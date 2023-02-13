@@ -10,6 +10,8 @@ class Player(CombatEntity):
     self.loot = defaultdict(lambda: 0)
     self.time = 4
     self.facing = "front"
+    self.rerolls = 0
+    self.explored = 1
 
   def switch_face(self):
     if self.facing == "front":

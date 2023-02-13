@@ -65,7 +65,9 @@ class Encounter:
   @property
   def escape_turn(self):
     last_enemy_spawn_turn = max(es.turn for es in self.enemy_spawns)
-    return max(last_enemy_spawn_turn + 2, 7)
+    # you can escape 2 turns after the last enemy spawned,
+    # but not earlier than turn 6, nor later than turn 9
+    return min(max(last_enemy_spawn_turn + 2, 6), 9)
 
   @property
   def overcome(self):
@@ -73,6 +75,14 @@ class Encounter:
     return self.turn > self.escape_turn or all_defeated
 
   # -------- Helpers --------
+
+  def get_containing_side_queue(self, enemy):
+    if enemy in self.back:
+      return self.back
+    elif enemy in self.front:
+      return self.front
+    else:
+      raise ValueError(f"{enemy.name} not in either side queue!")
 
   def all_other_enemies(self, enemy):
     return [e for e in self.enemies if not e is enemy]
@@ -158,9 +168,12 @@ class Encounter:
       print(f"{faced[0].name} took {damage} damage from searing presence!")
     # recharge random spell
     recharge_candidates = [sp for sp in self.player.spellbook.spells
-                          if sp.charges < sp.max_charges and "Passive" not in sp.spell]
+                          if sp.charges < sp.max_charges and "Passive" not in sp.spell and sp.echoing is None]
     if len(recharge_candidates) > 0:
       random.choice(recharge_candidates).recharge()
+    # Tick spell echoes
+    for page in self.player.spellbook.pages:
+      page.tick_echoes()
     #
     self.resolve_events()
 

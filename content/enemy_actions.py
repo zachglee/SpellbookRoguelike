@@ -5,9 +5,9 @@ from model.action import Action
 # Event functions
 
 def move_enemy(actor, encounter, movement):
-  if actor.side == "back":
+  if actor.side(encounter) == "back":
     enemy_queue = encounter.back
-  elif actor.side == "front":
+  elif actor.side(encounter) == "front":
     enemy_queue = encounter.front
   else:
     raise ValueError(f"Cannot perform move action when enemy {actor.name} has no side info.")
@@ -25,14 +25,20 @@ class NothingAction(Action):
   def act(self, actor, enc):
     return []
 
+class SelfDamageAction(Action):
+  def __init__(self, damage):
+    self.damage = damage
+
+  def act(self, actor, enc) -> List[Event]:
+    events = [Event(["assign_damage"], self, actor, lambda s, t: t.assign_damage(self.damage))]
+    return events
+
 class AttackAction(Action):
   def __init__(self, damage):
     self.damage = damage
 
   def act(self, actor, enc) -> List[Event]:
-    assigned_damage = self.damage + actor.conditions["sharp"] + actor.conditions["empower"]
-    actor.conditions["empower"] = 0
-    events = [Event(["assign_damage"], self, enc.player, lambda s, t: t.assign_damage(assigned_damage))]
+    events = [Event(["assign_damage"], actor, enc.player, lambda a, t: a.attack(t, self.damage))]
     return events
 
 class LifestealAttack(Action):
@@ -87,17 +93,49 @@ class AddConditionAction(Action):
     events = [Event(["condition"], actor, enc, event_func)]
     return events
 
+class SetConditionAction(Action):
+  def __init__(self, condition, magnitude, target: Literal["self", "player"]):
+    self.condition = condition
+    self.magnitude = magnitude
+    self.target = target
+
+  def act(self, actor, enc):
+    if self.target == "player":
+      def event_func(actor, encounter):
+        encounter.player.conditions[self.condition] = self.magnitude
+    elif self.target == "self":
+      def event_func(actor, encounter):
+        actor.conditions[self.condition] = self.magnitude
+    else:
+      raise ValueError(f"{self.target} is not a valid target...")
+
+    events = [Event(["condition"], actor, enc, event_func)]
+    return events
+
 
 # Branching Actions
+
+class WindupAction(Action):
+  def __init__(self, payoff_action, windup):
+    self.payoff_action = payoff_action
+    self.windup = windup
+
+  def act(self, actor, enc) -> List[Event]:
+    if actor.conditions["charge"] < self.windup:
+      actor.conditions["charge"] += 1
+      return []
+    else:
+      actor.conditions["charge"] = 0
+      return self.payoff_action.act(actor, enc)
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):
     self.backstab_action = backstab_action
     self.non_backstab_action = non_backstab_action
 
-  def act(self, actor, enc) -> Event:
+  def act(self, actor, enc) -> List[Event]:
     enc.update_enemy_self_knowledge()
-    if (enc.player.facing != actor.side):
+    if (enc.player.facing != actor.side(enc)):
       return self.backstab_action.act(actor, enc)
     else:
       return self.non_backstab_action.act(actor, enc)
@@ -109,7 +147,7 @@ class PackTacticsAction(Action):
 
   def act(self, actor, enc) -> Event:
     enc.update_enemy_self_knowledge()
-    if (actor.side == "back" and enc.front) or (actor.side == "front" and enc.back):
+    if (actor.side(enc) == "back" and enc.front) or (actor.side(enc) == "front" and enc.back):
       return self.pack_action.act(actor, enc)
     else:
       return self.non_pack_action.act(actor, enc)
@@ -121,6 +159,7 @@ class NearFarAction(Action):
 
   def act(self, actor, enc) -> Event:
     enc.update_enemy_self_knowledge()
+    print(f"-------- {actor.name} current position is {actor.position(enc)}")
     if actor.position(enc) == 0:
       return self.near_action.act(actor, enc)
     else:
@@ -151,12 +190,26 @@ class CautiousAction(Action):
       return self.non_cautious_action.act(actor, enc)
 
 class OverwhelmAction(Action):
-  def __init__(self, overwhelm_action, non_overwhelm_action):
+  def __init__(self, overwhelm_action, non_overwhelm_action, threshold):
     self.overwhelm_action = overwhelm_action
     self.non_overwhelm_action = non_overwhelm_action
+    self.threshold = threshold
 
   def act(self, actor, enc) -> List[Event]:
-    if len(enc.enemies) >= 3:
+    if len(enc.enemies) >= self.threshold:
+      return self.overwhelm_action.act(actor, enc)
+    else:
+      return self.non_overwhelm_action.act(actor, enc)
+
+class SideOverwhelmAction(Action):
+  def __init__(self, overwhelm_action, non_overwhelm_action, threshold):
+    self.overwhelm_action = overwhelm_action
+    self.non_overwhelm_action = non_overwhelm_action
+    self.threshold = threshold
+
+  def act(self, actor, enc) -> List[Event]:
+    side = enc.get_containing_side_queue(actor)
+    if len(side) >= self.threshold:
       return self.overwhelm_action.act(actor, enc)
     else:
       return self.non_overwhelm_action.act(actor, enc)
@@ -182,7 +235,8 @@ class TheVultureEntryAction(Action):
     events = []
     for enemy in other_enemies:
       total_sacrificed_health += enemy.hp
-      events.append(Event(["enemy_death"], enemy, enc, lambda s, t: enc.move_to_grave(enemy)))
+      events.append(Event(["enemy_death"], enemy, enc, lambda a, e: e.move_to_grave(a)))
     
     events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
+    events += AttackAction(len(other_enemies) * 2).act(actor, enc)
     return events

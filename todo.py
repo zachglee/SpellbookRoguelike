@@ -3,6 +3,7 @@
 # - implement dig deep
 # - implement actual Condition class so that I can do fleeting
 # - implement banish
+# - do death before searing
 
 # - design some new enemies that stay longer?
 #  - Elder One

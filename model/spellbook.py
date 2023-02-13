@@ -5,6 +5,7 @@ class SpellbookSpell:
     self.spell = spell
     self.charges = 2
     self.max_charges = 3
+    self.echoing = None
     self.exhausted = False
   
   def recharge(self):
@@ -20,19 +21,31 @@ class SpellbookSpell:
     rendered_str = rendered_str.replace("Producer", colored("Producer", "green"))
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
 
-    if "Passive" in self.spell:
-      prefix = "*"
-    else:
-      prefix = f"({self.charges}/{self.max_charges})"
+    echoing_prefix = colored('~' * self.echoing, 'blue') if self.echoing else ''
 
-    return f"{prefix} {rendered_str}"
+    if "Passive" in self.spell:
+      charges_prefix = "*"
+    else:
+      charges_prefix = f"({self.charges}/{self.max_charges})"
+
+    return f"{echoing_prefix}{charges_prefix} {rendered_str}"
 
 class SpellbookPage:
   def __init__(self, spells):
     self.spells = spells
+    self.copy_count = 0
+    self.notes = None
   
+  # tick down echoing spells
+  def tick_echoes(self):
+    for spell in self.spells:
+      if spell.echoing is not None:
+        spell.echoing -= 1
+    self.spells = [spell for spell in self.spells
+                   if spell.echoing is None or spell.echoing > 0]
+
   def render(self):
-    return "\n".join(f"- {spell.render()}" for spell in self.spells)
+    return "\n".join(f"{i + 1} - {spell.render()}" for i, spell in enumerate(self.spells))
 
 class Spellbook:
   def __init__(self, pages):
