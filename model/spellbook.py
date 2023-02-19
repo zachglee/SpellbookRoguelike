@@ -1,4 +1,22 @@
 from termcolor import colored
+from utils import numbered_list
+
+class LibrarySpell:
+  def __init__(self, spell):
+    self.spell = spell
+    self.copies_remaining = 3
+    self.max_copies_remaining = 3
+  
+  def render(self):
+    rendered_str = self.spell.replace("Red", colored("Red", "red"))
+    rendered_str = rendered_str.replace("Gold", colored("Gold", "yellow"))
+    rendered_str = rendered_str.replace("Blue", colored("Blue", "blue"))
+    rendered_str = rendered_str.replace("Green", colored("Green", "green"))
+    rendered_str = rendered_str.replace("Purple", colored("Purple", "magenta"))
+    rendered_str = rendered_str.replace("Consumer", colored("Consumer", "magenta"))
+    rendered_str = rendered_str.replace("Producer", colored("Producer", "green"))
+    rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
+    return f"[{self.copies_remaining}/{self.max_copies_remaining}] {rendered_str}"
 
 class SpellbookSpell:
   def __init__(self, spell):
@@ -7,7 +25,7 @@ class SpellbookSpell:
     self.max_charges = 3
     self.echoing = None
     self.exhausted = False
-  
+
   def recharge(self):
     self.charges = min(self.charges + 1, self.max_charges)
 
@@ -27,6 +45,7 @@ class SpellbookSpell:
       charges_prefix = "*"
     else:
       charges_prefix = f"({self.charges}/{self.max_charges})"
+    if self.echoing: charges_prefix = colored(charges_prefix, "blue")
 
     return f"{echoing_prefix}{charges_prefix} {rendered_str}"
 
@@ -45,7 +64,7 @@ class SpellbookPage:
                    if spell.echoing is None or spell.echoing > 0]
 
   def render(self):
-    return "\n".join(f"{i + 1} - {spell.render()}" for i, spell in enumerate(self.spells))
+    return numbered_list(self.spells)
 
 class Spellbook:
   def __init__(self, pages):
@@ -59,6 +78,10 @@ class Spellbook:
     for page in self.pages:
       spells += page.spells
     return spells
+
+  @property
+  def all_pages(self):
+    return self.pages + self.archive
 
   @property
   def current_page(self):

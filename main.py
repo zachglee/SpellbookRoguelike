@@ -6,16 +6,20 @@ from model.encounter import Encounter
 from model.player import Player
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
+from model.item import EnergyPotion
 from model.spell_draft import SpellDraft
-from model.rest_site import RestSite
-from model.route import Route
+# from model.rest_site import RestSite
+# from model.route import Route
+from model.map import Map
 from termcolor import colored
 from utils import colorize, choose_obj, choose_idx, get_combat_entities
-from generators import generate_routes
+from generators import generate_spell_pool, generate_library_spells
+from drafting import destination_draft, reroll_draft_player_library
 
 import random
 
-MAX_EXPLORE = 5
+STARTING_EXPLORED = 2
+MAX_EXPLORE = 6
 
 class GameOver(Exception):
   pass
@@ -26,16 +30,12 @@ class GameOver(Exception):
 class GameState:
   def __init__(self):
     self.player = None
-    self.routes = []
-    self.current_route_idx = 0
+    random.shuffle(enemy_sets)
+    self.map = Map(3, 3, generate_spell_pool(), enemy_sets[:12])
     self.encounter = None
     self.spell_draft = None
 
   # helpers
-
-  @property
-  def current_route(self):
-    return self.routes[self.current_route_idx]
 
   def time_cost(self, cost=1):
     if (self.player.time - cost) >= 0:
@@ -60,11 +60,20 @@ class GameState:
         color_to = conversion_tokens[4][:-1].lower()
         self.player.conditions[color_from] -= 1
         self.player.conditions[color_to] += 1
-      
+
+  def banish(self, target):
+    idx = target.position(self.encounter)
+    if target in self.encounter.back:
+      banished = self.encounter.back.pop(idx)
+      banished.spawned = False
+    if target in self.encounter.front:
+      banished = self.encounter.front.pop(idx)
+      banished.spawned = False
+
   # save management
   def save(self):
     with open("saves/main.pkl", "wb") as f:
-      dill.dump(self.routes, f)
+      dill.dump(self.map, f)
 
   # MAIN FUNCTIONS
   
@@ -72,19 +81,14 @@ class GameState:
 
   def init(self, file=None):
     starting_spellbook = Spellbook(pages=[])
-    self.player = Player(hp=30, name="Player", spellbook=starting_spellbook, inventory=[])
-    self.player.rerolls = 5
+    library = generate_library_spells(size=4)
+    inventory = [EnergyPotion("red", 1), EnergyPotion("blue", 1), EnergyPotion("gold", 1)]
+    self.player = Player(hp=30, name="Player", spellbook=starting_spellbook, inventory=inventory, library=library)
+    reroll_draft_player_library(self.player)
     if file:
       with open(file, "rb") as f:
-        self.routes = dill.load(f)
-    else:
-      self.routes = generate_routes(3)
-    # regenerate all the encounters from each route's enemy set pool
-    for route in self.routes:
-      route.generate_encounters()
-    for page in route.library:
-      for spell in page.spells:
-        spell.charges = 2
+        self.map = dill.load(f)
+    self.map.player = self.player
     self.save()
 
   # Ending
@@ -93,40 +97,21 @@ class GameState:
     print(colored("You died.", "red"))
     print("What page from your spellbook will you preserve?")
     print(self.player.spellbook.render())
-    page = choose_obj(self.player.spellbook.pages + self.player.spellbook.archive, colored("save a page > ", "red"))
+    page = choose_obj(self.player.spellbook.all_pages, colored("save a page > ", "red"))
     for spell in page.spells:
       spell.charges = 2
-    self.current_route.library.append(page)
+    # self.current_route.library.append(page)
     self.save()
     raise GameOver()
 
   # Drafting
 
-  def route_draft_phase(self):
-    self.current_route.library = [page for page in self.current_route.library if page.copy_count <= 4]
-    print(f"-------- Route Library --------")
-    for i, page in enumerate(self.current_route.library):
-      print(f"Page {i + 1} (copied {page.copy_count} times):")
-      print(page.render())
-    drafted_page_idx = choose_idx(self.current_route.library, "draft a page > ")
-    drafted_page = self.current_route.library[drafted_page_idx]
-    self.player.spellbook.pages.append(drafted_page)
-    # reduce max hp based on how many times this page was copied
-    max_hp_costs = [0, 1, 3, 6, 10]
-    self.player.max_hp -= max_hp_costs[page.copy_count]
-    self.player.hp -= max_hp_costs[page.copy_count]
-
-
-  def normal_draft_phase(self):
-    self.spell_draft = SpellDraft(self.player, self.current_route.spell_pool)
-    self.spell_draft.reroll_draft_spellbook_page()
-
-  def boss_draft_phase(self):
-    self.spell_draft = SpellDraft(self.player, self.current_route.spell_pool)
-    self.player.spellbook.archive += self.player.spellbook.pages
-    self.player.spellbook.pages = []
-    for _ in range(3):
-      self.spell_draft.archive_draft_spellbook_page()
+  # def boss_draft_phase(self):
+  #   self.spell_draft = SpellDraft(self.player, self.current_route.spell_pool)
+  #   self.player.spellbook.archive += self.player.spellbook.pages
+  #   self.player.spellbook.pages = []
+  #   for _ in range(3):
+  #     self.spell_draft.archive_draft_spellbook_page()
 
   # Resting
 
@@ -140,54 +125,48 @@ class GameState:
     for k, v in rest_action.cost.items():
       self.player.loot[k] -= v
 
-  # DEPRECATED NOW since we no longer have formal rest sites
-  def rest_phase(self):
-    self.current_route.rest_site.player = self.player
-    print(self.current_route.rest_site.render())
-    while True:
-      rest_action = self.current_route.rest_site.pick_rest_action()
-      if rest_action is None:
-        break
-      self.take_rest_action(rest_action)
-      print(self.current_route.rest_site.render())
-
   def discovery_phase(self):
-    if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
-      # crafting phase
-      n_crafts = 3
-      while n_crafts > 0:
-        item = self.current_route.safehouse.craft(self.player)
-        if item is None:
-          break
-        self.player.inventory.append(item)
-        n_crafts -= 1
+    pass # TODO find something to fill this in with
+    # if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
+    #   self.current_route.safehouse.n_crafts = 3
+    #   self.current_route.safehouse.player = self.player
+    #   # crafting phase
+    #   while self.current_route.safehouse.n_crafts > 0:
+    #     print(self.current_route.safehouse.render())
+    #     item = self.current_route.safehouse.craft(self.player)
+    #     if item is None:
+    #       break
+    #     self.current_route.safehouse.inventory.append(item)
+    #     self.current_route.safehouse.n_crafts -= 1
 
-      # taking phase
-      while True:
-        print(self.current_route.safehouse.render())
-        item = self.current_route.safehouse.take()
-        self.player.inventory.append(item)
-    else:
-      print(colored("Found nothing this time...", "blue"))
-    self.player.explored = 1
+    #   # taking phase
+    #   while len(self.player.inventory) < self.player.capacity:
+    #     print(self.current_route.safehouse.render())
+    #     item = self.current_route.safehouse.take()
+    #     if item is None:
+    #       break
+    #     self.player.inventory.append(item)
+    #     print(self.player.render_inventory())
+    # else:
+    #   print(colored("Found nothing this time...", "blue"))
+    # self.player.explored = STARTING_EXPLORED
       
 
   # Encounters
 
-  def use_item(self):
-    item_idx = choose_idx(self.player.inventory)
+  def use_item(self, idx=None):
+    if idx:
+      item_idx = idx - 1
+    else:
+      item_idx = choose_idx(self.player.inventory, "use item > ")
     item = self.player.inventory[item_idx]
     item.use(self.encounter)
-    self.player.inventory = [item for item in self.player.inventory if item.charges <= 0]
+    self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
 
   def init_encounter(self, encounter):
     self.encounter = encounter
     self.encounter.player = self.player
-    ambient_energy = random.choice(["red", "blue", "gold"])
-    self.player.conditions[ambient_energy] += 1
-    print(colorize(f"!!!!!!!! Ambient Energy: {ambient_energy.title()} !!!!!!!!"))
-    preview_enemy_set = random.choice(self.encounter.enemy_sets)
-    print(f"!!!!!!!! Preview: {preview_enemy_set.name} !!!!!!!!")
+    self.player.conditions[self.encounter.ambient_energy] += 1
 
   def run_encounter_round(self):
     encounter = self.encounter
@@ -201,6 +180,8 @@ class GameState:
             break
           elif cmd == "die":
             self.player_death()
+          elif cmd == "win":
+            encounter.turn = 10
           elif cmd == "site":
             print(self.rest_site.render())
           elif cmd_tokens[0] == "time":
@@ -208,21 +189,12 @@ class GameState:
             self.time_cost(magnitude)
           elif cmd in ["loot", "loot?"]:
             print(encounter.player.render_loot())
-          elif cmd == "echo":
-            self.time_cost()
-            spell = self.current_route.get_echo()
-            if spell:
-              print(colored("~~~ Echoes of a mage long dead ~~~", "blue"))
-              spell.echoing = 2
-              self.player.spellbook.current_page.spells.append(spell)
-            else:
-              print(colored("No echoes...", "blue"))
-          elif cmd == "inventory":
-            print(f"-------- INVENTORY --------")
-            "\n".join(f"{i} - {item.render()}" for i, item in enumerate(self.player.inventory))
+          elif cmd in ["inventory", "inv", "i"]:
+            print(self.player.render_inventory())
           elif cmd == "use":
+            self.time_cost()
             self.use_item()
-          elif cmd == "explore":
+          elif cmd in ["explore", "x"]:
             self.time_cost()
             self.player.explored += 1
             print(colored(f"Something lies within these passages... (explored {self.player.explored}/{MAX_EXPLORE})", "blue"))
@@ -251,6 +223,10 @@ class GameState:
                                    if es.turn > self.encounter.turn + 1]
             if non_imminent_spawns:
               sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
+          elif cmd_tokens[0] == "banish":
+            targets = get_combat_entities(encounter, cmd_tokens[1])
+            for target in targets:
+              self.banish(target)
           elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
             targets = get_combat_entities(encounter, cmd_tokens[1])
             magnitude = int(cmd_tokens[2])
@@ -280,46 +256,47 @@ class GameState:
 
     self.encounter.end_encounter()
   
-  def play_route(self):
-    self.init_encounter(self.current_route.normal_encounters.pop(0))
-    if self.current_route.library:
-      self.route_draft_phase()
-    else:
-      self.normal_draft_phase()
-    self.normal_draft_phase()
-    self.encounter_phase()
-    self.discovery_phase()
-    self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
+  # def play_route(self):
+  #   self.init_encounter(self.current_route.normal_encounters.pop(0))
+  #   if self.current_route.library:
+  #     self.route_draft_phase()
+  #   else:
+  #     self.normal_draft_phase()
+  #   self.normal_draft_phase()
+  #   self.encounter_phase()
+  #   self.discovery_phase()
+  #   self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
 
-    for i in range (1):
-      self.init_encounter(self.current_route.normal_encounters.pop(0))
-      self.normal_draft_phase()
-      self.encounter_phase()
-      self.discovery_phase()
-      self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
+  #   for i in range (1):
+  #     self.init_encounter(self.current_route.normal_encounters.pop(0))
+  #     self.normal_draft_phase()
+  #     self.encounter_phase()
+  #     self.discovery_phase()
+  #     self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
 
-    self.init_encounter(self.current_route.boss_encounters.pop(0))
-    self.boss_draft_phase()
-    self.encounter_phase()
-    self.discovery_phase()
-
-  def finish_route(self):
-    self.current_route.rest_site.library.append(Spellbook(self.player.spellbook.pages))
-    self.player.spellbook.pages = []
-    self.current_route_idx += 1
-    # self.current_route.library += self.player.spellbook.archive
+  #   print(colored("!!!!!!!! THIS IS A BOSS ENCOUNTER !!!!!!!!", "red"))
+  #   self.init_encounter(self.current_route.boss_encounters.pop(0))
+  #   self.boss_draft_phase()
+  #   self.encounter_phase()
+  #   self.discovery_phase()
 
   def play(self):
+    encounter = self.map.choose_route()
+    self.init_encounter(encounter)
+    destination_draft(self.player, self.map.destination_node)
+    self.encounter_phase()
 
-    self.play_route()
-    self.finish_route()
+    # self.play_route()
+    # self.finish_route()
     
-    self.play_route()
-    self.finish_route()
+    # self.play_route()
+    # self.finish_route()
+
+    self.save()
 
     print("YOU WIN!")
 
 gs = GameState()
-# gs.init()
-gs.init("saves/main.pkl")
+gs.init()
+# gs.init("saves/main.pkl")
 gs.play()

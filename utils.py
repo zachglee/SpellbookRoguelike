@@ -1,8 +1,10 @@
 import random
 from termcolor import colored
 
+energy_colors = ["red", "blue", "gold", "green", "purple"]
+
 # For rendering
-energy_colors = {
+energy_color_map = {
   "red": "red",
   "blue": "blue",
   "gold": "yellow",
@@ -15,10 +17,17 @@ energy_colors = {
   "Purple": "magenta",
 }
 
+# rendering
+
 def colorize(s):
-  for target_str, color in energy_colors.items():
+  for target_str, color in energy_color_map.items():
     s = s.replace(target_str, colored(target_str, color))
   return s
+
+def numbered_list(l):
+  return "\n".join(f"{i + 1} - {item.render()}" for i, item in enumerate(l))
+
+# choosing
 
 def choose_obj(choices, prompt):
   while True:

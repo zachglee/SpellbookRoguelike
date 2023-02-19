@@ -6,7 +6,7 @@ from copy import deepcopy
 from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import NothingAction
-from utils import energy_colors
+from utils import energy_colors, colorize
 
 
 class Enemy(CombatEntity):
@@ -33,8 +33,9 @@ class EnemySet:
     return [EnemySpawn(es.turn, es.side, deepcopy(es.enemy)) for es in self.enemy_spawns]
 
 class Encounter:
-  def __init__(self, enemy_sets, player):
+  def __init__(self, enemy_sets, player, ambient_energy=None):
     self.enemy_sets = enemy_sets
+    self.ambient_energy = ambient_energy or random.choice(energy_colors)
     self.enemy_spawns = []
     for enemy_set in enemy_sets:
       self.enemy_spawns += enemy_set.instantiated_enemy_spawns
@@ -212,6 +213,14 @@ class Encounter:
 
 
   # Rendering
+
+  def render_preview(self, preview_enemy_sets=None):
+    preview_enemy_sets = preview_enemy_sets or self.enemy_sets[0:1]
+    preview_enemy_set_names = ", ".join([es.name for es in preview_enemy_sets])
+    return colorize(
+      colored("Enemy Sets: ", "red") +
+      f"{len(self.enemy_sets)} ({preview_enemy_set_names}), "
+      f"Ambient {self.ambient_energy}")
 
   def render_combat(self):
     print(self.player.spellbook.render_current_page() + "\n")

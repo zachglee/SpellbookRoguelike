@@ -2,7 +2,7 @@ from typing import List
 from collections import defaultdict
 from termcolor import colored
 from model.event import Event
-from utils import energy_colors
+from utils import energy_color_map
 
 class CombatEntity:
   def __init__(self, max_hp, name):
@@ -32,8 +32,8 @@ class CombatEntity:
     condition_strs = []
     for k, v in self.conditions.items():
       if v:
-        if k in energy_colors and v > 0:
-          condition_strs.append(colored("*" * v, energy_colors[k]))
+        if k in energy_color_map and v > 0:
+          condition_strs.append(colored("*" * v, energy_color_map[k]))
         else:
           condition_strs.append(f"{k} {v}")
 

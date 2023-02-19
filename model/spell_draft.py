@@ -1,13 +1,12 @@
 import random
 from termcolor import colored
-from utils import choose_idx, choose_obj
+from utils import choose_idx, choose_obj, numbered_list
 from model.spellbook import SpellbookPage, SpellbookSpell
 
 class SpellDraft():
   def __init__(self, player, universe):
     self.player = player
     self.universe = universe
-    self.pool = []
   
   def render_spell_draft(self, archive=False):
     print("-------- Current Spellbook --------")
@@ -16,24 +15,11 @@ class SpellDraft():
       print(self.player.spellbook.render_archive())
     if self.player.inventory:
       print(f"\n-------- Current {colored('Inventory', 'cyan')} --------")
-      print("\n".join(f"- {item.render()}" for item in self.player.inventory))
-    if self.pool:
-      print(f"\n-------- Current {colored('Pool', 'magenta')} --------")
-      print("\n".join(f"- {spell.render()}" for spell in self.pool))
+      print(numbered_list(self.player.inventory))
 
   def generate_spells(self, n):
     return [SpellbookSpell(random.choice(self.universe)) for _ in range(n)]
-  
-  def draft_spellbook_page(self):
-    new_page = SpellbookPage([])
-    self.player.spellbook.pages.append(new_page)
-    while len(new_page.spells) < 3:
-      self.pool = self.generate_spells(3)
-      self.render_spell_draft()
-      print()
-      new_page.spells.append(self.draft_from_pool())
-    self.render_spell_draft()
-    new_page.spells.append(self.draft_from_inventory())
+
 
   def reroll_draft_spellbook_page(self):
     self.player.rerolls += 1
@@ -58,11 +44,4 @@ class SpellDraft():
     new_page = self.player.spellbook.archive.pop(drafted_idx)
     self.player.spellbook.pages.append(new_page)
 
-
-  def draft_to_inventory(self, n):
-    for _ in range(n):
-      self.pool = self.generate_spells(3)
-      self.render_spell_draft()
-      print()
-      self.player.inventory.append(self.draft_from_pool(f"draft to {colored('inventory', 'cyan')} > "))
     

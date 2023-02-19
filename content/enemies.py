@@ -35,7 +35,7 @@ enemies = {
   "Conniving Impfiend": Enemy(5, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy(20, "Insistent Duelist",
                               SideOverwhelmAction(
-                                MultiAction([AddConditionAction("sharp", 1, "self"), SetConditionAction("armor", 2, "self")]),
+                                MultiAction([AddConditionAction("sharp", 1, "self"), SetConditionAction("armor", 0, "self")]),
                                 MultiAction([SetConditionAction("armor", 2, "self"), AttackAction(4), AttackAction(4)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   "Cultist": Enemy(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self")),
@@ -47,6 +47,7 @@ enemies = {
   # elder one
   # energy vampire -- rylie ellam
   # enemies where damage is not the best option
+  # 4 armor 12 hp
 }
 
 enemy_sets = [
