@@ -142,6 +142,6 @@ enemy_sets = [
   ]),
   EnemySet("The Execution", [
     EnemySpawn(4, "b", enemies["Herald of Doom"]),
-    EnemySpawn(6, "b", enemies["The Executioner"]),
+    EnemySpawn(6, "f", enemies["The Executioner"]),
   ]),
 ]

@@ -1,20 +1,18 @@
 import dill
+from copy import deepcopy
 from content.spells import spells
 from content.enemies import enemy_sets
-from content.rest_actions import rest_actions, rerolls
 from model.encounter import Encounter
 from model.player import Player
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
 from model.item import EnergyPotion
 from model.spell_draft import SpellDraft
-# from model.rest_site import RestSite
-# from model.route import Route
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_idx, get_combat_entities
+from utils import colorize, choose_obj, choose_idx, get_combat_entities, choose_binary
 from generators import generate_spell_pool, generate_library_spells
-from drafting import destination_draft, reroll_draft_player_library
+from drafting import destination_draft, reroll_draft_player_library, safehouse_library_draft
 
 import random
 
@@ -31,7 +29,7 @@ class GameState:
   def __init__(self):
     self.player = None
     random.shuffle(enemy_sets)
-    self.map = Map(3, 3, generate_spell_pool(), enemy_sets[:12])
+    self.map = Map(3, 3, generate_spell_pool(), enemy_sets[:10])
     self.encounter = None
     self.spell_draft = None
 
@@ -72,46 +70,45 @@ class GameState:
 
   # save management
   def save(self):
-    with open("saves/main.pkl", "wb") as f:
+    with open("saves/map.pkl", "wb") as f:
       dill.dump(self.map, f)
+    with open("saves/player.pkl", "wb") as f:
+      dill.dump(self.player, f)
 
   # MAIN FUNCTIONS
   
   # setup
 
-  def init(self, file=None):
-    starting_spellbook = Spellbook(pages=[])
-    library = generate_library_spells(size=4)
-    inventory = [EnergyPotion("red", 1), EnergyPotion("blue", 1), EnergyPotion("gold", 1)]
-    self.player = Player(hp=30, name="Player", spellbook=starting_spellbook, inventory=inventory, library=library)
-    reroll_draft_player_library(self.player)
-    if file:
-      with open(file, "rb") as f:
+  def init(self, map_file=None, player_file=None):
+    if map_file:
+      with open(map_file, "rb") as f:
         self.map = dill.load(f)
+    self.map.current_node = random.choice(self.map.nodes[0])
+    print(self.map.render())
+    input("Press enter to continue...")
+
+    if player_file:
+      with open(player_file, "rb") as f:
+        self.player = dill.load(f)
+    else:
+      self.player = Player(hp=30, name="Player",
+                           spellbook=None,
+                           inventory=[],
+                           library=[],
+                           signature_spell=generate_library_spells(1)[0])
+    self.player.init()
     self.map.player = self.player
     self.save()
 
   # Ending
   def player_death(self):
     print(self.player.render())
-    print(colored("You died.", "red"))
-    print("What page from your spellbook will you preserve?")
-    print(self.player.spellbook.render())
-    page = choose_obj(self.player.spellbook.all_pages, colored("save a page > ", "red"))
-    for spell in page.spells:
-      spell.charges = 2
-    # self.current_route.library.append(page)
+    print(colored("You died. Lose half your explore.", "red"))
+    input("Press enter to continue...")
+    self.player.explored = int(self.player.explored / 2)
+    self.discovery_phase()
     self.save()
     raise GameOver()
-
-  # Drafting
-
-  # def boss_draft_phase(self):
-  #   self.spell_draft = SpellDraft(self.player, self.current_route.spell_pool)
-  #   self.player.spellbook.archive += self.player.spellbook.pages
-  #   self.player.spellbook.pages = []
-  #   for _ in range(3):
-  #     self.spell_draft.archive_draft_spellbook_page()
 
   # Resting
 
@@ -125,32 +122,44 @@ class GameState:
     for k, v in rest_action.cost.items():
       self.player.loot[k] -= v
 
-  def discovery_phase(self):
-    pass # TODO find something to fill this in with
-    # if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
-    #   self.current_route.safehouse.n_crafts = 3
-    #   self.current_route.safehouse.player = self.player
-    #   # crafting phase
-    #   while self.current_route.safehouse.n_crafts > 0:
-    #     print(self.current_route.safehouse.render())
-    #     item = self.current_route.safehouse.craft(self.player)
-    #     if item is None:
-    #       break
-    #     self.current_route.safehouse.inventory.append(item)
-    #     self.current_route.safehouse.n_crafts -= 1
+  # Discovery
 
-    #   # taking phase
-    #   while len(self.player.inventory) < self.player.capacity:
-    #     print(self.current_route.safehouse.render())
-    #     item = self.current_route.safehouse.take()
-    #     if item is None:
-    #       break
-    #     self.player.inventory.append(item)
-    #     print(self.player.render_inventory())
-    # else:
-    #   print(colored("Found nothing this time...", "blue"))
-    # self.player.explored = STARTING_EXPLORED
+  def discovery_phase(self):
+    while self.player.explored > 0:
+      if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
+        self.map.destination_node.passages.append("pass")
+        self.player.explored -= MAX_EXPLORE
+        print(colored("You found a passage!", "green"))
+        input(f"Press enter to continue exploring ({self.player.explored}/{MAX_EXPLORE}) ...")
+      else:
+        print(colored("Found nothing this time...", "blue"))
+        break
+    self.player.explored = STARTING_EXPLORED
       
+  # Navigation
+
+  def navigation_phase(self):
+    bag_of_passages = deepcopy(self.map.destination_node.passages)
+    passages_drawn = []
+    passes = 0
+    passes_required = 2
+    for i in range(5):
+      print(self.player.render())
+      drawn_passage = bag_of_passages.pop(random.randint(0, len(bag_of_passages)-1))
+      passages_drawn.append(drawn_passage)
+      input("You find a passage. It leads to...")
+      if drawn_passage == "pass":
+        passes += 1
+        print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
+        if passes > passes_required:
+          input(colored("You come out the other side!", "cyan"))
+          return True
+      elif drawn_passage == "fail":
+        print(colored(f"A trap! You take 1 damage. ({passes}/{passes_required} progress)", "red"))
+        self.player.hp -= 1
+      input(f"You press onwards... ({4 - i} turns remaining)")
+    input(colored("You have failed to find the way through.", "red"))
+    return False
 
   # Encounters
 
@@ -217,6 +226,9 @@ class GameState:
             self.cast(target,
                       cost_energy=not cmd_tokens[0] == "ccast",
                       cost_charges=not cmd_tokens[0] == "ecast")
+          elif cmd_tokens[0] == "fcast":
+            target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+            self.cast(target, cost_energy=False, cost_charges=False)
           elif cmd_tokens[0] == "call":
             magnitude = int(cmd_tokens[1])
             non_imminent_spawns = [es for es in self.encounter.enemy_spawns
@@ -253,50 +265,34 @@ class GameState:
     while not encounter.overcome:
       self.run_encounter_round()
     self.encounter.render_combat()
-
     self.encounter.end_encounter()
-  
-  # def play_route(self):
-  #   self.init_encounter(self.current_route.normal_encounters.pop(0))
-  #   if self.current_route.library:
-  #     self.route_draft_phase()
-  #   else:
-  #     self.normal_draft_phase()
-  #   self.normal_draft_phase()
-  #   self.encounter_phase()
-  #   self.discovery_phase()
-  #   self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
 
-  #   for i in range (1):
-  #     self.init_encounter(self.current_route.normal_encounters.pop(0))
-  #     self.normal_draft_phase()
-  #     self.encounter_phase()
-  #     self.discovery_phase()
-  #     self.player.spellbook.archive.append(self.player.spellbook.pages.pop(0))
-
-  #   print(colored("!!!!!!!! THIS IS A BOSS ENCOUNTER !!!!!!!!", "red"))
-  #   self.init_encounter(self.current_route.boss_encounters.pop(0))
-  #   self.boss_draft_phase()
-  #   self.encounter_phase()
-  #   self.discovery_phase()
+  def play_route(self):
+    while True:
+      encounter = self.map.choose_route(self.player)
+      if isinstance(encounter, Encounter):  
+        self.init_encounter(encounter)
+        destination_draft(self.player, self.map.destination_node)
+        self.encounter_phase()
+        self.discovery_phase()
+        break
+      elif encounter == "navigate":
+        success = self.navigation_phase()
+        if success:
+          break
+    self.map.current_node = self.map.destination_node
+    safehouse_library_draft(self.player, self.map.current_node.safehouse)
 
   def play(self):
-    encounter = self.map.choose_route()
-    self.init_encounter(encounter)
-    destination_draft(self.player, self.map.destination_node)
-    self.encounter_phase()
 
-    # self.play_route()
-    # self.finish_route()
-    
-    # self.play_route()
-    # self.finish_route()
+    for i in range(4):
+      self.play_route()
 
     self.save()
 
     print("YOU WIN!")
 
 gs = GameState()
-gs.init()
-# gs.init("saves/main.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl", player_file="saves/player.pkl")
 gs.play()

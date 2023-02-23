@@ -160,6 +160,7 @@ class Encounter:
     self.resolve_events()
 
   def player_end_phase(self):
+    self.resolve_events()
     # player end step
     for entity in self.combat_entities:
       entity.execute_conditions()
@@ -169,7 +170,10 @@ class Encounter:
       print(f"{faced[0].name} took {damage} damage from searing presence!")
     # recharge random spell
     recharge_candidates = [sp for sp in self.player.spellbook.spells
-                          if sp.charges < sp.max_charges and "Passive" not in sp.spell and sp.echoing is None]
+                          if sp.charges < sp.max_charges and
+                          "Passive" not in sp.spell and
+                          "Unrechargeable" not in sp.spell and
+                          sp.echoing is None]
     if len(recharge_candidates) > 0:
       random.choice(recharge_candidates).recharge()
     # Tick spell echoes

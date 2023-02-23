@@ -237,6 +237,6 @@ class TheVultureEntryAction(Action):
       total_sacrificed_health += enemy.hp
       events.append(Event(["enemy_death"], enemy, enc, lambda a, e: e.move_to_grave(a)))
     
-    events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
     events += AttackAction(len(other_enemies) * 2).act(actor, enc)
+    events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
     return events

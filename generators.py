@@ -1,7 +1,6 @@
 import random
 from model.spellbook import LibrarySpell, SpellbookSpell
 from content.enemies import enemy_sets
-from content.rest_actions import rest_actions, rerolls
 from content.spells import spells, red_page_sets, blue_page_sets, gold_page_sets
 
 def generate_spell_pool():

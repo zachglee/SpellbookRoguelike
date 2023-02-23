@@ -50,6 +50,17 @@ def choose_idx(choices, prompt):
     except (ValueError, TypeError, IndexError) as e:
       print(e)
 
+def choose_binary(prompt, choices=["y", "n"]):
+  while True:
+    try:
+      choice = input(f"{prompt} ({choices[0]}/{choices[1]}) > ")
+      if choice == choices[0]:
+        return True
+      elif choice == choices[1]:
+        return False
+    except (ValueError, TypeError, IndexError) as e:
+      print(e)
+
 def get_combat_entities(enc, target_string):
   if target_string == "p":
     return [enc.player]

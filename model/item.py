@@ -30,9 +30,10 @@ class EnergyPotion(Item):
   def __init__(self, energy_color, energy_amount):
     self.energy_color = energy_color
     self.energy_amount = energy_amount
+    self.charges = 1
 
   def use(self, encounter):
-    encounter.player.conditions[self.energy_color] + self.energy_amount
+    encounter.player.conditions[self.energy_color] += self.energy_amount
     self.charges -= 1
 
   def render(self):

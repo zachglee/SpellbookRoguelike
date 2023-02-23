@@ -15,7 +15,7 @@ red_enemy_dies = [
   "Converter: 1 Red -> 1 Green, Deal 9 damage. If this kills, +1 red.",
   "Consumer: 1 Red: Deal 16 damage"],
   #
-  ["Passive: Whenever an enemy dies, inflict its burn +2 on adjacent.",
+  ["Passive: Whenever an enemy dies, inflict its burn +2 on its side.",
   "Producer: +1 Red, inflict 2 burn.",
   "Converter: 1 Red -> 1 Blue, Inflict 5 burn.",
   "Consumer: 1 Red: Inflict 2 burn, then inflict their burn on all enemies."],
@@ -29,7 +29,7 @@ red_take_damage = [
   #
   ["Passive: Whenever you take damage, inflict 2 burn on adjacent enemies.",
   "Producer: +1 Red, when you take damage this turn, lose no life and gain half of it as burn.",
-  "Converter: 1 Red -> 1 Purple: Copy all burn from one entity to another.",
+  "Converter: 1 Red -> 1 Purple: Double burn on an entity and transfer it to another entity.",
   "Consumer: 1 Red: Inflict 3 burn. Tick all burn and gain life equal to damage dealt in this way."],
 ]
 
@@ -46,12 +46,12 @@ red_big_attack = [
 ]
 
 red_hit_big_enemy = [
-  ["Passive: Whenever you damage an enemy, inflict 3 burn if they're still above 9hp.",
+  ["Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.",
   "Producer: +1 Red, Deal 4 damage to immediate.",
   "Converter: 1 Red -> 1 Purple: Apply 3 burn, then tick all conditions 3 times.",
   "Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health."],
   #
-  ["Passive: Whenever you damage an enemy, gain 2 regen if they're still above 9hp.",
+  ["Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.",
   "Producer: +1 Red, Deal 5 damage to a target at or above 10 health.",
   "Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun the target if it's at or below half health.",
   "Consumer: 1 Red: Deal damage equal to target's missing health."],
@@ -85,10 +85,10 @@ blue_block_hits = [
   "Converter: 1 Blue -> 1 Green: Gain 8 block",
   "Consumer: 1 Blue: Gain 5 armor this turn."],
   #
-  ["Passive: Whenever you’re attacked and take no damage, gain 1 retaliate.",
+  ["Passive: Whenever you’re attacked and take no damage, gain 2 retaliate.",
   "Producer: +1 Blue, gain 1 block and Break: deal 5 damage to attacker.",
   "Converter: 1 Blue -> 1 Gold: Block 5. Deal 4 damage.",
-  "Consumer: 1 Blue: Block 5. Break: Deal 5 times the breaker’s attack damage back.",]
+  "Consumer: 1 Blue: Block 4. Break: Deal 5 times the breaker’s attack damage back.",]
 ]
 
 blue_turn_3 = [
@@ -138,10 +138,10 @@ blue_spells = sum(blue_pages, [])
 
 # gold_spells = [
 gold_3rd_spell = [
-  ["Passive: Whenever you cast your 3rd spell in a turn, gain 2 sharp.",
+  ["Passive: Whenever you cast your 3rd spell in a turn, gain 3 sharp.",
   "Producer: +1 Gold, Deal 2 damage to each adjacent enemy.",
   "Converter: 1 Gold -> 1 Red: Deal 3 damage to immediate enemy. Repeat twice more.",
-  "Consumer: 1 Gold: Regen 2. Cast a spell on this page twice, pay nothing."],
+  "Consumer: 1 Gold: Cast a spell on this page twice, pay nothing. Unrechargeable."],
   #
   ["Passive: Whenever you cast your 3rd spell in a turn, gain 9 block.",
   "Producer: +1 Gold, gain 1 regen.",
@@ -162,12 +162,12 @@ gold_turn_page = [
 ]
 
 gold_1_spell = [
-  ["Passive: When you cast 1 or less spell in a turn, gain 1 gold energy.",
+  ["Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.",
   "Producer: +1 Gold, you may convert 1 non-gold energy to gold.",
   "Converter: 1 Gold -> 1 Green: Gain 1 energy of each kind you do not have.",
   "Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color."],
   #
-  ["Passive: When you cast 1 or less spell in a turn, recharge a spell on this page.",
+  ["Passive: If you cast 1 or less spell in a turn, recharge a spell on this page.",
   "Producer: +1 Gold, +1 time.",
   "Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. If this kills, recharge and refresh.",
   "Consumer: 1 Gold: Gain 3 prolific."],

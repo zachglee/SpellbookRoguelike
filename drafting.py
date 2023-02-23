@@ -10,20 +10,21 @@ def render_spell_draft(player, archive=False):
     if archive:
       print(player.spellbook.render_archive())
     if player.library:
-      print(f"-------- Current {colored('Library', 'cyan')} --------")
-      print(numbered_list(player.library))
+      print(player.render_library())
 
 def reroll_draft_player_library(player):
   rerolls = 3
   render_spell_draft(player)
   while rerolls > 0:
     choice_idx = choose_idx(player.library, f"reroll ({rerolls}) > ")
-    if choice_idx is not None:
+    if choice_idx is None:
+      break
+    elif player.library[choice_idx].signature:
+      print("You can't reroll a signature spell!")
+    else:
       player.library[choice_idx] = generate_library_spells(1)[0]
       rerolls -= 1
       render_spell_draft(player)
-    else:
-      break
 
 def destination_draft(player, destination_node):
   first_spell = SpellbookSpell(destination_node.safehouse.library[0].spell)
@@ -39,20 +40,20 @@ def edit_page_from_inventory(player, page_number):
   available_spells = [spell for spell in player.library]
   while len(active_page.spells) < 3:
     render_spell_draft(player)
-    library_spell_idx = choose_obj(available_spells, f"add spell to page {page_number} > ")
-    if library_spell_idx is None:
+    library_spell = choose_obj(available_spells, f"add spell to page {page_number} > ")
+    if library_spell is None:
       break
-    library_spell = available_spells.pop(library_spell_idx)
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
     player.library = [spell for spell in player.library if spell.copies_remaining > 0]
 
 def safehouse_library_draft(player, safehouse):
+  print(player.render_library())
   print(safehouse.render())
   copied_spell = choose_obj(safehouse.library, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
     player.library.append(LibrarySpell(copied_spell.spell))
-    copied_spell.copy_count += 1
+    copied_spell.copies_remaining -= 1
     print(f"Copied: {copied_spell.render()}")
   else:
     print("No spell copied.")
