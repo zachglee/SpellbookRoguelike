@@ -12,7 +12,7 @@ def render_spell_draft(player, archive=False):
     if player.library:
       print(player.render_library())
 
-def reroll_draft_player_library(player):
+def reroll_draft_player_library(player, spell_pool):
   rerolls = 3
   render_spell_draft(player)
   while rerolls > 0:
@@ -22,7 +22,7 @@ def reroll_draft_player_library(player):
     elif player.library[choice_idx].signature:
       print("You can't reroll a signature spell!")
     else:
-      player.library[choice_idx] = generate_library_spells(1)[0]
+      player.library[choice_idx] = generate_library_spells(1, spell_pool=spell_pool)[0]
       rerolls -= 1
       render_spell_draft(player)
 
@@ -37,15 +37,16 @@ def destination_draft(player, destination_node):
 
 def edit_page_from_inventory(player, page_number):
   active_page = player.spellbook.pages[page_number - 1]
-  available_spells = [spell for spell in player.library]
   while len(active_page.spells) < 3:
     render_spell_draft(player)
-    library_spell = choose_obj(available_spells, f"add spell to page {page_number} > ")
+    library_spell = choose_obj(player.library, f"add spell to page {page_number} > ")
     if library_spell is None:
       break
+    if library_spell.copies_remaining <= 0:
+      print(colored("This spell is out of copies.", "red"))
+      continue
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
-    player.library = [spell for spell in player.library if spell.copies_remaining > 0]
 
 def safehouse_library_draft(player, safehouse):
   print(player.render_library())
@@ -53,7 +54,6 @@ def safehouse_library_draft(player, safehouse):
   copied_spell = choose_obj(safehouse.library, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
     player.library.append(LibrarySpell(copied_spell.spell))
-    copied_spell.copies_remaining -= 1
     print(f"Copied: {copied_spell.render()}")
   else:
     print("No spell copied.")

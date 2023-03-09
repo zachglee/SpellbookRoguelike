@@ -29,6 +29,18 @@ def numbered_list(l):
 
 # choosing
 
+def choose_str(choices, prompt):
+  while True:
+    try:
+      choice = input(prompt)
+      if choice == "done":
+        return None
+      if choice in choices:
+        return choice
+      print("Invalid choice...")
+    except (ValueError, TypeError, IndexError) as e:
+      print(e)
+
 def choose_obj(choices, prompt):
   while True:
     try:
@@ -50,7 +62,7 @@ def choose_idx(choices, prompt):
     except (ValueError, TypeError, IndexError) as e:
       print(e)
 
-def choose_binary(prompt, choices=["y", "n"]):
+def choose_binary(prompt, choices=["y", "n"]) -> bool:
   while True:
     try:
       choice = input(f"{prompt} ({choices[0]}/{choices[1]}) > ")
@@ -66,6 +78,8 @@ def get_combat_entities(enc, target_string):
     return [enc.player]
   elif target_string == "a":
     return enc.front + enc.back
+  elif target_string == "i":
+    return [enc.faced_enemy_queue[0]]
   elif target_string == "f":
     return enc.front
   elif target_string == "r":

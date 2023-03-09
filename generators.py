@@ -1,22 +1,35 @@
 import random
 from model.spellbook import LibrarySpell, SpellbookSpell
 from content.enemies import enemy_sets
-from content.spells import spells, red_page_sets, blue_page_sets, gold_page_sets
+from content.spells import (spells, red_pages, blue_pages, gold_pages,
+                            red_page_sets, blue_page_sets, gold_page_sets)
+from content.rituals import rituals
 
-def generate_spell_pool():
-  random.shuffle(red_page_sets)
-  random.shuffle(blue_page_sets)
-  random.shuffle(gold_page_sets)
-  red_spell_pool = sum(sum(red_page_sets[:2], []), [])
-  blue_spell_pool = sum(sum(blue_page_sets[:2], []), [])
-  gold_spell_pool = sum(sum(gold_page_sets[:2], []), [])
-  spell_pool = red_spell_pool + blue_spell_pool + gold_spell_pool
-  return spell_pool
+def generate_enemy_set_pool(n=10):
+  random.shuffle(enemy_sets)
+  return enemy_sets[:n]
 
-def generate_library_spells(size):
-  random.shuffle(spells)
-  return [LibrarySpell(sp) for sp in spells[:size]]
+def generate_spell_pools(n_pools=1):
+  random.shuffle(red_pages)
+  random.shuffle(blue_pages)
+  random.shuffle(gold_pages)
+  spell_pools = []
+  for i in range(n_pools):
+    red_spell_pool = sum(red_pages[i * 2:(i + 1) * 2], [])
+    blue_spell_pool = sum(blue_pages[i * 2:(i + 1) * 2], [])
+    gold_spell_pool = sum(gold_pages[i * 2:(i + 1) * 2], [])
+    spell_pool = red_spell_pool + blue_spell_pool + gold_spell_pool
+    spell_pools.append(spell_pool)
+  return spell_pools
 
-def generate_spellbook_spells(size):
-  random.shuffle(spells)
-  return [SpellbookSpell(sp) for sp in spells[:size]]
+def generate_library_spells(size, spell_pool=spells):
+  random.shuffle(spell_pool)
+  return [LibrarySpell(sp) for sp in spell_pool[:size]]
+
+def generate_spellbook_spells(size, spell_pool=spells):
+  random.shuffle(spell_pool)
+  return [SpellbookSpell(sp) for sp in spell_pool[:size]]
+
+def generate_rituals(size, ritual_pool=rituals):
+  random.shuffle(ritual_pool)
+  return [r for r in ritual_pool[:size]]

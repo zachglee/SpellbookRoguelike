@@ -5,13 +5,8 @@ from model.action import Action
 # Event functions
 
 def move_enemy(actor, encounter, movement):
-  if actor.side(encounter) == "back":
-    enemy_queue = encounter.back
-  elif actor.side(encounter) == "front":
-    enemy_queue = encounter.front
-  else:
-    raise ValueError(f"Cannot perform move action when enemy {actor.name} has no side info.")
-  
+  enemy_queue = actor.side_queue(encounter)
+
   from_idx = actor.position(encounter)
   to_idx = max(actor.position(encounter) + movement, 0)
   enemy_queue.insert(to_idx, enemy_queue.pop(from_idx))
@@ -30,23 +25,42 @@ class SelfDamageAction(Action):
     self.damage = damage
 
   def act(self, actor, enc) -> List[Event]:
-    events = [Event(["assign_damage"], self, actor, lambda s, t: t.assign_damage(self.damage))]
+    events = [Event(["assign_damage"], actor, actor, lambda s, t: t.assign_damage(self.damage))]
     return events
 
 class AttackAction(Action):
-  def __init__(self, damage):
+  def __init__(self, damage, lifesteal=False):
     self.damage = damage
+    self.lifesteal = lifesteal
 
   def act(self, actor, enc) -> List[Event]:
-    events = [Event(["assign_damage"], actor, enc.player, lambda a, t: a.attack(t, self.damage))]
+    events = [Event(["assign_damage"], actor, enc.player,
+                    lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))]
+    return events
+  
+class AttackImmediate(Action):
+  def __init__(self, damage, lifesteal=False):
+    self.damage = damage
+    self.lifesteal = lifesteal
+  
+  def act(self, actor, enc) -> List[Event]:
+    print(f"---------- attack immediate targets: {actor.get_immediate(enc)}")
+    events = [Event(["assign_damage"], actor, actor.get_immediate(enc),
+                    lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))]
     return events
 
-class LifestealAttack(Action):
-  def __init__(self, damage):
+class AttackSide(Action):
+  def __init__(self, damage, lifesteal=False):
     self.damage = damage
+    self.lifesteal = lifesteal
 
   def act(self, actor, enc) -> List[Event]:
-    events = [Event(["assign_damage"], actor, enc.player, lambda a, t: a.heal(t.assign_damage(self.damage)))]
+    targets = actor.side_queue(enc)
+    targets = [t for t in targets if t != actor]
+    print(f"---------- attack side targets: {targets}")
+    events = [Event(["assign_damage"], actor, target,
+              lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))
+              for target in targets]
     return events
 
 class MoveAction(Action):
@@ -73,25 +87,28 @@ class CallAction(Action):
       return []
 
 class AddConditionAction(Action):
-  def __init__(self, condition, magnitude, target: Literal["self", "player"]):
+  def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all"]):
     self.condition = condition
     self.magnitude = magnitude
     self.target = target
 
   def act(self, actor, enc):
+    def event_func_factory(combat_entity):
+      def event_func(actor, encounter):
+        current_magnitude = combat_entity.conditions[self.condition] or 0
+        combat_entity.conditions[self.condition] = current_magnitude + self.magnitude
+      return event_func
+
     if self.target == "player":
-      def event_func(actor, encounter):
-        current_magnitude = encounter.player.conditions[self.condition] or 0
-        encounter.player.conditions[self.condition] = current_magnitude + self.magnitude
+      return [Event(["condition"], actor, enc, event_func_factory(enc.player))]
     elif self.target == "self":
-      def event_func(actor, encounter):
-        current_magnitude = actor.conditions[self.condition] or 0
-        actor.conditions[self.condition] = current_magnitude + self.magnitude
+      return [Event(["condition"], actor, enc, event_func_factory(actor))]
+    elif self.target == "all_enemies":
+      return [Event(["condition"], actor, enc, event_func_factory(enemy)) for enemy in enc.enemies]
+    elif self.target == "all":
+      return [Event(["condition"], actor, enc, event_func_factory(ce)) for ce in enc.enemies + [enc.player]]
     else:
       raise ValueError(f"{self.target} is not a valid target...")
-
-    events = [Event(["condition"], actor, enc, event_func)]
-    return events
 
 class SetConditionAction(Action):
   def __init__(self, condition, magnitude, target: Literal["self", "player"]):
@@ -116,16 +133,18 @@ class SetConditionAction(Action):
 # Branching Actions
 
 class WindupAction(Action):
-  def __init__(self, payoff_action, windup):
+  def __init__(self, payoff_action, windup, windup_action=NothingAction()):
     self.payoff_action = payoff_action
+    self.windup_action = windup_action
     self.windup = windup
 
   def act(self, actor, enc) -> List[Event]:
     if actor.conditions["charge"] < self.windup:
       actor.conditions["charge"] += 1
-      return []
+      return [self.windup_action.act(actor, enc)]
     else:
       actor.conditions["charge"] = 0
+      print(f"----- payoff action!")
       return self.payoff_action.act(actor, enc)
 
 class BackstabAction(Action):
@@ -166,12 +185,14 @@ class NearFarAction(Action):
       return self.far_action.act(actor, enc)
 
 class CowardlyAction(Action):
-  def __init__(self, cowardly_action, non_cowardly_action):
+  def __init__(self, cowardly_action, non_cowardly_action, hp_threshold=None):
     self.cowardly_action = cowardly_action
     self.non_cowardly_action = non_cowardly_action
+    self.hp_threshold = hp_threshold
 
   def act(self, actor, enc) -> List[Event]:
-    if any(True for enemy in enc.all_other_enemies(actor) if enemy.max_hp >= actor.max_hp):
+    hp_threshold = self.hp_threshold or actor.max_hp
+    if any(True for enemy in enc.all_other_enemies(actor) if enemy.max_hp >= hp_threshold):
       print(f"Not Cowardly!")
       return self.non_cowardly_action.act(actor, enc)
     else:

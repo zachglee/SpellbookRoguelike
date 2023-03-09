@@ -6,15 +6,17 @@ from copy import deepcopy
 from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import NothingAction
+from content.rituals import rituals
 from utils import energy_colors, colorize
 
 
 class Enemy(CombatEntity):
-  def __init__(self, hp, name, action, entry=NothingAction()):
+  def __init__(self, hp, name, action, entry=NothingAction(), exp=None):
     super().__init__(hp, name)
     self.action = action
     self.entry = entry
     self.spawned = False
+    self.experience = exp or math.ceil(self.max_hp / 2)
     # add ability triggers?
 
 class EnemySpawn:
@@ -24,9 +26,10 @@ class EnemySpawn:
     self.enemy = enemy
 
 class EnemySet:
-  def __init__(self, name, enemy_spawns):
+  def __init__(self, name, enemy_spawns, exp=None):
     self.name = name
     self.enemy_spawns = enemy_spawns
+    self.experience = exp or 15
   
   @property
   def instantiated_enemy_spawns(self):
@@ -35,6 +38,7 @@ class EnemySet:
 class Encounter:
   def __init__(self, enemy_sets, player, ambient_energy=None):
     self.enemy_sets = enemy_sets
+    self.rituals = []
     self.ambient_energy = ambient_energy or random.choice(energy_colors)
     self.enemy_spawns = []
     for enemy_set in enemy_sets:
@@ -45,6 +49,8 @@ class Encounter:
     self.front = []
     self.dead_enemies = []
     self.events = []
+    self.max_turns = 9
+    self.min_turns = 6
 
   # -------- @properties --------
 
@@ -65,10 +71,10 @@ class Encounter:
 
   @property
   def escape_turn(self):
-    last_enemy_spawn_turn = max(es.turn for es in self.enemy_spawns)
+    last_enemy_spawn_turn = max(es.turn for es in self.enemy_spawns if es.turn <= self.max_turns)
     # you can escape 2 turns after the last enemy spawned,
     # but not earlier than turn 6, nor later than turn 9
-    return min(max(last_enemy_spawn_turn + 2, 6), 9)
+    return min(max(last_enemy_spawn_turn + 2, self.min_turns), self.max_turns)
 
   @property
   def overcome(self):
@@ -116,6 +122,7 @@ class Encounter:
 
     dead_enemies = back_dead_enemies + front_dead_enemies
     for enemy in dead_enemies:
+      self.player.experience += enemy.experience
       self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(enemy)))
 
   def resolve_events(self):
@@ -136,16 +143,23 @@ class Encounter:
 
   # Phase handlers
 
+  def ritual_upkeep(self):
+    for ritual in self.rituals:
+      if ritual.encounter_trigger(self):
+        ritual.effect(self)
+        print(f"{ritual.name} triggered on turn {self.turn}!")
+    
   def player_upkeep(self):
     prolific = self.player.conditions["prolific"]
     self.player.time = (8 if prolific else 4)
 
   def upkeep_phase(self):
-    # begin new round
-    self.player_upkeep()
     for entity in self.combat_entities:
       entity.end_round()
+    # begin new round
     self.turn += 1
+    self.ritual_upkeep()
+    self.player_upkeep()
     to_spawn = [es for es in self.enemy_spawns if not es.enemy.spawned and es.turn <= self.turn]
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
@@ -200,10 +214,12 @@ class Encounter:
     # add player loot
     for color, v in self.player.conditions.items():
       if color in energy_colors:
-        self.player.loot[f"{color.title()} Essence"] += v
-    for enemy in self.dead_enemies:
-      bounties = math.ceil(enemy.max_hp / 5)
-      self.player.loot["Bounties"] += bounties
+        self.player.resources[color] += v
+    experience_gained = 0
+    for es in self.enemy_sets:
+      experience_gained += es.experience
+    self.player.experience += experience_gained
+    print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"))
 
     # reset player state
     for spell in self.player.spellbook.spells:
@@ -211,9 +227,7 @@ class Encounter:
       spell.exhausted = False
     self.player.spellbook.current_page_idx = 0
     self.player.facing = "front"
-    for condition in self.player.conditions.keys():
-      self.player.conditions[condition] = 0
-    self.player.conditions["durable"] = None
+    self.player.clear_conditions()
 
 
   # Rendering

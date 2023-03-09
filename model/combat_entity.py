@@ -12,6 +12,7 @@ class CombatEntity:
 
     # current state
     self.conditions = defaultdict(lambda: 0)
+    self.conditions["enduring"] = None
     self.conditions["durable"] = None
     self.location = {"side": None, "position": None}
     self.events = []
@@ -21,12 +22,23 @@ class CombatEntity:
     if self in encounter.back: return "back"
     if self in encounter.front: return "front"
     return None
+  
+  def side_queue(self, encounter):
+    if self in encounter.back: return encounter.back
+    if self in encounter.front: return encounter.front
+    return None
 
   def position(self, encounter):
     if self in encounter.back:
       return encounter.back.index(self)
     elif self in encounter.front:
       return encounter.front.index(self)
+    
+  def get_immediate(self, encounter):
+    if pos := self.position(encounter) == 0:
+      return encounter.player
+    else:
+      return self.side_queue(encounter)[pos - 1]
 
   def render(self):
     condition_strs = []
@@ -43,8 +55,9 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("shield", colored("shield", "blue"))
     rendered_conditions = rendered_conditions.replace("armor", colored("armor", "cyan"))
     rendered_conditions = rendered_conditions.replace("durable", colored("durable", "cyan"))
+    rendered_conditions = rendered_conditions.replace("enduring", colored("enduring", "magenta"))
     rendered_conditions = rendered_conditions.replace("regen", colored("regen", "green"))
-    rendered_conditions = rendered_conditions.replace("poison", colored("poison", "green"))
+    rendered_conditions = rendered_conditions.replace("poison", colored("poison", "magenta"))
     rendered_conditions = rendered_conditions.replace("empower", colored("empower", "yellow"))
     rendered_conditions = rendered_conditions.replace("searing", colored("searing", "yellow"))
     rendered_conditions = rendered_conditions.replace("stun", colored("stun", "blue"))
@@ -59,11 +72,22 @@ class CombatEntity:
 
   # Manipulations
 
-  def attack(self, target, damage):
-    final_damage = damage + self.conditions["empower"] + self.conditions["sharp"]
-    self.conditions["empower"] = 0
-    self.hp -= target.conditions["retaliate"]
-    target.assign_damage(final_damage)
+  def clear_conditions(self):
+    self.conditions = defaultdict(lambda: 0)
+    self.conditions["durable"] = None
+    self.conditions["enduring"] = None
+
+  def attack(self, target, damage, lifesteal=False):
+    damage_to_kill = target.conditions["block"] + target.conditions["shield"] + target.conditions["armor"] + target.hp - self.conditions["sharp"]
+    empower_to_spend = max(0, damage_to_kill - damage)
+    spent_empower = min(self.conditions["empower"], empower_to_spend)
+    self.conditions["empower"] -= spent_empower
+    final_damage = damage + spent_empower + self.conditions["sharp"]
+    self.assign_damage(target.conditions["retaliate"])
+    damage_dealt = target.assign_damage(final_damage)
+    if lifesteal:
+      self.heal(damage_dealt)
+    return damage_dealt
 
   def assign_damage(self, damage) -> int:
     if self.conditions["vulnerable"]:
@@ -80,7 +104,9 @@ class CombatEntity:
 
     taken_damage = max(0, damage_after_shield)
     if (durable := self.conditions["durable"]) is not None:
-      remaining_potential_damage = durable - self.damage_taken_this_turn
+      taken_damage = min(taken_damage, durable)
+    if (enduring := self.conditions["enduring"]) is not None:
+      remaining_potential_damage = enduring - self.damage_taken_this_turn
       taken_damage = min(taken_damage, remaining_potential_damage)
 
     self.hp -= taken_damage

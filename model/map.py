@@ -5,19 +5,51 @@ from termcolor import colored
 from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter
-from utils import energy_colors, energy_color_map, numbered_list, choose_obj, choose_binary
+from model.player import Player
+from model.item import EnergyPotion
+from model.ritual import Ritual, RitualDraft
+from utils import energy_colors, energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
+from generators import generate_spell_pools, generate_enemy_set_pool, generate_library_spells, generate_rituals
+from content.rituals import rituals
 
 class Node:
-  def __init__(self, safehouse, guardian_enemy_sets, position):
+  def __init__(self, safehouse, guardian_enemy_sets, position, seen=False):
     self.safehouse = safehouse
     self.guardian_enemy_sets = guardian_enemy_sets
     self.ambient_energy = random.choice(["red", "blue", "gold"])
     self.position = position
-    self.passages = ["fail" for i in range(10)]
+    self.passages = ["fail" for i in range(5)]
+    self.seen = seen
 
-class Map:
-  def __init__(self, width, height, spell_pool, enemy_set_pool):
+  def render_preview(self):
+    if not self.seen:
+      return colored("???", "cyan")
+    return (f"{colored('*', energy_color_map[self.ambient_energy])}"
+            f"{self.passages.count('pass')}/{len(self.passages)} "
+            + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
+
+  def render(self):
+    passes = self.passages.count("pass")
+    total = len(self.passages)
+    render_str = f"-------- Node {self.position} : ({passes}/{total} passages) --------\n"
+    if not self.seen:
+      return render_str + "- ???"
+    guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
+    render_str += colorize(
+      colored("Enemy Sets: ", "red") +
+      f"{len(self.guardian_enemy_sets) + 1} ({guardian_enemy_set_names}), "
+      f"Ambient {self.ambient_energy}") + "\n"
+    render_str += numbered_list(self.safehouse.library)
+    if self.safehouse.resting_characters:
+      render_str += colored("\nResting Characters:\n", "green")
+      render_str += "\n".join([f"{i+1} - {c.render()} - \"{c.request}\""
+                               for i, c in enumerate(self.safehouse.resting_characters)])
+    return render_str
+
+class Region:
+  def __init__(self, position, width, height, spell_pool, enemy_set_pool):
     # setup
+    self.position = position
     self.spell_pool = spell_pool
     self.enemy_set_pool = enemy_set_pool
     random.shuffle(self.spell_pool)
@@ -39,7 +71,7 @@ class Map:
         enemy_set_pool_cursor += 1
       self.nodes.append(row_of_nodes)
     # generate starting layer
-    starting_layer = [Node(Safehouse([]), [], (0, j)) for j in range(width)]
+    starting_layer = [Node(Safehouse([]), [], (0, 0), seen=True)]
     self.nodes = [starting_layer] + self.nodes
 
     # generate boss layer
@@ -55,9 +87,27 @@ class Map:
     self.nodes.append(boss_layer)
     
     # 
-    self.current_node = random.choice(self.nodes[0])
+    self.current_node = self.nodes[0][0]
     self.destination_node = None
     self.player = None
+
+  def choose_node(self):
+    print(self.render())
+    while True:
+      try:
+        raw_input = input(colored("choose node > ", "cyan"))
+        if raw_input == "done":
+          return None
+        elif raw_input == "map":
+          print(self.render())
+          continue
+        input_tokens = raw_input.split(",")
+        layer_idx = int(input_tokens[0]) # there is a zeroth layer we don't render so no need to -1 here
+        column_idx = int(input_tokens[1]) - 1
+        node = self.nodes[layer_idx][column_idx]
+        return node
+      except (TypeError, ValueError, IndexError) as e:
+        print(e)
 
   def generate_route(self, drift=0):
     """Generates a route from the current node to the destination node."""
@@ -69,7 +119,9 @@ class Map:
     destination_node = next_layer[destination_node_column]
 
     enemy_sets = destination_node.guardian_enemy_sets + [random.choice(self.enemy_set_pool)]
-    encounter = Encounter(enemy_sets, self.player, ambient_energy=destination_node.ambient_energy)
+    encounter = Encounter(enemy_sets=enemy_sets,
+                          player=self.player,
+                          ambient_energy=destination_node.ambient_energy)
     return destination_node, encounter
 
 
@@ -82,15 +134,13 @@ class Map:
     routes = []
     routes.append(self.generate_route(drift=0))
     routes.append(self.generate_route(drift=random.choice([-1, 1])))
+    for node, _ in routes:
+      node.seen = True
     
     # prompt the player to choose a route
     print(player.render_library())
     for i, (node, encounter) in enumerate(routes):
-      passes = node.passages.count("pass")
-      total = len(node.passages)
-      print(f"-------- Destination {i+1} : {node.position} : ({passes}/{total} passages) --------")
-      print(encounter.render_preview(preview_enemy_sets=node.guardian_enemy_sets))
-      print(numbered_list(node.safehouse.library))
+      print(node.render())
       print()
     
     node, encounter = choose_obj(routes, colored("choose a route > ", "red"))
@@ -101,16 +151,16 @@ class Map:
     else:
       return "navigate"
   
+  # Rendering
+
   def render_layer(self, layer_idx):
     """Renders a layer of the map."""
     layer = self.nodes[layer_idx]
-    node_overviews = [
-      f"{colored('*', energy_color_map[node.ambient_energy])}"
-      f"{node.passages.count('pass')}/{len(node.passages)}"
-      for node in layer]
+    characters = sum([node.safehouse.resting_characters for node in layer], [])
+    node_overviews = [node.render_preview() for node in layer]
     enemy_preview_lines = []
     for i in range(len(layer[0].guardian_enemy_sets)):
-      enemy_preview_line = [node.guardian_enemy_sets[i].name for node in layer]
+      enemy_preview_line = [node.guardian_enemy_sets[i].name if node.seen else "???" for node in layer]
       enemy_preview_lines.append(enemy_preview_line)
     # have to use a bigger format spacing to account for 'invisible' color code characters
     overview_render_template = " ".join("{" + str(i) + ":<31} " for i in range(len(layer)))
@@ -118,17 +168,88 @@ class Map:
 
     preview_render_template = " ".join("- {" + str(i) + ":<20} " for i in range(len(layer)))
     rendered_preview_lines = [preview_render_template.format(*line) for line in enemy_preview_lines]
-    return "\n".join([rendered_overview_line] + rendered_preview_lines)
+    character_section = "\n".join([f"{character.name}: \"{character.request}\"" for character in characters])
+    return "\n".join([rendered_overview_line] + rendered_preview_lines) + "\n" + character_section
     
 
   def render(self):
-    """Renders the map."""
+    """Renders the region."""
     rendered_layers = [f"-------- Layer {i} --------\n{self.render_layer(i)}"
                        for i in reversed(range(1, len(self.nodes)))]
     return "\n\n".join(rendered_layers)
-
-
-
-
-
   
+  def inspect(self):
+    print(self.render())
+    while True:
+      node = self.choose_node()
+      if node is None:
+        break
+      print(node.render())
+
+class Map:
+  def __init__(self, n_regions=3):
+    enemy_set_pool = generate_enemy_set_pool(n=27)
+    spell_pools = generate_spell_pools(n_pools=n_regions)
+    self.regions = [Region(i, 3, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
+                    for i, spell_pool in enumerate(spell_pools)]
+    self.current_region_idx = 0
+    self.ritual_draft = RitualDraft(generate_rituals(size=3))
+    self.active_ritual = random.choice(rituals) # None
+  
+  @property
+  def current_region(self):
+    return self.regions[self.current_region_idx]
+  
+  def choose_region(self) -> Region:
+    while True:
+      try:
+        region_idx = choose_idx(self.regions, "Choose a region > ")
+        if region_idx is None:
+          return None
+        return self.regions[region_idx]
+      except (TypeError, ValueError, IndexError) as e:
+        print(e)
+
+  def init(self) -> Player:
+    print(f"Active Ritual: {self.render_active_ritual()}")
+    region = self.choose_region()
+    starting_node = region.choose_node()
+    print(starting_node.render())
+    character_idx = choose_idx(starting_node.safehouse.resting_characters, colored("Choose a character > ", "green"))
+    if character_idx is not None:
+      player = starting_node.safehouse.resting_characters.pop(character_idx)
+      self.current_region_idx = region.position
+      self.current_region.current_node = starting_node
+      if region.position == 0 and starting_node.position == (0, 0):
+        player.init(spell_pool=self.current_region.spell_pool)
+    else:
+      self.current_region_idx = 0
+      self.current_region.current_node = self.current_region.nodes[0][0]
+      print("Starting a new character...")
+      signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
+      print(numbered_list(signature_spell_options))
+      chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
+      starting_inventory = [EnergyPotion(choose_str(["red", "blue", "gold"], "choose an energy color > "), 1)]
+      name = input("What shall they be called? > ")
+      player = Player(hp=30, name=name,
+                           spellbook=None,
+                           inventory=[],
+                           library=[],
+                           signature_spell=chosen_spell,
+                           starting_inventory=starting_inventory)
+      player.init(spell_pool=self.current_region.spell_pool)
+    self.current_region.player = player
+    return player
+
+  def inspect(self):
+    while True:
+      region = self.choose_region()
+      if region is None:
+        return None
+      region.inspect()
+  
+  def render_active_ritual(self):
+    if self.active_ritual is None:
+      return "No active ritual."
+    else:
+      return self.active_ritual.render()

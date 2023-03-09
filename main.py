@@ -5,19 +5,17 @@ from content.enemies import enemy_sets
 from model.encounter import Encounter
 from model.player import Player
 from model.combat_entity import CombatEntity
-from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
+from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpell
 from model.item import EnergyPotion
-from model.spell_draft import SpellDraft
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_idx, get_combat_entities, choose_binary
-from generators import generate_spell_pool, generate_library_spells
+from utils import colorize, choose_obj, choose_idx, get_combat_entities, choose_binary, numbered_list
 from drafting import destination_draft, reroll_draft_player_library, safehouse_library_draft
 
 import random
 
-STARTING_EXPLORED = 2
-MAX_EXPLORE = 6
+STARTING_EXPLORED = 1
+MAX_EXPLORE = 5
 
 class GameOver(Exception):
   pass
@@ -28,10 +26,8 @@ class GameOver(Exception):
 class GameState:
   def __init__(self):
     self.player = None
-    random.shuffle(enemy_sets)
-    self.map = Map(3, 3, generate_spell_pool(), enemy_sets[:10])
+    self.map = Map(n_regions=3)
     self.encounter = None
-    self.spell_draft = None
 
   # helpers
 
@@ -67,79 +63,69 @@ class GameState:
     if target in self.encounter.front:
       banished = self.encounter.front.pop(idx)
       banished.spawned = False
+    target.reset_conditions()
 
   # save management
   def save(self):
     with open("saves/map.pkl", "wb") as f:
       dill.dump(self.map, f)
-    with open("saves/player.pkl", "wb") as f:
-      dill.dump(self.player, f)
 
   # MAIN FUNCTIONS
   
   # setup
 
-  def init(self, map_file=None, player_file=None):
+  def init(self, map_file=None):
     if map_file:
       with open(map_file, "rb") as f:
         self.map = dill.load(f)
-    self.map.current_node = random.choice(self.map.nodes[0])
-    print(self.map.render())
-    input("Press enter to continue...")
 
-    if player_file:
-      with open(player_file, "rb") as f:
-        self.player = dill.load(f)
-    else:
-      self.player = Player(hp=30, name="Player",
-                           spellbook=None,
-                           inventory=[],
-                           library=[],
-                           signature_spell=generate_library_spells(1)[0])
-    self.player.init()
-    self.map.player = self.player
+    player = self.map.init()
+    self.player = player
     self.save()
 
   # Ending
   def player_death(self):
     print(self.player.render())
-    print(colored("You died. Lose half your explore.", "red"))
     input("Press enter to continue...")
-    self.player.explored = int(self.player.explored / 2)
     self.discovery_phase()
+    self.player.defeats += 1
+    self.player.check_level_up()
+    # reset character back to starting layer
+    self.map.regions[0].nodes[0][0].safehouse.resting_characters.append(self.player)
     self.save()
     raise GameOver()
 
   # Resting
 
-  def take_rest_action(self, rest_action):
-    # check cost
-    # post_cost_loot = {k: v - rest_action.cost[k] for k, v in self.player.loot}
-    if any((self.player.loot[k] - v) < 0 for k, v in rest_action.cost.items()):
-      print(colored("You don't have the resources to take this action.", "red"))
-      return
-    rest_action.effect(self)
-    for k, v in rest_action.cost.items():
-      self.player.loot[k] -= v
+  # def take_rest_action(self, rest_action):
+  #   # check cost
+  #   if any((self.player.loot[k] - v) < 0 for k, v in rest_action.cost.items()):
+  #     print(colored("You don't have the resources to take this action.", "red"))
+  #     return
+  #   rest_action.effect(self)
+  #   for k, v in rest_action.cost.items():
+  #     self.player.loot[k] -= v
 
   # Discovery
 
   def discovery_phase(self):
     while self.player.explored > 0:
       if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
-        self.map.destination_node.passages.append("pass")
+        self.map.current_region.destination_node.passages.append("pass")
         self.player.explored -= MAX_EXPLORE
-        print(colored("You found a passage!", "green"))
+        self.player.experience += 3
+        print(colored("You found a passage and gained 3xp!", "green"))
         input(f"Press enter to continue exploring ({self.player.explored}/{MAX_EXPLORE}) ...")
       else:
         print(colored("Found nothing this time...", "blue"))
         break
     self.player.explored = STARTING_EXPLORED
+    self.save()
       
   # Navigation
 
   def navigation_phase(self):
-    bag_of_passages = deepcopy(self.map.destination_node.passages)
+    bag_of_passages = deepcopy(self.map.current_region.destination_node.passages)
     passages_drawn = []
     passes = 0
     passes_required = 2
@@ -151,7 +137,8 @@ class GameState:
       if drawn_passage == "pass":
         passes += 1
         print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
-        if passes > passes_required:
+        if passes >= passes_required:
+          self.map.current_region.destination_node.passages.append("fail") # make it harder for next time
           input(colored("You come out the other side!", "cyan"))
           return True
       elif drawn_passage == "fail":
@@ -159,6 +146,7 @@ class GameState:
         self.player.hp -= 1
       input(f"You press onwards... ({4 - i} turns remaining)")
     input(colored("You have failed to find the way through.", "red"))
+    self.save()
     return False
 
   # Encounters
@@ -176,6 +164,8 @@ class GameState:
     self.encounter = encounter
     self.encounter.player = self.player
     self.player.conditions[self.encounter.ambient_energy] += 1
+    encounter.rituals.append(self.map.active_ritual)
+    self.map.active_ritual.encounters_remaining -= 1
 
   def run_encounter_round(self):
     encounter = self.encounter
@@ -191,15 +181,20 @@ class GameState:
             self.player_death()
           elif cmd == "win":
             encounter.turn = 10
-          elif cmd == "site":
-            print(self.rest_site.render())
+          elif cmd == "map":
+            self.map.inspect()
+          elif cmd_tokens[0] == "experience":
+            magnitude = int(cmd_tokens[1])
+            self.player.experience += magnitude
           elif cmd_tokens[0] == "time":
             magnitude = int(cmd_tokens[1])
             self.time_cost(magnitude)
-          elif cmd in ["loot", "loot?"]:
-            print(encounter.player.render_loot())
+          elif cmd in ["res", "resources"]:
+            print(encounter.player.render_resources())
           elif cmd in ["inventory", "inv", "i"]:
             print(self.player.render_inventory())
+          elif cmd in ["ritual"]:
+            print(self.map.render_active_ritual())
           elif cmd == "use":
             self.time_cost()
             self.use_item()
@@ -218,7 +213,11 @@ class GameState:
           elif cmd == "page?":
             encounter.player.spellbook.switch_page()
           elif cmd_tokens[0] == "recharge":
-            target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+            if cmd_tokens[1] == "r":
+              spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
+            else:
+              spell_idx = int(cmd_tokens[1]) - 1
+            target = self.player.spellbook.current_page.spells[spell_idx]
             target.recharge()
           elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
             target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
@@ -244,6 +243,11 @@ class GameState:
             magnitude = int(cmd_tokens[2])
             for target in targets:
               self.player.attack(target, magnitude)
+          elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
+            targets = get_combat_entities(encounter, cmd_tokens[1])
+            magnitude = int(cmd_tokens[2])
+            for target in targets:
+              target.hp -= magnitude
           elif cmd_tokens[0] == "heal":
             targets = get_combat_entities(encounter, cmd_tokens[1])
             magnitude = int(cmd_tokens[2])
@@ -255,6 +259,8 @@ class GameState:
             magnitude = int(cmd_tokens[2])
             for target in targets:
               target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
+              if condition == "enduring" and target.conditions["enduring"] == 0:
+                target.conditions["enduring"] = None
               if condition == "durable" and target.conditions["durable"] == 0:
                 target.conditions["durable"] = None
         except (KeyError, IndexError, ValueError, TypeError) as e:
@@ -266,13 +272,14 @@ class GameState:
       self.run_encounter_round()
     self.encounter.render_combat()
     self.encounter.end_encounter()
+    self.save()
 
   def play_route(self):
     while True:
-      encounter = self.map.choose_route(self.player)
+      encounter = self.map.current_region.choose_route(self.player)
       if isinstance(encounter, Encounter):  
         self.init_encounter(encounter)
-        destination_draft(self.player, self.map.destination_node)
+        destination_draft(self.player, self.map.current_region.destination_node)
         self.encounter_phase()
         self.discovery_phase()
         break
@@ -280,19 +287,61 @@ class GameState:
         success = self.navigation_phase()
         if success:
           break
-    self.map.current_node = self.map.destination_node
-    safehouse_library_draft(self.player, self.map.current_node.safehouse)
+    self.map.current_region.current_node = self.map.current_region.destination_node
+    safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse)
+    self.save()
+    onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
+    if onwards:
+      print("Onwards...")
+      return True
+    else:
+      print("Resting...")
+      return False
 
-  def play(self):
+  def rest_phase(self):
+    safehouse = self.map.current_region.current_node.safehouse
+    self.player.hp += 1
+    print("Healed 1 hp...")
+    self.player.check_level_up()
 
-    for i in range(4):
-      self.play_route()
+    # add excess energy + labor to ritual pool
+    self.map.ritual_draft.add_player_contribution(self.player)
+    castable_rituals = self.map.ritual_draft.castable_rituals
+    new_ritual = castable_rituals[0] if castable_rituals else None
+    if new_ritual and not self.map.active_ritual:
+      self.map.active_ritual = new_ritual
+      print(f"New ritual! {new_ritual.render()}")
 
+    self.player.request = input("Broadcast a message to fellow Delvers? >")
+    safehouse.resting_characters.append(self.player)
     self.save()
 
-    print("YOU WIN!")
+  def play(self):
+    for i in range(len(self.map.regions)):
+      while self.map.current_region.current_node.position[0] < len(self.map.current_region.nodes) - 1:
+        onwards = self.play_route()
+        # Help out characters resting at this safehouse
+        safehouse = self.map.current_region.current_node.safehouse
+        for character in safehouse.resting_characters:
+          character.hp += 6
+          input(f"Healed {character.name} for 6 HP")
+          print(self.player.render_library())
+          print(f"{character.name} has requested: \"{character.request}\"")
+          spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
+          if spell_to_give is None:
+            continue
+          spell_to_give.copies_remaining -= 1
+          character.library.append(LibrarySpell(spell_to_give.spell, copies=2))
+        self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0]
+        self.save()
+        if not onwards:
+          self.rest_phase()
+          return
+      self.map.current_region_idx += 1
+
+    print("--- END ---")
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl", player_file="saves/player.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 gs.play()

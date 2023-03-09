@@ -2,15 +2,15 @@ from termcolor import colored
 from utils import numbered_list
 
 class LibrarySpell:
-  def __init__(self, spell, signature=False):
+  def __init__(self, spell, copies=3, signature=False):
     self.spell = spell
     self.signature = signature
     if self.signature:
       self.copies_remaining = 6
       self.max_copies_remaining = 6
     else:
-      self.copies_remaining = 3
-      self.max_copies_remaining = 3
+      self.copies_remaining = copies
+      self.max_copies_remaining = copies
   
   def render(self):
     rendered_str = self.spell.replace("Red", colored("Red", "red"))
@@ -21,6 +21,7 @@ class LibrarySpell:
     rendered_str = rendered_str.replace("Consumer", colored("Consumer", "magenta"))
     rendered_str = rendered_str.replace("Producer", colored("Producer", "green"))
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
+    rendered_str = rendered_str.replace("Passive", colored("Passive", "yellow"))
     copies_remaining_part = f"[{self.copies_remaining}/{self.max_copies_remaining}]"
     if self.signature:
       copies_remaining_part = colored(copies_remaining_part, "magenta")
