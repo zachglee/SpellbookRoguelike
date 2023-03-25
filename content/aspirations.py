@@ -1,0 +1,1 @@
+aspirations = ["Slayer", "Explorer", "Scholar"]

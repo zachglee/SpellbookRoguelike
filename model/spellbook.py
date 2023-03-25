@@ -5,12 +5,8 @@ class LibrarySpell:
   def __init__(self, spell, copies=3, signature=False):
     self.spell = spell
     self.signature = signature
-    if self.signature:
-      self.copies_remaining = 6
-      self.max_copies_remaining = 6
-    else:
-      self.copies_remaining = copies
-      self.max_copies_remaining = copies
+    self.copies_remaining = copies
+    self.max_copies_remaining = copies
   
   def render(self):
     rendered_str = self.spell.replace("Red", colored("Red", "red"))

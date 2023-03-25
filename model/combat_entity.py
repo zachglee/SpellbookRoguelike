@@ -35,7 +35,9 @@ class CombatEntity:
       return encounter.front.index(self)
     
   def get_immediate(self, encounter):
-    if pos := self.position(encounter) == 0:
+    pos = self.position(encounter)
+    print(f"Get immediate: my position is {pos}")
+    if pos == 0:
       return encounter.player
     else:
       return self.side_queue(encounter)[pos - 1]
@@ -87,6 +89,7 @@ class CombatEntity:
     damage_dealt = target.assign_damage(final_damage)
     if lifesteal:
       self.heal(damage_dealt)
+    print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
     return damage_dealt
 
   def assign_damage(self, damage) -> int:

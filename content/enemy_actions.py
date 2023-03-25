@@ -141,7 +141,7 @@ class WindupAction(Action):
   def act(self, actor, enc) -> List[Event]:
     if actor.conditions["charge"] < self.windup:
       actor.conditions["charge"] += 1
-      return [self.windup_action.act(actor, enc)]
+      return self.windup_action.act(actor, enc)
     else:
       actor.conditions["charge"] = 0
       print(f"----- payoff action!")

@@ -2,6 +2,7 @@ import random
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
+from drafting import reroll_draft_player_library
 from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter
@@ -11,6 +12,7 @@ from model.ritual import Ritual, RitualDraft
 from utils import energy_colors, energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
 from generators import generate_spell_pools, generate_enemy_set_pool, generate_library_spells, generate_rituals
 from content.rituals import rituals
+from content.aspirations import aspirations
 
 class Node:
   def __init__(self, safehouse, guardian_enemy_sets, position, seen=False):
@@ -21,17 +23,24 @@ class Node:
     self.passages = ["fail" for i in range(5)]
     self.seen = seen
 
+  @property
+  def fail_passages(self):
+    return self.passages.count("fail")
+  
+  @property
+  def pass_passages(self):
+    return self.passages.count("pass")
+
   def render_preview(self):
     if not self.seen:
       return colored("???", "cyan")
     return (f"{colored('*', energy_color_map[self.ambient_energy])}"
-            f"{self.passages.count('pass')}/{len(self.passages)} "
+            f"{self.pass_passages}/{len(self.passages)} "
             + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
 
   def render(self):
-    passes = self.passages.count("pass")
     total = len(self.passages)
-    render_str = f"-------- Node {self.position} : ({passes}/{total} passages) --------\n"
+    render_str = f"-------- Node {self.position} : ({self.pass_passages}/{total} passages) --------\n"
     if not self.seen:
       return render_str + "- ???"
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
@@ -56,6 +65,7 @@ class Region:
     random.shuffle(self.enemy_set_pool)
     spell_pool_cursor = 0
     enemy_set_pool_cursor = 0
+    self.corruption = 0
 
     # generate the nodes
     self.nodes = []
@@ -90,6 +100,13 @@ class Region:
     self.current_node = self.nodes[0][0]
     self.destination_node = None
     self.player = None
+
+  def corrupt(self):
+    self.corruption += 1
+    # make one node harder in each layer
+    for layer in self.nodes:
+      most_passes_node = max(layer, key=lambda node: node.pass_passages)
+      most_passes_node.passages += ["fail"] * self.corruption * 3
 
   def choose_node(self):
     print(self.render())
@@ -176,7 +193,8 @@ class Region:
     """Renders the region."""
     rendered_layers = [f"-------- Layer {i} --------\n{self.render_layer(i)}"
                        for i in reversed(range(1, len(self.nodes)))]
-    return "\n\n".join(rendered_layers)
+    corruption_str = colored(f"\nCorruption: {self.corruption}", "red") if self.corruption > 0 else ""
+    return "\n\n".join(rendered_layers) + corruption_str
   
   def inspect(self):
     print(self.render())
@@ -194,7 +212,8 @@ class Map:
                     for i, spell_pool in enumerate(spell_pools)]
     self.current_region_idx = 0
     self.ritual_draft = RitualDraft(generate_rituals(size=3))
-    self.active_ritual = random.choice(rituals) # None
+    self.active_ritual = None # random.choice(rituals)
+    self.runs = 0
   
   @property
   def current_region(self):
@@ -210,36 +229,57 @@ class Map:
       except (TypeError, ValueError, IndexError) as e:
         print(e)
 
-  def init(self) -> Player:
+  def init(self, character=None) -> Player:
     print(f"Active Ritual: {self.render_active_ritual()}")
+    print(f"~~~~ Run {self.runs + 1} ~~~~")
     region = self.choose_region()
     starting_node = region.choose_node()
     print(starting_node.render())
-    character_idx = choose_idx(starting_node.safehouse.resting_characters, colored("Choose a character > ", "green"))
-    if character_idx is not None:
-      player = starting_node.safehouse.resting_characters.pop(character_idx)
+    if character:
+      player = character
       self.current_region_idx = region.position
       self.current_region.current_node = starting_node
       if region.position == 0 and starting_node.position == (0, 0):
         player.init(spell_pool=self.current_region.spell_pool)
     else:
-      self.current_region_idx = 0
-      self.current_region.current_node = self.current_region.nodes[0][0]
-      print("Starting a new character...")
-      signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
-      print(numbered_list(signature_spell_options))
-      chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
-      starting_inventory = [EnergyPotion(choose_str(["red", "blue", "gold"], "choose an energy color > "), 1)]
-      name = input("What shall they be called? > ")
-      player = Player(hp=30, name=name,
-                           spellbook=None,
-                           inventory=[],
-                           library=[],
-                           signature_spell=chosen_spell,
-                           starting_inventory=starting_inventory)
-      player.init(spell_pool=self.current_region.spell_pool)
+      character_idx = choose_idx(starting_node.safehouse.resting_characters, colored("Choose a character > ", "green"))
+      if character_idx is not None:
+        player = starting_node.safehouse.resting_characters.pop(character_idx)
+        self.current_region_idx = region.position
+        self.current_region.current_node = starting_node
+        if region.position == 0 and starting_node.position == (0, 0):
+          player.init(spell_pool=self.current_region.spell_pool)
+      else:
+        self.current_region_idx = 0
+        self.current_region.current_node = self.current_region.nodes[0][0]
+        print("Starting a new character...")
+        signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
+        print(numbered_list(signature_spell_options))
+        chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
+        chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
+        chosen_aspiration = choose_str(aspirations, f"choose an aspiration ({', '.join(aspirations)}) > ")
+        name = input("What shall they be called? > ")
+        library = ([LibrarySpell(chosen_spell.spell, copies=4, signature=True)] +
+                   generate_library_spells(size=3, spell_pool=self.current_region.spell_pool))
+        player = Player(hp=30, name=name,
+                        spellbook=None,
+                        inventory=[],
+                        library=library,
+                        signature_spell=chosen_spell,
+                        signature_color=chosen_color,
+                        aspiration=chosen_aspiration)
+        player.init(spell_pool=self.current_region.spell_pool)
+        reroll_draft_player_library(player, self.current_region.spell_pool)
     self.current_region.player = player
     return player
+
+  def end_run(self):
+    self.runs += 1
+    if self.runs % 3 == 0:
+      corruption_progress = int(self.runs / 3)
+      print(colored(f"Corruption has progressed to level {corruption_progress}", "red"))
+      for region in self.regions[0:corruption_progress]:
+        region.corrupt()
 
   def inspect(self):
     while True:

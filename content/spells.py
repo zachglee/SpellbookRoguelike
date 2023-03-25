@@ -53,7 +53,7 @@ red_hit_big_enemy = [
   #
   ["Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.",
   "Producer: +1 Red, Deal 6 damage to a target at or above 10 health.",
-  "Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun 1 the target if it's at or above half health.",
+  "Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun 1 the target if it's at or above 10 health.",
   "Consumer: 1 Red: Deal damage equal to target's missing health."],
 ]
 
