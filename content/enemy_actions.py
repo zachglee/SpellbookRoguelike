@@ -44,7 +44,6 @@ class AttackImmediate(Action):
     self.lifesteal = lifesteal
   
   def act(self, actor, enc) -> List[Event]:
-    print(f"---------- attack immediate targets: {actor.get_immediate(enc)}")
     events = [Event(["assign_damage"], actor, actor.get_immediate(enc),
                     lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))]
     return events
@@ -57,7 +56,6 @@ class AttackSide(Action):
   def act(self, actor, enc) -> List[Event]:
     targets = actor.side_queue(enc)
     targets = [t for t in targets if t != actor]
-    print(f"---------- attack side targets: {targets}")
     events = [Event(["assign_damage"], actor, target,
               lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))
               for target in targets]
@@ -144,7 +142,6 @@ class WindupAction(Action):
       return self.windup_action.act(actor, enc)
     else:
       actor.conditions["charge"] = 0
-      print(f"----- payoff action!")
       return self.payoff_action.act(actor, enc)
 
 class BackstabAction(Action):
@@ -178,7 +175,6 @@ class NearFarAction(Action):
 
   def act(self, actor, enc) -> Event:
     enc.update_enemy_self_knowledge()
-    print(f"-------- {actor.name} current position is {actor.position(enc)}")
     if actor.position(enc) == 0:
       return self.near_action.act(actor, enc)
     else:

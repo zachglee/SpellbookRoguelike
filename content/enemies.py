@@ -47,7 +47,7 @@ enemies = {
   "Cloud of Daggers": Enemy(6, "Cloud of Daggers",
                             MultiAction([AttackAction(2), AttackAction(2), AttackAction(2),
                                         AttackSide(1), AttackSide(1), AttackSide(1)]),
-                            entry=AddConditionAction("durable", 2, "self"), exp=6),
+                            entry=AddConditionAction("durable", 3, "self"), exp=6),
   "Slumbering Giant": Enemy(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
   "Shaman of Withering": Enemy(12, "Shaman of Withering", AddConditionAction("poison", 1, "all"), entry=AddConditionAction("poison", 2, "all")),

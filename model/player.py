@@ -1,4 +1,5 @@
 from termcolor import colored
+import random
 from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
@@ -74,13 +75,25 @@ class Player(CombatEntity):
         chosen_energy = choose_obj(energy_options, colored("Choose an energy type tap into > ", "cyan"))
         self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
         self.inventory.append(EnergyPotion(chosen_energy, 1))
+      elif self.level == 4:
+        self.memorize_spell()
+      elif self.level == 5:
+        self.memorize_spell()
 
 
   def init(self, spell_pool):
     starting_spellbook = Spellbook(pages=[])
+    
+    # recharge signature spells to max and get 1 more charge
+    # for a random non-signature spell
     for library_spell in self.library:
       if library_spell.signature:
         library_spell.copies_remaining = library_spell.max_copies_remaining
+    non_max_charges_spells = [spell for spell in self.library
+                              if spell.copies_remaining < spell.max_copies_remaining]
+    if non_max_charges_spells:
+      random.choice(non_max_charges_spells).copies_remaining += 1
+
     inventory = deepcopy(self.starting_inventory)
     self.hp = self.max_hp
     self.clear_conditions()

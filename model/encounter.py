@@ -20,10 +20,11 @@ class Enemy(CombatEntity):
     # add ability triggers?
 
 class EnemySpawn:
-  def __init__(self, turn, side, enemy):
+  def __init__(self, turn, side, enemy, wave=1):
     self.turn = turn
     self.side = side
     self.enemy = enemy
+    self.wave = wave
 
 class EnemySet:
   def __init__(self, name, enemy_spawns, exp=None):
@@ -35,14 +36,28 @@ class EnemySet:
   def instantiated_enemy_spawns(self):
     return [EnemySpawn(es.turn, es.side, deepcopy(es.enemy)) for es in self.enemy_spawns]
 
-class Encounter:
-  def __init__(self, enemy_sets, player, ambient_energy=None):
+class EnemyWave:
+  def __init__(self, enemy_sets, delay=0):
     self.enemy_sets = enemy_sets
+    self.delay = delay
+  
+  @property
+  def instantiated_enemy_spawns(self):
+    enemy_spawns = []
+    for i, enemy_set in enumerate(self.enemy_sets):
+        enemy_set_spawns = [EnemySpawn(es.turn + self.delay, es.side, es.enemy, wave=i+1)
+                            for es in enemy_set.instantiated_enemy_spawns]
+        enemy_spawns += enemy_set_spawns
+    return enemy_spawns
+
+class Encounter:
+  def __init__(self, waves, player, ambient_energy=None):
+    self.waves = waves
     self.rituals = []
     self.ambient_energy = ambient_energy or random.choice(energy_colors)
     self.enemy_spawns = []
-    for enemy_set in enemy_sets:
-      self.enemy_spawns += enemy_set.instantiated_enemy_spawns
+    for wave in self.waves:
+      self.enemy_spawns += wave.instantiated_enemy_spawns
     self.player = player
     self.turn = 0
     self.back = []
@@ -53,6 +68,10 @@ class Encounter:
     self.min_turns = 6
 
   # -------- @properties --------
+
+  @property
+  def enemy_sets(self):
+    return sum([wave.enemy_sets for wave in self.waves], [])
 
   @property
   def combat_entities(self):

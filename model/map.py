@@ -1,11 +1,12 @@
 import random
+from copy import deepcopy
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
 from drafting import reroll_draft_player_library
 from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
-from model.encounter import Encounter
+from model.encounter import Encounter, EnemyWave
 from model.player import Player
 from model.item import EnergyPotion
 from model.ritual import Ritual, RitualDraft
@@ -15,13 +16,18 @@ from content.rituals import rituals
 from content.aspirations import aspirations
 
 class Node:
-  def __init__(self, safehouse, guardian_enemy_sets, position, seen=False):
+  def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1):
     self.safehouse = safehouse
-    self.guardian_enemy_sets = guardian_enemy_sets
+    self.guardian_enemy_waves = guardian_enemy_waves
     self.ambient_energy = random.choice(["red", "blue", "gold"])
     self.position = position
     self.passages = ["fail" for i in range(5)]
     self.seen = seen
+    self.difficulty = difficulty
+
+  @property
+  def guardian_enemy_sets(self):
+    return sum([wave.enemy_sets for wave in self.guardian_enemy_waves], [])
 
   @property
   def fail_passages(self):
@@ -30,6 +36,13 @@ class Node:
   @property
   def pass_passages(self):
     return self.passages.count("pass")
+
+  def generate_encounter_waves(self, enemy_set_pool):
+    encounter_waves = [deepcopy(wave) for wave in self.guardian_enemy_waves]
+    for i in range(self.difficulty):
+      wave_to_reinforce = encounter_waves[i % len(encounter_waves)]
+      wave_to_reinforce.enemy_sets += [random.choice(enemy_set_pool)]
+    return encounter_waves
 
   def render_preview(self):
     if not self.seen:
@@ -46,7 +59,7 @@ class Node:
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
     render_str += colorize(
       colored("Enemy Sets: ", "red") +
-      f"{len(self.guardian_enemy_sets) + 1} ({guardian_enemy_set_names}), "
+      f"{len(self.guardian_enemy_sets) + 1} | Waves: {len(self.guardian_enemy_waves)} ({guardian_enemy_set_names}), "
       f"Ambient {self.ambient_energy}") + "\n"
     render_str += numbered_list(self.safehouse.library)
     if self.safehouse.resting_characters:
@@ -68,14 +81,16 @@ class Region:
     self.corruption = 0
 
     # generate the nodes
+    # TODO: Make helpers to generate boss / nonboss nodes
+    # TODO: Make a persistent spell pool and enemy set pool objects
     self.nodes = []
     for i in range(1, height + 1):
       row_of_nodes = []
       for j in range(width):
         library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
         unique_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 1]
-        guardian_enemy_sets = unique_enemy_sets + [random.choice(self.enemy_set_pool)]
-        node = Node(Safehouse(library), guardian_enemy_sets, (i, j))
+        guardian_enemy_wave = EnemyWave(unique_enemy_sets + [random.choice(self.enemy_set_pool)])
+        node = Node(Safehouse(library), [guardian_enemy_wave], (i, j))
         row_of_nodes.append(node)
         spell_pool_cursor += 2
         enemy_set_pool_cursor += 1
@@ -90,8 +105,9 @@ class Region:
     enemy_set_pool_cursor = 0
     for j in range(2):
       library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
-      guardian_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 3]
-      boss_layer.append(Node(Safehouse(library), guardian_enemy_sets, (height + 1, j)))
+      guardian_enemy_wave1 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2], 0)
+      guardian_enemy_wave2 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor + 2:enemy_set_pool_cursor + 3], 2)
+      boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j)))
       enemy_set_pool_cursor += 3
       spell_pool_cursor += 2
     self.nodes.append(boss_layer)
@@ -135,10 +151,10 @@ class Region:
     destination_node_column = (self.current_node.position[1] + drift) % len(next_layer)
     destination_node = next_layer[destination_node_column]
 
-    enemy_sets = destination_node.guardian_enemy_sets + [random.choice(self.enemy_set_pool)]
-    encounter = Encounter(enemy_sets=enemy_sets,
+    encounter = Encounter(waves=destination_node.generate_encounter_waves(self.enemy_set_pool),
                           player=self.player,
                           ambient_energy=destination_node.ambient_energy)
+    print(f"------------- {encounter.waves[0].enemy_sets}")
     return destination_node, encounter
 
 

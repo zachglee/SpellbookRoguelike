@@ -142,7 +142,7 @@ class GameState:
           return True
       elif drawn_passage == "fail":
         print(colored(f"A trap! You take 1 damage. ({passes}/{passes_required} progress)", "red"))
-        self.player.hp -= 1
+        self.player.hp -= (1 + self.map.current_region.corruption)
       input(f"You press onwards... ({4 - i} turns remaining)")
     input(colored("You have failed to find the way through.", "red"))
     self.save()
@@ -302,9 +302,10 @@ class GameState:
   def rest_phase(self):
     # take wounds and damage from corruption
     if self.map.current_region.corruption > 0:
-      self.player.wounds += self.map.current_region.corruption
-      self.player.hp -= self.player.wounds
-      input(colored("The corruption of this place leaves its mark...", "red"))
+      corruption_damage = self.map.current_region.corruption + self.player.wounds
+      self.player.hp -= corruption_damage
+      input(colored("The corruption of this place leaves its mark. "
+                    f"You take {corruption_damage} damage.", "red"))
 
     safehouse = self.map.current_region.current_node.safehouse
     self.player.hp += 3

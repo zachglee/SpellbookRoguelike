@@ -152,7 +152,7 @@ gold_3rd_spell = [
 gold_turn_page = [
   ["Passive: Every time you turn to this page, the next spell cast doesn’t cost charges or exhaust.",
   "Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.",
-  "Converter: 1 Gold -> 1 Green: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with < 0 charges.",
+  "Converter: 1 Gold -> 1 Green: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.",
   "Consumer: 1 Gold: Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield."],
   #
   ["Passive: Every time you turn to this page, your next spell cast doesn’t cost energy.",
