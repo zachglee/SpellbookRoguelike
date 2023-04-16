@@ -230,6 +230,12 @@ class Encounter:
     self.upkeep_phase()
 
   def end_encounter(self):
+    # progress rituals
+    for ritual in self.player.rituals:
+      ritual.progress += ritual.progressor(self)
+      print(f"{ritual.name} progressed!")
+      input(ritual.render())
+
     # add player loot
     for color, v in self.player.conditions.items():
       if color in energy_colors:

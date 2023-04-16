@@ -21,7 +21,7 @@ class Node:
     self.guardian_enemy_waves = guardian_enemy_waves
     self.ambient_energy = random.choice(["red", "blue", "gold"])
     self.position = position
-    self.passages = ["fail" for i in range(5)]
+    self.passages = ["fail" for i in range(4)]
     self.seen = seen
     self.difficulty = difficulty
 
@@ -227,7 +227,6 @@ class Map:
     self.regions = [Region(i, 3, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
                     for i, spell_pool in enumerate(spell_pools)]
     self.current_region_idx = 0
-    self.ritual_draft = RitualDraft(generate_rituals(size=3))
     self.active_ritual = None # random.choice(rituals)
     self.runs = 0
   

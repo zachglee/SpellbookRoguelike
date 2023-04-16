@@ -3,11 +3,10 @@ import random
 from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
-from model.spellbook import Spellbook, LibrarySpell
-from model.item import EnergyPotion, SpellPotion
+from model.spellbook import Spellbook
+from model.item import EnergyPotion
 from utils import colorize, numbered_list, choose_obj
-from generators import generate_library_spells
-from drafting import reroll_draft_player_library
+from content.rituals import rituals
 
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
@@ -16,8 +15,8 @@ class Player(CombatEntity):
     super().__init__(hp, name)
     self.spellbook = spellbook
     self.inventory = inventory
-    # self.loot = defaultdict(lambda: 0)
     self.resources = defaultdict(lambda: 0)
+    self.rituals = []
     self.time = 4
     self.facing = "front"
     self.explored = 1
@@ -41,7 +40,7 @@ class Player(CombatEntity):
   @property
   def next_exp_milestone(self):
     next_level = self.level + 1
-    total_exp_required = sum([i * 50 for i in range(1, next_level + 1)])
+    total_exp_required = 50 + sum([i * 30 for i in range(1, next_level + 1)])
     return total_exp_required
   
   @property
@@ -72,12 +71,16 @@ class Player(CombatEntity):
       elif self.level == 3:
         energy_options = ["red", "blue", "gold"]
         print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
-        chosen_energy = choose_obj(energy_options, colored("Choose an energy type tap into > ", "cyan"))
+        chosen_energy = choose_obj(energy_options, colored("Choose an energy type to tap into > ", "cyan"))
         self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
         self.inventory.append(EnergyPotion(chosen_energy, 1))
       elif self.level == 4:
         self.memorize_spell()
       elif self.level == 5:
+        # TODO: GET A RITUAL!
+        chosen_ritual = choose_obj(rituals, colored("Choose a ritual to learn > ", "cyan"))
+        self.rituals.append(chosen_ritual)
+      elif self.level == 6:
         self.memorize_spell()
 
 
@@ -93,6 +96,9 @@ class Player(CombatEntity):
                               if spell.copies_remaining < spell.max_copies_remaining]
     if non_max_charges_spells:
       random.choice(non_max_charges_spells).copies_remaining += 1
+
+    for ritual in self.rituals:
+      ritual.progress = 0
 
     inventory = deepcopy(self.starting_inventory)
     self.hp = self.max_hp

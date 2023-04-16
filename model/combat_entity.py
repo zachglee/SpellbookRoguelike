@@ -81,7 +81,8 @@ class CombatEntity:
 
   def attack(self, target, damage, lifesteal=False):
     damage_to_kill = target.conditions["block"] + target.conditions["shield"] + target.conditions["armor"] + target.hp - self.conditions["sharp"]
-    empower_to_spend = max(0, damage_to_kill - damage)
+    target_enduring = target.conditions["enduring"] or 1000
+    empower_to_spend = max(0, min(damage_to_kill, target_enduring) - damage)
     spent_empower = min(self.conditions["empower"], empower_to_spend)
     self.conditions["empower"] -= spent_empower
     final_damage = damage + spent_empower + self.conditions["sharp"]

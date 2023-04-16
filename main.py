@@ -14,7 +14,7 @@ from drafting import destination_draft, safehouse_library_draft
 
 import random
 
-STARTING_EXPLORED = 1
+STARTING_EXPLORED = 2
 MAX_EXPLORE = 4
 
 class GameOver(Exception):
@@ -130,6 +130,8 @@ class GameState:
     passes_required = 2
     for i in range(5):
       print(self.player.render())
+      if len(bag_of_passages) == 0:
+        break
       drawn_passage = bag_of_passages.pop(random.randint(0, len(bag_of_passages)-1))
       passages_drawn.append(drawn_passage)
       input("You find a passage. It leads to...")
@@ -142,7 +144,9 @@ class GameState:
           return True
       elif drawn_passage == "fail":
         print(colored(f"A trap! You take 1 damage. ({passes}/{passes_required} progress)", "red"))
+        print(colored(f"You gained 1xp.", "green"))
         self.player.hp -= (1 + self.map.current_region.corruption)
+        self.player.experience += 1
       input(f"You press onwards... ({4 - i} turns remaining)")
     input(colored("You have failed to find the way through.", "red"))
     self.save()
@@ -163,9 +167,10 @@ class GameState:
     self.encounter = encounter
     self.encounter.player = self.player
     self.player.conditions[self.encounter.ambient_energy] += 1
-    if self.map.active_ritual:
-      encounter.rituals.append(self.map.active_ritual)
-      self.map.active_ritual.encounters_remaining -= 1
+    activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
+    encounter.rituals += activable_rituals
+    for ritual in activable_rituals:
+      ritual.progress = 0
 
   def run_encounter_round(self):
     encounter = self.encounter
@@ -274,6 +279,7 @@ class GameState:
     self.encounter.end_encounter()
     self.save()
 
+
   def play_route(self):
     while True:
       encounter = self.map.current_region.choose_route(self.player)
@@ -310,14 +316,6 @@ class GameState:
     safehouse = self.map.current_region.current_node.safehouse
     self.player.hp += 3
     print("Healed 3 hp...")
-
-    # add excess energy + labor to ritual pool
-    self.map.ritual_draft.add_player_contribution(self.player)
-    castable_rituals = self.map.ritual_draft.castable_rituals
-    new_ritual = castable_rituals[0] if castable_rituals else None
-    if new_ritual and not self.map.active_ritual:
-      self.map.active_ritual = new_ritual
-      print(f"New ritual! {new_ritual.render()}")
 
     self.player.request = input("Broadcast a message to fellow Delvers? >")
     safehouse.resting_characters.append(self.player)
