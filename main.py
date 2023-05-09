@@ -200,6 +200,7 @@ class GameState:
             print(self.player.render_inventory())
           elif cmd in ["ritual"]:
             print(self.map.render_active_ritual())
+            print(self.player.render_rituals())
           elif cmd == "use":
             self.time_cost()
             self.use_item()
@@ -295,7 +296,9 @@ class GameState:
           break
     self.map.current_region.current_node = self.map.current_region.destination_node
     if encounter != "navigate":
-      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse)
+      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse, copies=3)
+    else:
+      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse, copies=1)
     self.save()
     onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
     if onwards:
@@ -314,8 +317,9 @@ class GameState:
                     f"You take {corruption_damage} damage.", "red"))
 
     safehouse = self.map.current_region.current_node.safehouse
-    self.player.hp += 3
-    print("Healed 3 hp...")
+    self.player.hp += 1
+    input("Healed 1 hp...")
+    self.player.check_level_up()
 
     self.player.request = input("Broadcast a message to fellow Delvers? >")
     safehouse.resting_characters.append(self.player)
@@ -353,7 +357,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Barnabus.pkl")
 gs.play()

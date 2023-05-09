@@ -68,6 +68,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("sharp", colored("sharp", "red"))
     rendered_conditions = rendered_conditions.replace("vulnerable", colored("vulnerable", "red"))
     rendered_conditions = rendered_conditions.replace("prolific", colored("prolific", "yellow"))
+    rendered_conditions = rendered_conditions.replace("slow", colored("slow", "magenta"))
     rendered_conditions = rendered_conditions.replace("inventive", colored("inventive", "cyan"))
     rendered_conditions = rendered_conditions.replace("dig", colored("dig", "yellow"))
     return f"{self.name}: {self.hp}/{self.max_hp}hp ({rendered_conditions})"
@@ -143,6 +144,7 @@ class CombatEntity:
     self.conditions["regen"] = max(self.conditions["regen"] - 1, 0)
     self.conditions["stun"] = max(self.conditions["stun"] - 1, 0)
     self.conditions["prolific"] = max(self.conditions["prolific"] - 1, 0)
+    self.conditions["slow"] = max(self.conditions["slow"] - 1, 0)
     self.conditions["inventive"] = max(self.conditions["inventive"] - 1, 0)
     self.conditions["vulnerable"] = max(self.conditions["vulnerable"] - 1, 0)
     self.conditions["dig"] = max(self.conditions["dig"] - 1, 0)

@@ -105,6 +105,10 @@ class AddConditionAction(Action):
       return [Event(["condition"], actor, enc, event_func_factory(enemy)) for enemy in enc.enemies]
     elif self.target == "all":
       return [Event(["condition"], actor, enc, event_func_factory(ce)) for ce in enc.enemies + [enc.player]]
+    elif self.target == "immediate":
+      return [Event(["condition"], actor, enc, event_func_factory(actor.get_immediate(enc)))]
+    elif self.target == "side":
+      return [Event(["condition"], actor, enc, event_func_factory(enemy)) for enemy in actor.side_queue(enc)]
     else:
       raise ValueError(f"{self.target} is not a valid target...")
 
@@ -143,6 +147,22 @@ class WindupAction(Action):
     else:
       actor.conditions["charge"] = 0
       return self.payoff_action.act(actor, enc)
+
+class HealthThresholdAction(Action):
+  def __init__(self, meet_threshold_action, below_threshold_action, threshold):
+    self.meet_threshold_action = meet_threshold_action
+    self.below_threshold_action = below_threshold_action
+    self.threshold = threshold
+
+  def act(self, actor, enc) -> List[Event]:
+    if self.threshold < 1 and (actor.hp / actor.max_hp) >= self.threshold:
+      # if threshold is less than 1 it's a proportion of max hp
+      return self.meet_threshold_action.act(actor, enc)
+    elif actor.hp >= self.threshold:
+      # if threshold is greater than 1 it's a raw hp value
+      return self.meet_threshold_action.act(actor, enc)
+    else:
+      return self.below_threshold_action.act(actor, enc)
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):

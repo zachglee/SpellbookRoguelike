@@ -56,6 +56,10 @@ class Player(CombatEntity):
       chosen_spell.signature = True
       chosen_spell.max_copies_remaining = 1
 
+  def learn_ritual(self):
+    chosen_ritual = choose_obj(rituals, colored("Choose a ritual to learn > ", "cyan"))
+    self.rituals.append(chosen_ritual)
+
   def check_level_up(self):
     while self.experience >= self.next_exp_milestone:
       self.level += 1
@@ -69,18 +73,20 @@ class Player(CombatEntity):
       elif self.level == 2:
         self.memorize_spell()
       elif self.level == 3:
+        self.learn_ritual()
+      elif self.level == 4:
+        self.memorize_spell()
+      elif self.level == 5:
         energy_options = ["red", "blue", "gold"]
         print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
         chosen_energy = choose_obj(energy_options, colored("Choose an energy type to tap into > ", "cyan"))
         self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
         self.inventory.append(EnergyPotion(chosen_energy, 1))
-      elif self.level == 4:
-        self.memorize_spell()
-      elif self.level == 5:
-        # TODO: GET A RITUAL!
-        chosen_ritual = choose_obj(rituals, colored("Choose a ritual to learn > ", "cyan"))
-        self.rituals.append(chosen_ritual)
       elif self.level == 6:
+        self.memorize_spell()
+      elif self.level == 7:
+        self.learn_ritual()
+      elif self.level == 8:
         self.memorize_spell()
 
 
@@ -92,10 +98,11 @@ class Player(CombatEntity):
     for library_spell in self.library:
       if library_spell.signature:
         library_spell.copies_remaining = library_spell.max_copies_remaining
-    non_max_charges_spells = [spell for spell in self.library
-                              if spell.copies_remaining < spell.max_copies_remaining]
-    if non_max_charges_spells:
-      random.choice(non_max_charges_spells).copies_remaining += 1
+    # NOTE: Trying without this recharge for now since you can get spells from navigation now
+    # non_max_charges_spells = [spell for spell in self.library
+    #                           if spell.copies_remaining < spell.max_copies_remaining]
+    # if non_max_charges_spells:
+    #   random.choice(non_max_charges_spells).copies_remaining += 1
 
     for ritual in self.rituals:
       ritual.progress = 0
@@ -127,6 +134,11 @@ class Player(CombatEntity):
     resource_strs = [f"- {k}: {v}" for k, v in self.resources.items()]
     resources_str = "\n".join(resource_strs)
     return colorize(resources_str)
+  
+  def render_rituals(self):
+    render_str = "-------- PLAYER RITUALS --------\n"
+    render_str += numbered_list(self.rituals)
+    return render_str
   
   def render_inventory(self):
     render_str = "-------- INVENTORY --------\n"

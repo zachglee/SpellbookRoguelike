@@ -8,11 +8,8 @@ from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter, EnemyWave
 from model.player import Player
-from model.item import EnergyPotion
-from model.ritual import Ritual, RitualDraft
-from utils import energy_colors, energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
+from utils import energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
 from generators import generate_spell_pools, generate_enemy_set_pool, generate_library_spells, generate_rituals
-from content.rituals import rituals
 from content.aspirations import aspirations
 
 class Node:
@@ -142,19 +139,12 @@ class Region:
       except (TypeError, ValueError, IndexError) as e:
         print(e)
 
-  def generate_route(self, drift=0):
-    """Generates a route from the current node to the destination node."""
-    current_layer_idx = self.current_node.position[0]
-    if current_layer_idx >= len(self.nodes) - 1:
-      raise ValueError("You are already at the top of the map.")
-    next_layer = self.nodes[current_layer_idx + 1]
-    destination_node_column = (self.current_node.position[1] + drift) % len(next_layer)
-    destination_node = next_layer[destination_node_column]
-
+  def get_route_for_node(self, i, j):
+    """Generates a route to the node at the given position."""
+    destination_node = self.nodes[i][j]
     encounter = Encounter(waves=destination_node.generate_encounter_waves(self.enemy_set_pool),
                           player=self.player,
                           ambient_energy=destination_node.ambient_energy)
-    print(f"------------- {encounter.waves[0].enemy_sets}")
     return destination_node, encounter
 
 
@@ -165,8 +155,22 @@ class Region:
 
     # generate available routes
     routes = []
-    routes.append(self.generate_route(drift=0))
-    routes.append(self.generate_route(drift=random.choice([-1, 1])))
+    current_layer_idx = self.current_node.position[0]
+    current_node_idx = self.current_node.position[1]
+    next_layer = self.nodes[current_layer_idx + 1]
+    if current_layer_idx == len(self.nodes) - 2:
+      # heading into boss layer
+      which_boss = int(current_node_idx / 2)
+      routes.append(self.get_route_for_node(current_layer_idx + 1, which_boss))
+    elif current_layer_idx == 0:
+      # heading into first layer
+      routes.append(self.get_route_for_node(current_layer_idx + 1, random.choice(range(len(next_layer)))))
+    else:
+      routes.append(self.get_route_for_node(current_layer_idx + 1, current_node_idx))
+      side_indices = [current_node_idx - 1, current_node_idx + 1]
+      side_routes = [self.get_route_for_node(current_layer_idx + 1, i)
+                     for i in side_indices if i >= 0 and i < len(next_layer)]
+      routes.append(random.choice(side_routes))
     for node, _ in routes:
       node.seen = True
     
@@ -224,7 +228,7 @@ class Map:
   def __init__(self, n_regions=3):
     enemy_set_pool = generate_enemy_set_pool(n=27)
     spell_pools = generate_spell_pools(n_pools=n_regions)
-    self.regions = [Region(i, 3, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
+    self.regions = [Region(i, 4, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
                     for i, spell_pool in enumerate(spell_pools)]
     self.current_region_idx = 0
     self.active_ritual = None # random.choice(rituals)
@@ -268,6 +272,7 @@ class Map:
         self.current_region_idx = 0
         self.current_region.current_node = self.current_region.nodes[0][0]
         print("Starting a new character...")
+        # TODO: let player choose spell color and type of their signature!
         signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
         print(numbered_list(signature_spell_options))
         chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
@@ -283,6 +288,8 @@ class Map:
                         signature_spell=chosen_spell,
                         signature_color=chosen_color,
                         aspiration=chosen_aspiration)
+        # TODO: possibly remove this later
+        print(player.render_rituals())
         player.init(spell_pool=self.current_region.spell_pool)
         reroll_draft_player_library(player, self.current_region.spell_pool)
     self.current_region.player = player

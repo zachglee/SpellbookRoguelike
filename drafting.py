@@ -48,7 +48,7 @@ def edit_page_from_inventory(player, page_number):
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
 
-def safehouse_library_draft(player, safehouse):
+def safehouse_library_draft(player, safehouse, copies=3):
   print(player.render_library())
   print(safehouse.render())
   if len(player.library) > player.library_capacity:
@@ -56,7 +56,7 @@ def safehouse_library_draft(player, safehouse):
     return
   copied_spell = choose_obj(safehouse.library, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
-    player.library.append(LibrarySpell(copied_spell.spell))
+    player.library.append(LibrarySpell(copied_spell.spell, copies=copies))
     print(f"Copied: {copied_spell.render()}")
   else:
     print("No spell copied.")

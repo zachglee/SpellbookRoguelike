@@ -13,6 +13,7 @@ from utils import energy_colors, colorize
 class Enemy(CombatEntity):
   def __init__(self, hp, name, action, entry=NothingAction(), exp=None):
     super().__init__(hp, name)
+    self.faction = None
     self.action = action
     self.entry = entry
     self.spawned = False
@@ -34,7 +35,12 @@ class EnemySet:
   
   @property
   def instantiated_enemy_spawns(self):
-    return [EnemySpawn(es.turn, es.side, deepcopy(es.enemy)) for es in self.enemy_spawns]
+    enemy_spawns = []
+    for es in self.enemy_spawns:
+      instantiated_enemy = deepcopy(es.enemy)
+      # instantiated_enemy.faction = self.faction
+      enemy_spawns.append(EnemySpawn(es.turn, es.side, instantiated_enemy))
+    return enemy_spawns
 
 class EnemyWave:
   def __init__(self, enemy_sets, delay=0):
@@ -166,11 +172,15 @@ class Encounter:
     for ritual in self.rituals:
       if ritual.encounter_trigger(self):
         ritual.effect(self)
-        print(f"{ritual.name} triggered on turn {self.turn}!")
+        print(colored(f"{ritual.name} triggered on turn {self.turn}!", "yellow"))
     
   def player_upkeep(self):
     prolific = self.player.conditions["prolific"]
-    self.player.time = (8 if prolific else 4)
+    slow = self.player.conditions["slow"]
+    time = 4
+    if prolific: time += 4
+    if slow: time -= 1
+    self.player.time = time
 
   def upkeep_phase(self):
     for entity in self.combat_entities:
