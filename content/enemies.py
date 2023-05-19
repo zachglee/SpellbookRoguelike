@@ -103,8 +103,7 @@ enemies = {
   "Cocky Descender": Enemy(9, "Cocky Descender",
                                   HealthThresholdAction(
                                     MultiAction([AttackAction(4), AttackAction(4)]),
-                                    AttackAction(2), 9),
-                                  entry=AddConditionAction("durable", 5, "self")),
+                                    AttackAction(2), 9)),
   # hit me I get stronger
   # does something good for you when there gets to be 5 enemies?
   # heal immediate?

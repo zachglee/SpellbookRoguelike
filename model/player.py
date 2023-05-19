@@ -4,14 +4,15 @@ from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
-from model.item import EnergyPotion
+from model.item import EnergyPotion, MeleeWeapon
 from utils import colorize, numbered_list, choose_obj
 from content.rituals import rituals
+from content.items import starting_weapons
 
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
                signature_spell=None, signature_color=None, starting_inventory=None,
-               aspiration=None):
+               aspiration=None, starting_weapon=None):
     super().__init__(hp, name)
     self.spellbook = spellbook
     self.inventory = inventory
@@ -27,6 +28,8 @@ class Player(CombatEntity):
     self.library = library
     self.starting_inventory = starting_inventory or []
     self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
+    if starting_weapon:
+      self.starting_inventory.append(starting_weapon)
     self.request = None
 
     # 
@@ -91,6 +94,9 @@ class Player(CombatEntity):
 
 
   def init(self, spell_pool):
+    print(numbered_list(starting_weapons))
+    chosen_weapon = choose_obj(starting_weapons, "which weapon will you take > ")
+
     starting_spellbook = Spellbook(pages=[])
     
     # recharge signature spells to max and get 1 more charge
@@ -108,6 +114,7 @@ class Player(CombatEntity):
       ritual.progress = 0
 
     inventory = deepcopy(self.starting_inventory)
+    inventory.append(deepcopy(chosen_weapon))
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
@@ -115,6 +122,14 @@ class Player(CombatEntity):
     self.inventory = inventory
     self.request = None
 
+  def get_immediate(self, encounter):
+    """Returns the closest enemy on the side the player is facing,
+    or None if there are no enemies on that side."""
+    if self.facing == "front":
+      immediate = encounter.front[0:1]
+    if self.facing == "back":
+      immediate = encounter.back[0:1]
+    return immediate[0] if immediate else None
 
   def switch_face(self):
     if self.facing == "front":

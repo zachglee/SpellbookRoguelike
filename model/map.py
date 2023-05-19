@@ -3,7 +3,7 @@ from copy import deepcopy
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
-from drafting import reroll_draft_player_library
+from drafting import draft_player_library
 from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter, EnemyWave
@@ -11,6 +11,7 @@ from model.player import Player
 from utils import energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
 from generators import generate_spell_pools, generate_enemy_set_pool, generate_library_spells, generate_rituals
 from content.aspirations import aspirations
+from content.items import starting_weapons
 
 class Node:
   def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1):
@@ -51,13 +52,18 @@ class Node:
   def render(self):
     total = len(self.passages)
     render_str = f"-------- Node {self.position} : ({self.pass_passages}/{total} passages) --------\n"
-    if not self.seen:
-      return render_str + "- ???"
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
-    render_str += colorize(
-      colored("Enemy Sets: ", "red") +
-      f"{len(self.guardian_enemy_sets) + 1} | Waves: {len(self.guardian_enemy_waves)} ({guardian_enemy_set_names}), "
-      f"Ambient {self.ambient_energy}") + "\n"
+    # render known enemy waves
+    if self.seen:
+      render_str += colorize(
+        colored("Enemy Sets: ", "red") +
+        f"{len(self.guardian_enemy_sets) + 1} | Waves: {len(self.guardian_enemy_waves)} ({guardian_enemy_set_names}), "
+        f"Ambient {self.ambient_energy}") + "\n"
+    else:
+      render_str += colorize(
+        f"{len(self.guardian_enemy_sets) + 1} | Waves: {len(self.guardian_enemy_waves)} (???), "
+        f"Ambient {self.ambient_energy}") + "\n"
+    # render safehouse library
     render_str += numbered_list(self.safehouse.library)
     if self.safehouse.resting_characters:
       render_str += colored("\nResting Characters:\n", "green")
@@ -104,7 +110,7 @@ class Region:
       library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
       guardian_enemy_wave1 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2], 0)
       guardian_enemy_wave2 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor + 2:enemy_set_pool_cursor + 3], 2)
-      boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j)))
+      boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j), seen=True))
       enemy_set_pool_cursor += 3
       spell_pool_cursor += 2
     self.nodes.append(boss_layer)
@@ -153,6 +159,9 @@ class Region:
 
     Returns the encounter for that route and updates the destination node."""
 
+    # show the region map
+    print(self.render())
+
     # generate available routes
     routes = []
     current_layer_idx = self.current_node.position[0]
@@ -164,15 +173,16 @@ class Region:
       routes.append(self.get_route_for_node(current_layer_idx + 1, which_boss))
     elif current_layer_idx == 0:
       # heading into first layer
-      routes.append(self.get_route_for_node(current_layer_idx + 1, random.choice(range(len(next_layer)))))
+      idx_choices = list(range(len(next_layer)))
+      random.shuffle(idx_choices)
+      routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[0]))
+      routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[1]))
     else:
       routes.append(self.get_route_for_node(current_layer_idx + 1, current_node_idx))
       side_indices = [current_node_idx - 1, current_node_idx + 1]
       side_routes = [self.get_route_for_node(current_layer_idx + 1, i)
                      for i in side_indices if i >= 0 and i < len(next_layer)]
       routes.append(random.choice(side_routes))
-    for node, _ in routes:
-      node.seen = True
     
     # prompt the player to choose a route
     print(player.render_library())
@@ -182,6 +192,7 @@ class Region:
     
     node, encounter = choose_obj(routes, colored("choose a route > ", "red"))
     self.destination_node = node
+    node.seen = True
     fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
     if fight:
       return encounter
@@ -277,10 +288,11 @@ class Map:
         print(numbered_list(signature_spell_options))
         chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
         chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
-        chosen_aspiration = choose_str(aspirations, f"choose an aspiration ({', '.join(aspirations)}) > ")
+        # NOTE: not currently using aspirations
+        # chosen_aspiration = choose_str(aspirations, f"choose an aspiration ({', '.join(aspirations)}) > ")
+        chosen_aspiration = random.choice(aspirations)
         name = input("What shall they be called? > ")
-        library = ([LibrarySpell(chosen_spell.spell, copies=4, signature=True)] +
-                   generate_library_spells(size=3, spell_pool=self.current_region.spell_pool))
+        library = ([LibrarySpell(chosen_spell.spell, copies=4, signature=True)])
         player = Player(hp=30, name=name,
                         spellbook=None,
                         inventory=[],
@@ -290,8 +302,8 @@ class Map:
                         aspiration=chosen_aspiration)
         # TODO: possibly remove this later
         print(player.render_rituals())
+        draft_player_library(player, self.current_region.spell_pool)
         player.init(spell_pool=self.current_region.spell_pool)
-        reroll_draft_player_library(player, self.current_region.spell_pool)
     self.current_region.player = player
     return player
 

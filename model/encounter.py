@@ -275,11 +275,14 @@ class Encounter:
       f"{len(self.enemy_sets)} ({preview_enemy_set_names}), "
       f"Ambient {self.ambient_energy}")
 
-  def render_combat(self):
+  def render_combat(self, show_intents=False):
     print(self.player.spellbook.render_current_page() + "\n")
     print(f"-------- Front --------")
     for enemy in reversed(self.front):
-      print(f"- {enemy.render()}")
+      render_str = f"- {enemy.render()}"
+      if show_intents:
+        render_str += f" | {enemy.action}"
+      print(render_str)
 
     turn_str = f"(T{self.turn})"
     if self.turn == self.escape_turn:
@@ -289,7 +292,10 @@ class Encounter:
     bookend = colored(f"{face_character*8} ", "green" if self.player.facing == "front" else "red")
     print(f"\n {bookend}" + f"{self.player.render()} {turn_str}" + f"{bookend} \n")
     for enemy in self.back:
-      print(f"- {enemy.render()}")
+      render_str = f"- {enemy.render()}"
+      if show_intents:
+        render_str += f" | {enemy.action}"
+      print(render_str)
     print(f"-------- Back --------")
     
 

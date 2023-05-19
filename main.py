@@ -16,6 +16,7 @@ import random
 
 STARTING_EXPLORED = 2
 MAX_EXPLORE = 4
+PASSAGE_EXPERIENCE = 4
 
 class GameOver(Exception):
   pass
@@ -28,6 +29,7 @@ class GameState:
     self.player = None
     self.map = Map(n_regions=3)
     self.encounter = None
+    self.show_intents = False
 
   # helpers
 
@@ -111,8 +113,8 @@ class GameState:
       if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
         self.map.current_region.destination_node.passages.append("pass")
         self.player.explored -= MAX_EXPLORE
-        self.player.experience += 3
-        print(colored("You found a passage and gained 3xp!", "green"))
+        self.player.experience += PASSAGE_EXPERIENCE
+        print(colored(f"You found a passage and gained {PASSAGE_EXPERIENCE}xp!", "green"))
         input(f"Press enter to continue exploring ({self.player.explored}/{MAX_EXPLORE}) ...")
       else:
         print(colored("Found nothing this time...", "blue"))
@@ -175,7 +177,7 @@ class GameState:
   def run_encounter_round(self):
     encounter = self.encounter
     while True:
-        encounter.render_combat()
+        encounter.render_combat(show_intents=self.show_intents)
         cmd = input("> ")
         cmd_tokens = cmd.split(" ")
         try:
@@ -198,6 +200,8 @@ class GameState:
             print(encounter.player.render_resources())
           elif cmd in ["inventory", "inv", "i"]:
             print(self.player.render_inventory())
+          elif cmd in ["intent", "intents", "int"]:
+            self.show_intents = not self.show_intents
           elif cmd in ["ritual"]:
             print(self.map.render_active_ritual())
             print(self.player.render_rituals())
@@ -296,9 +300,11 @@ class GameState:
           break
     self.map.current_region.current_node = self.map.current_region.destination_node
     if encounter != "navigate":
-      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse, copies=3)
+      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
+                              copies=3, spell_pool=self.map.current_region.spell_pool)
     else:
-      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse, copies=1)
+      safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
+                              copies=1, spell_pool=self.map.current_region.spell_pool)
     self.save()
     onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
     if onwards:
@@ -343,9 +349,9 @@ class GameState:
           spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
           if spell_to_give is None:
             continue
-          spell_to_give.copies_remaining -= 1
-          character.library.append(LibrarySpell(spell_to_give.spell, copies=2))
+          character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
         self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
+        self.player.experience += 30
         self.save()
         if not onwards:
           self.rest_phase()
@@ -357,7 +363,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Barnabus.pkl")
 gs.play()

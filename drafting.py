@@ -12,19 +12,21 @@ def render_spell_draft(player, archive=False):
     if player.library:
       print(player.render_library())
 
-def reroll_draft_player_library(player, spell_pool):
-  rerolls = 3
-  render_spell_draft(player)
-  while rerolls > 0:
-    choice_idx = choose_idx(player.library, f"reroll ({rerolls}) > ")
-    if choice_idx is None:
-      break
-    elif player.library[choice_idx].signature:
-      print("You can't reroll a signature spell!")
-    else:
-      player.library[choice_idx] = generate_library_spells(1, spell_pool=spell_pool)[0]
-      rerolls -= 1
-      render_spell_draft(player)
+def draft_player_library(player, spell_pool):
+  # Get 2 more random spells
+  other_spells = generate_library_spells(1, spell_pool=spell_pool)
+  player.library += other_spells
+  print(player.render_library())
+  # Choose 1 of 2 spells
+  choices = generate_library_spells(2, spell_pool=spell_pool)
+  print("---\n" + numbered_list(choices))
+  choice = choose_obj(choices, "Which spell have you been studying > ")
+  player.library.append(choice)
+  # Choose 1 of 2 spells
+  choices = generate_library_spells(2, spell_pool=spell_pool)
+  print("---\n" + numbered_list(choices))
+  choice = choose_obj(choices, "Which spell have you been studying > ")
+  player.library.append(choice)
 
 def destination_draft(player, destination_node):
   first_spell = SpellbookSpell(destination_node.safehouse.library[0].spell)
@@ -48,13 +50,16 @@ def edit_page_from_inventory(player, page_number):
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
 
-def safehouse_library_draft(player, safehouse, copies=3):
+def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
   print(player.render_library())
   print(safehouse.render())
   if len(player.library) > player.library_capacity:
     input(colored("You no space left in your library...", "red"))
     return
-  copied_spell = choose_obj(safehouse.library, colored("copy a spell to your library > ", "blue"))
+  choices = [random.choice(safehouse.library),
+             random.choice(generate_library_spells(2, spell_pool=spell_pool))]
+  print("---\n" + numbered_list(choices))
+  copied_spell = choose_obj(choices, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
     player.library.append(LibrarySpell(copied_spell.spell, copies=copies))
     print(f"Copied: {copied_spell.render()}")

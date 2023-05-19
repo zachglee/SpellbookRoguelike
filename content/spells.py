@@ -12,7 +12,7 @@
 red_enemy_dies = [
   ["Passive: Whenever an enemy dies, deal overkill damage + 4 to target behind.",
   "Producer: +1 Red, inflict 1 vulnerable",
-  "Converter: 1 Red -> 1 Green, Deal 9 damage. If this kills, +1 red.",
+  "Converter: 1 Red -> 1 Gold, Deal 9 damage. If this kills, +1 red.",
   "Consumer: 1 Red: Deal 16 damage"],
   #
   ["Passive: Whenever an enemy dies, inflict its burn +3 on its side.",
@@ -29,17 +29,17 @@ red_take_damage = [
   #
   ["Passive: Whenever you lose hp, inflict 2 burn on all enemies.",
   "Producer: +1 Red, when you take damage this turn, lose no life and gain half of it as burn.",
-  "Converter: 1 Red -> 1 Purple: Double burn on an entity and you may transfer it to another entity.",
+  "Converter: 1 Red -> 1 Gold: Double burn on an entity and you may transfer it to another entity.", # NOTE: Purple
   "Consumer: 1 Red: Inflict 3 burn. Tick all burn and gain life equal to damage dealt in this way."],
 ]
 
 red_big_attack = [
-  ["Passive: Gain 1 Red energy and recharge 1 random spell for every 8 damage you survive each round.",
+  ["Passive: Gain 1 Red energy and recharge 1 random spell for every 7 damage you survive each round.",
   "Producer: +1 Red, If you're below half health, +1 more red.",
-  "Converter: 1 Red -> 1 Green: Deal 2 damage x times, where x is amount of energy you have.",
+  "Converter: 1 Red -> 1 Gold: Deal 2 damage x times, where x is amount of energy you have.", # NOTE: Green
   "Consumer: 1 Red: Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this."],
   #
-  ["Passive: Gain 2 regen, deal 2 damage to all for every 8 damage you survive each round.",
+  ["Passive: Gain 2 regen, deal 2 damage to all for every 7 damage you survive each round.",
   "Producer: +1 Red, If at full health, deal 6 damage, otherwise gain 1 regen.",
   "Converter: 1 Red -> 1 Gold: Suffer 3 damage, gain 3 sharp.",
   "Consumer: 1 Red: Deal 7 damage. Heal for unblocked."],
@@ -48,7 +48,7 @@ red_big_attack = [
 red_hit_big_enemy = [
   ["Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.",
   "Producer: +1 Red, Deal 4 damage to immediate.",
-  "Converter: 1 Red -> 1 Purple: Apply 3 burn, then tick all conditions 2 times.",
+  "Converter: 1 Red -> 1 Blue: Apply 3 burn, then tick all conditions 2 times.", # NOTE: Purple
   "Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health."],
   #
   ["Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.",
@@ -82,8 +82,8 @@ red_spells = sum(red_pages, [])
 blue_block_hits = [
   ["Passive: Whenever you’re attacked and take no damage, deal 4 damage to attacker.",
   "Producer: +1 Blue, gain 1 block per enemy.",
-  "Converter: 1 Blue -> 1 Green: Gain 8 block",
-  "Consumer: 1 Blue: Gain 5 armor this turn."],
+  "Converter: 1 Blue -> 1 Gold: Gain 9 block", # NOTE: Green
+  "Consumer: 1 Blue: Gain 6 armor this turn."],
   #
   ["Passive: Whenever you’re attacked and take no damage, gain 2 retaliate.",
   "Producer: +1 Blue, gain 1 block and Break: deal 5 damage to attacker.",
@@ -94,7 +94,7 @@ blue_block_hits = [
 blue_turn_3 = [
   ["Passive: At beginning of 3rd turn and onwards, block 4.",
   "Producer: +1 Blue, Inflict 1 stun on an enemy that entered this turn.",
-  "Converter: 1 Blue -> 1 Purple: Stun 1 or deal 15 damage to a stunned enemy.",
+  "Converter: 1 Blue -> 1 Red: Stun 1 or deal 15 damage to a stunned enemy.", # NOTE: Purple
   "Consumer: 1 Blue: Inflict 3 stun."],
   #
   ["Passive: At beginning of 3rd turn and onwards, deal 3 damage to all enemies.",
@@ -106,12 +106,12 @@ blue_turn_3 = [
 blue_3_enemies = [
   ["Passive: At the beginning of your turn if there are 3 or more enemies, stun 2 of them at random.",
   "Producer: +1 Blue, gain 1 block and Break: stun 1.",
-  "Converter: 1 Blue -> 1 Green: Gain retaliate 2.",
-  "Consumer: 1 Blue: Stun all damaged enemies, then deal 4 damage to all stunned enemies."],
+  "Converter: 1 Blue -> 1 Gold: Gain retaliate 2.", # NOTE: Green
+  "Consumer: 1 Blue: Deal 4 damage to all stunned enemies. Stun 1 all enemies."],
   #
   ["Passive: At the beginning of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.",
   "Producer: +1 Blue, deal 6 damage, call 1",
-  "Converter: 1 Blue -> 1 Purple: Gain retaliate 6 this turn.",
+  "Converter: 1 Blue -> 1 Gold: Gain retaliate 6 this turn.", # NOTE: Purple
   "Consumer: 1 Blue: Gain 3 enduring this turn."],
 ]
 
@@ -152,19 +152,19 @@ gold_3rd_spell = [
 gold_turn_page = [
   ["Passive: Every time you turn to this page, the next spell cast doesn’t cost charges or exhaust.",
   "Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.",
-  "Converter: 1 Gold -> 1 Green: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.",
+  "Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.", # NOTE: Green
   "Consumer: 1 Gold: Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield."],
   #
   ["Passive: Every time you turn to this page, your next spell cast doesn’t cost energy.",
   "Producer: +1 Gold, refresh a spell.",
-  "Converter: 1 Gold -> 1 Green: +4 time. Refresh all other spells on this page.",
+  "Converter: 1 Gold -> 1 Red: +4 time. Refresh all other spells on this page.", # NOTE: Green
   "Consumer: 1 Gold: Gain x shield and deal 2x to all where x is # of spells cast this turn."],
 ]
 
 gold_1_spell = [
   ["Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.",
   "Producer: +1 Gold, you may convert 1 non-gold energy to gold.",
-  "Converter: 1 Gold -> 1 Green: Green: 2 regen. Gold: 3 empower. Red: 3 damage. Blue: 3 shield. Purple: 2 poison.",
+  "Converter: 1 Gold -> 1 Red: Green: 2 regen. Gold: 3 empower. Red: 3 damage. Blue: 3 shield. Purple: 2 poison.",
   "Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color."],
   #
   ["Passive: If you cast 1 or less spell in a turn, empower 6.",
@@ -176,7 +176,7 @@ gold_1_spell = [
 gold_face_noone = [
   ["Passive: At end of turn, if facing no enemies, gain 2 searing presence.",
   "Producer: +1 Gold, gain 2 searing presence.",
-  "Converter: 1 Gold -> 1 Purple: Banish 1 immediate enemy.",
+  "Converter: 1 Gold -> 1 Red: Banish 1 immediate enemy.", # NOTE: Purple
   "Consumer: 1 Gold: Gain 2 armor."],
   #
   ["Passive: At end of turn, if facing no enemies, gain 3 shield.",

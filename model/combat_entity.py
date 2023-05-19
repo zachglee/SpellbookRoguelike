@@ -62,6 +62,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("poison", colored("poison", "magenta"))
     rendered_conditions = rendered_conditions.replace("empower", colored("empower", "yellow"))
     rendered_conditions = rendered_conditions.replace("searing", colored("searing", "yellow"))
+    rendered_conditions = rendered_conditions.replace("charge", colored("charge", "yellow"))
     rendered_conditions = rendered_conditions.replace("stun", colored("stun", "blue"))
     rendered_conditions = rendered_conditions.replace("ward", colored("ward", "blue"))
     rendered_conditions = rendered_conditions.replace("retaliate", colored("retaliate", "magenta"))
