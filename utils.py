@@ -80,6 +80,10 @@ def get_combat_entities(enc, target_string):
     return enc.front + enc.back
   elif target_string == "i":
     return [enc.faced_enemy_queue[0]]
+  elif target_string == "iside":
+    return enc.faced_enemy_queue
+  elif target_string == "bi":
+    return [enc.unfaced_enemy_queue[0]]
   elif target_string == "f":
     return enc.front
   elif target_string == "r":
@@ -92,3 +96,6 @@ def get_combat_entities(enc, target_string):
   elif target_string[0] == "f":
     target_pos = int(target_string[1])
     return [enc.front[target_pos - 1]]
+  elif target_string == "_":
+    input_target_string = input(colored("Choose a target > ", "green"))
+    return get_combat_entities(enc, input_target_string)

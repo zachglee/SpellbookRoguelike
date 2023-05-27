@@ -22,7 +22,7 @@ enemies = {
   "Hawk": Enemy(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
   "Hunter": Enemy(20, "Hunter", MultiAction([MoveAction(1), NearFarAction(AddConditionAction("armor", 1, "self"), AttackAction(10))])),
   "Charging Ogre": Enemy(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
-  "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 2, "self"), AttackAction(5)), entry=AddConditionAction("enduring", 5, "self")),
+  "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 2, "self"), AttackAction(5)), entry=AddConditionAction("enduring", 7, "self")),
   "The Vulture": Enemy(30, "The Vulture", AttackAction(2), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
@@ -47,7 +47,7 @@ enemies = {
   "The Executioner": Enemy(40, "The Executioner", WindupAction(AttackAction(25), 1)),
   "Cloud of Daggers": Enemy(6, "Cloud of Daggers",
                             MultiAction([AttackAction(2), AttackAction(2), AttackAction(2),
-                                        AttackSide(1), AttackSide(1), AttackSide(1)]),
+                                        AttackSide(2), AttackSide(2), AttackSide(2)]),
                             entry=AddConditionAction("durable", 3, "self"), exp=6),
   "Slumbering Giant": Enemy(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),

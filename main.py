@@ -14,9 +14,9 @@ from drafting import destination_draft, safehouse_library_draft
 
 import random
 
-STARTING_EXPLORED = 2
-MAX_EXPLORE = 4
-PASSAGE_EXPERIENCE = 4
+STARTING_EXPLORED = 1
+MAX_EXPLORE = 3
+PASSAGE_EXPERIENCE = 3
 
 class GameOver(Exception):
   pass
@@ -43,19 +43,13 @@ class GameState:
   def cast(self, spell, cost_energy=True, cost_charges=True):
     if cost_charges:
       spell.charges -= 1
-    if spell.spell[0:13] == "Producer: +1 ":
-      color = spell.spell[13:].split(",")[0].lower()
-      self.player.conditions[color] += 1
-    elif cost_energy:
-      if spell.spell[0:12] == "Consumer: 1 ":
-        color = spell.spell[12:].split(":")[0].lower()
-        self.player.conditions[color] -= 1
-      elif spell.spell[0:11] == "Converter: ":
-        conversion_tokens = spell.spell[11:].split(" ")[0:5]
-        color_from = conversion_tokens[1].lower()
-        color_to = conversion_tokens[4][:-1].lower()
-        self.player.conditions[color_from] -= 1
-        self.player.conditions[color_to] += 1
+    if cost_energy:
+      if spell.spell.type in ["Converter", "Consumer"]:
+        # TODO: eventually enforce that you must have the correct energy
+        self.player.conditions[spell.spell.color] -= 1
+    
+    for cmd in spell.spell.cast_commands:
+      self.encounter_command(cmd)
 
   def banish(self, target):
     idx = target.position(self.encounter)
@@ -96,6 +90,8 @@ class GameState:
   # Ending
   def player_death(self):
     print(self.player.render())
+    input("Gained 20xp...")
+    self.player.experience += 20
     input("Press enter to continue...")
     self.discovery_phase()
     self.player.wounds += 1
@@ -145,9 +141,10 @@ class GameState:
           input(colored("You come out the other side!", "cyan"))
           return True
       elif drawn_passage == "fail":
-        print(colored(f"A trap! You take 1 damage. ({passes}/{passes_required} progress)", "red"))
+        fail_damage = (1 + self.map.current_region.corruption)
+        print(colored(f"A trap! You take {fail_damage} damage. ({passes}/{passes_required} progress)", "red"))
         print(colored(f"You gained 1xp.", "green"))
-        self.player.hp -= (1 + self.map.current_region.corruption)
+        self.player.hp -= fail_damage
         self.player.experience += 1
       input(f"You press onwards... ({4 - i} turns remaining)")
     input(colored("You have failed to find the way through.", "red"))
@@ -174,107 +171,114 @@ class GameState:
     for ritual in activable_rituals:
       ritual.progress = 0
 
-  def run_encounter_round(self):
+  def encounter_command(self, cmd):
     encounter = self.encounter
+    cmd_tokens = cmd.split(" ")
+    try:
+      if cmd == "die":
+        self.player_death()
+      elif cmd == "win":
+        encounter.turn = 10
+      elif cmd == "map":
+        self.map.inspect()
+      elif cmd_tokens[0] == "experience":
+        magnitude = int(cmd_tokens[1])
+        self.player.experience += magnitude
+      elif cmd_tokens[0] == "time":
+        magnitude = int(cmd_tokens[1])
+        self.time_cost(magnitude)
+      elif cmd in ["inventory", "inv", "i"]:
+        print(self.player.render_inventory())
+      elif cmd in ["intent", "intents", "int"]:
+        self.show_intents = not self.show_intents
+      elif cmd in ["ritual"]:
+        print(self.map.render_active_ritual())
+        print(self.player.render_rituals())
+      elif cmd == "use":
+        self.time_cost()
+        self.use_item()
+      elif cmd in ["explore", "x"]:
+        self.time_cost()
+        self.player.explored += 1
+        print(colored(f"Something lies within these passages... (explored {self.player.explored}/{MAX_EXPLORE})", "blue"))
+      elif cmd == "face":
+        self.time_cost()
+        encounter.player.switch_face()
+      elif cmd == "face?":
+        encounter.player.switch_face()
+      elif cmd == "page":
+        self.time_cost()
+        encounter.player.spellbook.switch_page()
+      elif cmd == "page?":
+        encounter.player.spellbook.switch_page()
+      elif cmd_tokens[0] == "recharge":
+        if cmd_tokens[1] == "r":
+          spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
+        else:
+          spell_idx = int(cmd_tokens[1]) - 1
+        target = self.player.spellbook.current_page.spells[spell_idx]
+        target.recharge()
+      elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
+        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        self.time_cost()
+        self.cast(target,
+                  cost_energy=not cmd_tokens[0] == "ccast",
+                  cost_charges=not cmd_tokens[0] == "ecast")
+      elif cmd_tokens[0] == "fcast":
+        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        self.cast(target, cost_energy=False, cost_charges=False)
+      elif cmd_tokens[0] == "call":
+        magnitude = int(cmd_tokens[1])
+        non_imminent_spawns = [es for es in self.encounter.enemy_spawns
+                                if es.turn > self.encounter.turn + 1]
+        if non_imminent_spawns:
+          sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
+      elif cmd_tokens[0] == "banish":
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        for target in targets:
+          self.banish(target)
+      elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          self.player.attack(target, magnitude)
+      elif cmd_tokens[0] == "lifesteal":
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          self.player.attack(target, magnitude, lifesteal=True)
+      elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.hp -= magnitude
+      elif cmd_tokens[0] == "heal":
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.hp += magnitude
+      else:
+        condition = cmd_tokens[0]
+        targets = get_combat_entities(encounter, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
+          if condition == "enduring" and target.conditions["enduring"] == 0:
+            target.conditions["enduring"] = None
+          if condition == "durable" and target.conditions["durable"] == 0:
+            target.conditions["durable"] = None
+    except (KeyError, IndexError, ValueError, TypeError) as e:
+      print(e)
+
+  def run_encounter_round(self):
     while True:
-        encounter.render_combat(show_intents=self.show_intents)
-        cmd = input("> ")
-        cmd_tokens = cmd.split(" ")
-        try:
-          if cmd == "done":
-            encounter.end_player_turn()
-            break
-          elif cmd == "die":
-            self.player_death()
-          elif cmd == "win":
-            encounter.turn = 10
-          elif cmd == "map":
-            self.map.inspect()
-          elif cmd_tokens[0] == "experience":
-            magnitude = int(cmd_tokens[1])
-            self.player.experience += magnitude
-          elif cmd_tokens[0] == "time":
-            magnitude = int(cmd_tokens[1])
-            self.time_cost(magnitude)
-          elif cmd in ["res", "resources"]:
-            print(encounter.player.render_resources())
-          elif cmd in ["inventory", "inv", "i"]:
-            print(self.player.render_inventory())
-          elif cmd in ["intent", "intents", "int"]:
-            self.show_intents = not self.show_intents
-          elif cmd in ["ritual"]:
-            print(self.map.render_active_ritual())
-            print(self.player.render_rituals())
-          elif cmd == "use":
-            self.time_cost()
-            self.use_item()
-          elif cmd in ["explore", "x"]:
-            self.time_cost()
-            self.player.explored += 1
-            print(colored(f"Something lies within these passages... (explored {self.player.explored}/{MAX_EXPLORE})", "blue"))
-          elif cmd == "face":
-            self.time_cost()
-            encounter.player.switch_face()
-          elif cmd == "face?":
-            encounter.player.switch_face()
-          elif cmd == "page":
-            self.time_cost()
-            encounter.player.spellbook.switch_page()
-          elif cmd == "page?":
-            encounter.player.spellbook.switch_page()
-          elif cmd_tokens[0] == "recharge":
-            if cmd_tokens[1] == "r":
-              spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
-            else:
-              spell_idx = int(cmd_tokens[1]) - 1
-            target = self.player.spellbook.current_page.spells[spell_idx]
-            target.recharge()
-          elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
-            target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-            self.time_cost()
-            self.cast(target,
-                      cost_energy=not cmd_tokens[0] == "ccast",
-                      cost_charges=not cmd_tokens[0] == "ecast")
-          elif cmd_tokens[0] == "fcast":
-            target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-            self.cast(target, cost_energy=False, cost_charges=False)
-          elif cmd_tokens[0] == "call":
-            magnitude = int(cmd_tokens[1])
-            non_imminent_spawns = [es for es in self.encounter.enemy_spawns
-                                   if es.turn > self.encounter.turn + 1]
-            if non_imminent_spawns:
-              sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
-          elif cmd_tokens[0] == "banish":
-            targets = get_combat_entities(encounter, cmd_tokens[1])
-            for target in targets:
-              self.banish(target)
-          elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
-            targets = get_combat_entities(encounter, cmd_tokens[1])
-            magnitude = int(cmd_tokens[2])
-            for target in targets:
-              self.player.attack(target, magnitude)
-          elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
-            targets = get_combat_entities(encounter, cmd_tokens[1])
-            magnitude = int(cmd_tokens[2])
-            for target in targets:
-              target.hp -= magnitude
-          elif cmd_tokens[0] == "heal":
-            targets = get_combat_entities(encounter, cmd_tokens[1])
-            magnitude = int(cmd_tokens[2])
-            for target in targets:
-              target.hp += magnitude
-          else:
-            condition = cmd_tokens[0]
-            targets = get_combat_entities(encounter, cmd_tokens[1])
-            magnitude = int(cmd_tokens[2])
-            for target in targets:
-              target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
-              if condition == "enduring" and target.conditions["enduring"] == 0:
-                target.conditions["enduring"] = None
-              if condition == "durable" and target.conditions["durable"] == 0:
-                target.conditions["durable"] = None
-        except (KeyError, IndexError, ValueError, TypeError) as e:
-          print(e)
+      self.encounter.render_combat(show_intents=self.show_intents)
+      cmd = input("> ")
+      if cmd == "done":
+        self.encounter.end_player_turn()
+        break
+      self.encounter_command(cmd)
+
 
   def encounter_phase(self):
     encounter = self.encounter
@@ -363,7 +367,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
-# gs.init(map_file="saves/map.pkl", character_file="saves/Barnabus.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
+# gs.init(map_file="saves/map.pkl", character_file="saves/Barrin.pkl")
 gs.play()

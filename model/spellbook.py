@@ -1,15 +1,32 @@
 from termcolor import colored
 from utils import numbered_list
 
+class Spell:
+  def __init__(self, description, color, type, conversion_color=None, cost=None, cast_commands=None):
+    self.description = description
+    self.color = color
+    self.type = type
+    self.conversion_color = conversion_color
+    self.cost = cost
+    self.cast_commands = cast_commands or []
+
+    if self.type == "Producer":
+      self.cast_commands.append(f"{color} p 1")
+    if self.type == "Converter" and conversion_color is not None:
+      self.cast_commands.append(f"{conversion_color} p 1")
+  
+  def __repr__(self):
+    return self.description
+
 class LibrarySpell:
-  def __init__(self, spell, copies=3, signature=False):
+  def __init__(self, spell: Spell, copies=3, signature=False):
     self.spell = spell
     self.signature = signature
     self.copies_remaining = copies
     self.max_copies_remaining = copies
   
   def render(self):
-    rendered_str = self.spell.replace("Red", colored("Red", "red"))
+    rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
     rendered_str = rendered_str.replace("Gold", colored("Gold", "yellow"))
     rendered_str = rendered_str.replace("Blue", colored("Blue", "blue"))
     rendered_str = rendered_str.replace("Green", colored("Green", "green"))
@@ -24,7 +41,7 @@ class LibrarySpell:
     return f"{copies_remaining_part} {rendered_str}"
 
 class SpellbookSpell:
-  def __init__(self, spell):
+  def __init__(self, spell: Spell):
     self.spell = spell
     self.charges = 2
     self.max_charges = 3
@@ -35,7 +52,7 @@ class SpellbookSpell:
     self.charges = min(self.charges + 1, self.max_charges)
 
   def render(self):
-    rendered_str = self.spell.replace("Red", colored("Red", "red"))
+    rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
     rendered_str = rendered_str.replace("Gold", colored("Gold", "yellow"))
     rendered_str = rendered_str.replace("Blue", colored("Blue", "blue"))
     rendered_str = rendered_str.replace("Green", colored("Green", "green"))
@@ -46,7 +63,7 @@ class SpellbookSpell:
 
     echoing_prefix = colored('~' * self.echoing, 'blue') if self.echoing else ''
 
-    if "Passive" in self.spell:
+    if self.spell.type == "Passive":
       charges_prefix = "*"
     else:
       charges_prefix = f"({self.charges}/{self.max_charges})"

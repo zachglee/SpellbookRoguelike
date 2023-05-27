@@ -93,6 +93,13 @@ class Encounter:
       return self.front
     elif self.player.facing == "back":
       return self.back
+    
+  @property
+  def unfaced_enemy_queue(self):
+    if self.player.facing == "front":
+      return self.back
+    elif self.player.facing == "back":
+      return self.front
 
   @property
   def escape_turn(self):
@@ -214,8 +221,8 @@ class Encounter:
     # recharge random spell
     recharge_candidates = [sp for sp in self.player.spellbook.spells
                           if sp.charges < sp.max_charges and
-                          "Passive" not in sp.spell and
-                          "Unrechargeable" not in sp.spell and
+                          sp.spell.type != "Passive" and
+                          "Unrechargeable" not in sp.spell.description and
                           sp.echoing is None]
     if len(recharge_candidates) > 0:
       random.choice(recharge_candidates).recharge()

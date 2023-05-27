@@ -123,9 +123,11 @@ class Region:
   def corrupt(self):
     self.corruption += 1
     # make one node harder in each layer
-    for layer in self.nodes:
-      most_passes_node = max(layer, key=lambda node: node.pass_passages)
-      most_passes_node.passages += ["fail"] * self.corruption * 3
+    # TODO: this is a bit too punishing for now
+    # for layer in self.nodes:
+    #   most_passes_node = max(layer, key=lambda node: node.pass_passages)
+    #   most_passes_node.passages += ["fail"] * self.corruption * 3
+    pass
 
   def choose_node(self):
     print(self.render())

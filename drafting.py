@@ -52,16 +52,18 @@ def edit_page_from_inventory(player, page_number):
 
 def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
   print(player.render_library())
-  print(safehouse.render())
-  if len(player.library) > player.library_capacity:
-    input(colored("You no space left in your library...", "red"))
+  if len(player.library) >= player.library_capacity:
+    input(colored("You have no space left in your library...", "red"))
     return
   choices = [random.choice(safehouse.library),
              random.choice(generate_library_spells(2, spell_pool=spell_pool))]
   print("---\n" + numbered_list(choices))
   copied_spell = choose_obj(choices, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
-    player.library.append(LibrarySpell(copied_spell.spell, copies=copies))
+    library_spell = LibrarySpell(copied_spell.spell, copies=3)
+    library_spell.copies_remaining = copies
+    player.library.append(library_spell)
+
     print(f"Copied: {copied_spell.render()}")
   else:
     print("No spell copied.")

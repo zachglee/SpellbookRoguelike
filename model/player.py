@@ -34,7 +34,7 @@ class Player(CombatEntity):
 
     # 
     self.capacity = 5
-    self.library_capacity = 8
+    self.library_capacity = 10
     self.level = 0
     self.experience = 0
     self.aspiration = aspiration
@@ -60,6 +60,7 @@ class Player(CombatEntity):
       chosen_spell.max_copies_remaining = 1
 
   def learn_ritual(self):
+    print(numbered_list(rituals))
     chosen_ritual = choose_obj(rituals, colored("Choose a ritual to learn > ", "cyan"))
     self.rituals.append(chosen_ritual)
 

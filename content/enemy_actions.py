@@ -85,7 +85,7 @@ class MoveAction(Action):
     return events
 
   def __repr__(self):
-    return f"Move {self.move}"
+    return f"Move {self.movement}"
 
 class CallAction(Action):
   def __init__(self, call_name, call_amount):

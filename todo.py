@@ -14,3 +14,8 @@
 #   you need to escape from a dangerous spot now and that's fun.
 # - regions now have a level of corruption? Yeah not on the layer level yet?
 # - 
+
+# - So actually let's say -- you get 3 characters? Each character has 3 lives.
+#   The world is persistent between characters.
+# - Still not enough ways to attack / deal damage. That feels very premium...
+#   More charges for items does help, and maybe that's enough for now?
