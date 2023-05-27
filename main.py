@@ -11,6 +11,7 @@ from model.map import Map
 from termcolor import colored
 from utils import colorize, choose_obj, choose_idx, get_combat_entities, choose_binary, numbered_list
 from drafting import destination_draft, safehouse_library_draft
+from sound_utils import play_sound
 
 import random
 
@@ -20,7 +21,6 @@ PASSAGE_EXPERIENCE = 3
 
 class GameOver(Exception):
   pass
-
 
 # --------
 
@@ -50,6 +50,9 @@ class GameState:
     
     for cmd in spell.spell.cast_commands:
       self.encounter_command(cmd)
+
+    if sound_file := spell.spell.sound_file:
+      play_sound(sound_file)
 
   def banish(self, target):
     idx = target.position(self.encounter)
@@ -242,6 +245,7 @@ class GameState:
         magnitude = int(cmd_tokens[2])
         for target in targets:
           self.player.attack(target, magnitude)
+        play_sound("sword-attack-1.wav")
       elif cmd_tokens[0] == "lifesteal":
         targets = get_combat_entities(encounter, cmd_tokens[1])
         magnitude = int(cmd_tokens[2])

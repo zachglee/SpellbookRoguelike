@@ -1,5 +1,7 @@
+import os
 from termcolor import colored
 from utils import numbered_list
+from sound_utils import play_sound
 
 class Spell:
   def __init__(self, description, color, type, conversion_color=None, cost=None, cast_commands=None):
@@ -9,12 +11,16 @@ class Spell:
     self.conversion_color = conversion_color
     self.cost = cost
     self.cast_commands = cast_commands or []
+    self.sound_file = None
 
     if self.type == "Producer":
       self.cast_commands.append(f"{color} p 1")
     if self.type == "Converter" and conversion_color is not None:
       self.cast_commands.append(f"{conversion_color} p 1")
-  
+    if self.type == "Consumer":
+      file_stem = f"{self.color}-consumer-cast"
+      self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
+
   def __repr__(self):
     return self.description
 
@@ -111,6 +117,7 @@ class Spellbook:
 
   def switch_page(self):
     self.current_page_idx = (self.current_page_idx + 1) % len(self.pages)
+    play_sound("page-flip-1.mp3")
 
   def render(self):
     rendered = ""

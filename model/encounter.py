@@ -8,6 +8,7 @@ from model.event import Event
 from content.enemy_actions import NothingAction
 from content.rituals import rituals
 from utils import energy_colors, colorize
+from sound_utils import play_sound
 
 
 class Enemy(CombatEntity):
@@ -245,6 +246,7 @@ class Encounter:
     self.player_end_phase()
     self.enemy_phase()
     self.upkeep_phase()
+    play_sound()
 
   def end_encounter(self):
     # progress rituals

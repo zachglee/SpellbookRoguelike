@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "spellbookroguelike"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Zachary Lee <zacharygowlee@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+pygame = "^2.4.0"
 termcolor = "^2.2.0"
 dill = "^0.3.6"
 
