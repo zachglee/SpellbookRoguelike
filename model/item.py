@@ -11,6 +11,20 @@ class Item:
 
   def render(self):
     return self.description
+  
+class CustomItem(Item):
+  def __init__(self, name, charges, description, use_commands):
+    super().__init__(charges, description)
+    self.name = name
+    self.use_commands = use_commands
+
+  def use(self, encounter):
+    for command in self.use_commands:
+      encounter.handle_command(command)
+    self.charges -= 1
+
+  def render(self):
+    return colorize(f"{self.name} ({self.charges}): {self.description}")
 
 class SpellPotion(Item):
   def __init__(self, spell):
@@ -60,7 +74,7 @@ class ConditionMeleeWeapon(Item):
     self.magnitude = magnitude
 
   def use(self, encounter):
-    encounter.player.get_immediate().conditions[self.condition] += self.magnitude
+    encounter.player.get_immediate(encounter).conditions[self.condition] += self.magnitude
     self.charges -= 1
   
   def render(self):

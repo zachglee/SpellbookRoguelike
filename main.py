@@ -31,39 +31,6 @@ class GameState:
     self.encounter = None
     self.show_intents = False
 
-  # helpers
-
-  def time_cost(self, cost=1):
-    if (self.player.time - cost) >= 0:
-      self.player.time -= cost
-    else:
-      raise ValueError(colored("Not enough time!", "red"))
-
-
-  def cast(self, spell, cost_energy=True, cost_charges=True):
-    if cost_charges:
-      spell.charges -= 1
-    if cost_energy:
-      if spell.spell.type in ["Converter", "Consumer"]:
-        # TODO: eventually enforce that you must have the correct energy
-        self.player.conditions[spell.spell.color] -= 1
-    
-    for cmd in spell.spell.cast_commands:
-      self.encounter_command(cmd)
-
-    if sound_file := spell.spell.sound_file:
-      play_sound(sound_file)
-
-  def banish(self, target):
-    idx = target.position(self.encounter)
-    if target in self.encounter.back:
-      banished = self.encounter.back.pop(idx)
-      banished.spawned = False
-    if target in self.encounter.front:
-      banished = self.encounter.front.pop(idx)
-      banished.spawned = False
-    target.reset_conditions()
-
   # save management
   def save(self):
     with open("saves/map.pkl", "wb") as f:
@@ -92,6 +59,7 @@ class GameState:
 
   # Ending
   def player_death(self):
+    play_sound("player-death.mp3")
     print(self.player.render())
     input("Gained 20xp...")
     self.player.experience += 20
@@ -108,6 +76,7 @@ class GameState:
   # Discovery
 
   def discovery_phase(self):
+    play_sound("passage-discovery.mp3")
     while self.player.explored > 0:
       if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
         self.map.current_region.destination_node.passages.append("pass")
@@ -124,6 +93,7 @@ class GameState:
   # Navigation
 
   def navigation_phase(self):
+    play_sound("onwards.mp3")
     bag_of_passages = deepcopy(self.map.current_region.destination_node.passages)
     random.shuffle(bag_of_passages)
     passages_drawn = []
@@ -156,15 +126,6 @@ class GameState:
 
   # Encounters
 
-  def use_item(self, idx=None):
-    if idx:
-      item_idx = idx - 1
-    else:
-      item_idx = choose_idx(self.player.inventory, "use item > ")
-    item = self.player.inventory[item_idx]
-    item.use(self.encounter)
-    self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
-
   def init_encounter(self, encounter):
     self.encounter = encounter
     self.encounter.player = self.player
@@ -174,105 +135,37 @@ class GameState:
     for ritual in activable_rituals:
       ritual.progress = 0
 
-  def encounter_command(self, cmd):
+  def handle_command(self, cmd):
     encounter = self.encounter
-    cmd_tokens = cmd.split(" ")
     try:
       if cmd == "die":
         self.player_death()
-      elif cmd == "win":
-        encounter.turn = 10
+        return
       elif cmd == "map":
         self.map.inspect()
-      elif cmd_tokens[0] == "experience":
-        magnitude = int(cmd_tokens[1])
-        self.player.experience += magnitude
-      elif cmd_tokens[0] == "time":
-        magnitude = int(cmd_tokens[1])
-        self.time_cost(magnitude)
+        return
       elif cmd in ["inventory", "inv", "i"]:
         print(self.player.render_inventory())
+        play_sound("inventory.mp3")
+        return
       elif cmd in ["intent", "intents", "int"]:
         self.show_intents = not self.show_intents
+        return
       elif cmd in ["ritual"]:
         print(self.map.render_active_ritual())
         print(self.player.render_rituals())
-      elif cmd == "use":
-        self.time_cost()
-        self.use_item()
-      elif cmd in ["explore", "x"]:
-        self.time_cost()
-        self.player.explored += 1
-        print(colored(f"Something lies within these passages... (explored {self.player.explored}/{MAX_EXPLORE})", "blue"))
-      elif cmd == "face":
-        self.time_cost()
-        encounter.player.switch_face()
+        return
       elif cmd == "face?":
         encounter.player.switch_face()
-      elif cmd == "page":
-        self.time_cost()
-        encounter.player.spellbook.switch_page()
+        return
       elif cmd == "page?":
         encounter.player.spellbook.switch_page()
-      elif cmd_tokens[0] == "recharge":
-        if cmd_tokens[1] == "r":
-          spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
-        else:
-          spell_idx = int(cmd_tokens[1]) - 1
-        target = self.player.spellbook.current_page.spells[spell_idx]
-        target.recharge()
-      elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
-        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-        self.time_cost()
-        self.cast(target,
-                  cost_energy=not cmd_tokens[0] == "ccast",
-                  cost_charges=not cmd_tokens[0] == "ecast")
-      elif cmd_tokens[0] == "fcast":
-        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-        self.cast(target, cost_energy=False, cost_charges=False)
-      elif cmd_tokens[0] == "call":
-        magnitude = int(cmd_tokens[1])
-        non_imminent_spawns = [es for es in self.encounter.enemy_spawns
-                                if es.turn > self.encounter.turn + 1]
-        if non_imminent_spawns:
-          sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
-      elif cmd_tokens[0] == "banish":
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        for target in targets:
-          self.banish(target)
-      elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
-        for target in targets:
-          self.player.attack(target, magnitude)
-        play_sound("sword-attack-1.wav")
-      elif cmd_tokens[0] == "lifesteal":
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
-        for target in targets:
-          self.player.attack(target, magnitude, lifesteal=True)
-      elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
-        for target in targets:
-          target.hp -= magnitude
-      elif cmd_tokens[0] == "heal":
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
-        for target in targets:
-          target.hp += magnitude
-      else:
-        condition = cmd_tokens[0]
-        targets = get_combat_entities(encounter, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
-        for target in targets:
-          target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
-          if condition == "enduring" and target.conditions["enduring"] == 0:
-            target.conditions["enduring"] = None
-          if condition == "durable" and target.conditions["durable"] == 0:
-            target.conditions["durable"] = None
+        return
     except (KeyError, IndexError, ValueError, TypeError) as e:
       print(e)
+
+    # If not a UI command, see if it can be handled as an encounter command
+    encounter.handle_command(cmd)
 
   def run_encounter_round(self):
     while True:
@@ -281,7 +174,7 @@ class GameState:
       if cmd == "done":
         self.encounter.end_player_turn()
         break
-      self.encounter_command(cmd)
+      self.handle_command(cmd)
 
 
   def encounter_phase(self):
@@ -317,6 +210,7 @@ class GameState:
     onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
     if onwards:
       print("Onwards...")
+      play_sound("onwards.mp3")
       return True
     else:
       print("Resting...")
@@ -371,7 +265,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Barrin.pkl")
 gs.play()

@@ -22,4 +22,4 @@ class Ritual:
     return self.progress >= self.required_progress
 
   def render(self):
-    return colorize(f"({self.progress}/{self.required_progress}) {self.name}")
+    return colorize(f"({self.progress}/{self.required_progress}) {self.name} - {self.description}")

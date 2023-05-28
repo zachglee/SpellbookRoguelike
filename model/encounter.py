@@ -7,7 +7,7 @@ from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import NothingAction
 from content.rituals import rituals
-from utils import energy_colors, colorize
+from utils import energy_colors, colorize, get_combat_entities, choose_idx
 from sound_utils import play_sound
 
 
@@ -112,7 +112,7 @@ class Encounter:
   @property
   def overcome(self):
     all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns) 
-    return self.turn > self.escape_turn or all_defeated
+    return (self.turn > self.escape_turn or all_defeated) and self.player.hp > 0
 
   # -------- Helpers --------
 
@@ -131,6 +131,10 @@ class Encounter:
     try:
       idx = self.back.index(enemy)
       self.dead_enemies.append(self.back.pop(idx))
+      if enemy.max_hp <= 10:
+        play_sound("enemy-death-small.mp3")
+      else:
+        play_sound("enemy-death-large.mp3")
     except ValueError:
       pass
 
@@ -163,8 +167,8 @@ class Encounter:
     while len(self.events) > 0:
       # resolve every event
       for event in self.events:
+        input(f"Resolving event {event}...")
         event.resolve()
-        input(f"Resolved event {event}...")
       self.events = []
 
       # state triggers
@@ -173,6 +177,126 @@ class Encounter:
       # gather any new events that were triggered
       for entity in self.combat_entities:
         self.events += entity.pop_events()
+
+  def use_item(self, idx=None):
+    if idx:
+      item_idx = idx - 1
+    else:
+      item_idx = choose_idx(self.player.inventory, "use item > ")
+    item = self.player.inventory[item_idx]
+    item.use(self)
+    self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
+
+  def banish(self, target):
+    idx = target.position(self)
+    if target in self.back:
+      banished = self.back.pop(idx)
+      banished.spawned = False
+    if target in self.front:
+      banished = self.front.pop(idx)
+      banished.spawned = False
+    target.reset_conditions()
+
+  def cast(self, spell, cost_energy=True, cost_charges=True):
+    if cost_charges:
+      spell.charges -= 1
+    if cost_energy:
+      if spell.spell.type in ["Converter", "Consumer"]:
+        # TODO: eventually enforce that you must have the correct energy
+        self.player.conditions[spell.spell.color] -= 1
+    
+    for cmd in spell.spell.cast_commands:
+      self.handle_command(cmd)
+
+    if sound_file := spell.spell.sound_file:
+      play_sound(sound_file)
+
+  def handle_command(self, cmd):
+    cmd_tokens = cmd.split(" ")
+    try:
+      if cmd == "win":
+        self.turn = 10
+      elif cmd_tokens[0] == "experience":
+        magnitude = int(cmd_tokens[1])
+        self.player.experience += magnitude
+      elif cmd_tokens[0] == "time":
+        magnitude = int(cmd_tokens[1])
+        self.player.spend_time(magnitude)
+      elif cmd == "use":
+        self.player.spend_time()
+        self.use_item()
+        play_sound("inventory.mp3")
+      elif cmd in ["explore", "x"]:
+        self.player.spend_time()
+        self.player.explored += 1
+        print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
+        play_sound("explore.mp3")
+      elif cmd == "face":
+        self.player.spend_time()
+        self.player.switch_face()
+      elif cmd == "page":
+        self.player.spend_time()
+        self.player.spellbook.switch_page()
+      elif cmd_tokens[0] == "recharge":
+        if cmd_tokens[1] == "r":
+          spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
+        else:
+          spell_idx = int(cmd_tokens[1]) - 1
+        target = self.player.spellbook.current_page.spells[spell_idx]
+        target.recharge()
+      elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
+        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        self.player.spend_time()
+        self.cast(target,
+                  cost_energy=not cmd_tokens[0] == "ccast",
+                  cost_charges=not cmd_tokens[0] == "ecast")
+      elif cmd_tokens[0] == "fcast":
+        target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        self.cast(target, cost_energy=False, cost_charges=False)
+      elif cmd_tokens[0] == "call":
+        magnitude = int(cmd_tokens[1])
+        non_imminent_spawns = [es for es in self.enemy_spawns
+                                if es.turn > self.turn + 1]
+        if non_imminent_spawns:
+          sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
+      elif cmd_tokens[0] == "banish":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        for target in targets:
+          self.banish(target)
+      elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          self.player.attack(target, magnitude)
+      elif cmd_tokens[0] == "lifesteal":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          self.player.attack(target, magnitude, lifesteal=True)
+      elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.hp -= magnitude
+      elif cmd_tokens[0] == "heal":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.hp += magnitude
+      else:
+        condition = cmd_tokens[0]
+        targets = get_combat_entities(self, cmd_tokens[1])
+        magnitude = int(cmd_tokens[2])
+        for target in targets:
+          target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
+          if condition == "enduring" and target.conditions["enduring"] == 0:
+            target.conditions["enduring"] = None
+          if condition == "durable" and target.conditions["durable"] == 0:
+            target.conditions["durable"] = None
+        play_sound(f"apply-{condition}.mp3")
+    except (KeyError, IndexError, ValueError, TypeError) as e:
+      print(e)
+    self.resolve_events()
 
   # Phase handlers
 
@@ -243,10 +367,10 @@ class Encounter:
     self.resolve_events()
 
   def end_player_turn(self):
+    play_sound("turn-end.mp3")
     self.player_end_phase()
     self.enemy_phase()
     self.upkeep_phase()
-    play_sound()
 
   def end_encounter(self):
     # progress rituals

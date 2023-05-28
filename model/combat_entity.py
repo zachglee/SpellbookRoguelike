@@ -3,6 +3,7 @@ from collections import defaultdict
 from termcolor import colored
 from model.event import Event
 from utils import energy_color_map
+from sound_utils import play_sound
 
 class CombatEntity:
   def __init__(self, max_hp, name):
@@ -93,6 +94,18 @@ class CombatEntity:
     if lifesteal:
       self.heal(damage_dealt)
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
+
+    # play the proper sound
+    if damage_dealt == 0:
+      if damage <= 4:
+        play_sound("light-attack-blocked.mp3")
+      else:
+        play_sound("heavy-attack-blocked.mp3")
+    elif damage_dealt <= 4:
+      play_sound("light-attack.wav")
+    else:
+      play_sound("medium-attack.mp3")
+
     return damage_dealt
 
   def assign_damage(self, damage) -> int:

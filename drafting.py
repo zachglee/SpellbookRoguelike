@@ -2,6 +2,7 @@ import random
 from termcolor import colored
 from model.spellbook import SpellbookPage, SpellbookSpell, LibrarySpell
 from utils import choose_obj, numbered_list, choose_idx
+from sound_utils import play_sound
 from generators import generate_library_spells
 
 def render_spell_draft(player, archive=False):
@@ -29,6 +30,7 @@ def draft_player_library(player, spell_pool):
   player.library.append(choice)
 
 def destination_draft(player, destination_node):
+  play_sound("build-spellbook.mp3")
   first_spell = SpellbookSpell(destination_node.safehouse.library[0].spell)
   second_spell = SpellbookSpell(destination_node.safehouse.library[1].spell)
   player.spellbook.pages = [SpellbookPage([first_spell]), SpellbookPage([second_spell])]
@@ -49,6 +51,7 @@ def edit_page_from_inventory(player, page_number):
       continue
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
+    play_sound("write-spell.mp3")
 
 def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
   print(player.render_library())
@@ -65,5 +68,6 @@ def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
     player.library.append(library_spell)
 
     print(f"Copied: {copied_spell.render()}")
+    play_sound("copy-spell.mp3")
   else:
     print("No spell copied.")

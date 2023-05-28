@@ -6,8 +6,9 @@ from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
 from model.item import EnergyPotion, MeleeWeapon
 from utils import colorize, numbered_list, choose_obj
+from sound_utils import play_sound
 from content.rituals import rituals
-from content.items import starting_weapons
+from content.items import starting_weapons, signature_items
 
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
@@ -50,6 +51,12 @@ class Player(CombatEntity):
   def level_progress_str(self):
     return f"{self.experience}/{self.next_exp_milestone}"
 
+  def spend_time(self, cost=1):
+    if (self.time - cost) >= 0:
+      self.time -= cost
+    else:
+      raise ValueError(colored("Not enough time!", "red"))
+
   def memorize_spell(self):
     print(self.render_library())
     chosen_spell = choose_obj(self.library, colored("Choose a spell to memorize > ", "cyan"))
@@ -60,9 +67,19 @@ class Player(CombatEntity):
       chosen_spell.max_copies_remaining = 1
 
   def learn_ritual(self):
-    print(numbered_list(rituals))
-    chosen_ritual = choose_obj(rituals, colored("Choose a ritual to learn > ", "cyan"))
-    self.rituals.append(chosen_ritual)
+    random.shuffle(rituals)
+    ritual_choices = rituals[0:3]
+    print(numbered_list(ritual_choices))
+    chosen_ritual = choose_obj(ritual_choices, colored("Choose a ritual to learn > ", "cyan"))
+    self.rituals.append(deepcopy(chosen_ritual))
+
+  def gain_signature_item(self):
+    random.shuffle(signature_items)
+    signature_item_choices = signature_items[0:3]
+    print(numbered_list(signature_item_choices))
+    chosen_item = choose_obj(signature_item_choices, colored("Choose a signature item > ", "cyan"))
+    self.inventory.append(deepcopy(chosen_item))
+    self.starting_inventory.append(deepcopy(chosen_item))
 
   def check_level_up(self):
     while self.experience >= self.next_exp_milestone:
@@ -92,11 +109,14 @@ class Player(CombatEntity):
         self.learn_ritual()
       elif self.level == 8:
         self.memorize_spell()
+      elif self.level == 9:
+        self.gain_signature_item()
 
 
   def init(self, spell_pool):
     print(numbered_list(starting_weapons))
     chosen_weapon = choose_obj(starting_weapons, "which weapon will you take > ")
+    play_sound("inventory.mp3")
 
     starting_spellbook = Spellbook(pages=[])
     
@@ -104,12 +124,7 @@ class Player(CombatEntity):
     # for a random non-signature spell
     for library_spell in self.library:
       if library_spell.signature:
-        library_spell.copies_remaining = library_spell.max_copies_remaining
-    # NOTE: Trying without this recharge for now since you can get spells from navigation now
-    # non_max_charges_spells = [spell for spell in self.library
-    #                           if spell.copies_remaining < spell.max_copies_remaining]
-    # if non_max_charges_spells:
-    #   random.choice(non_max_charges_spells).copies_remaining += 1
+        library_spell.copies_remaining = max(library_spell.max_copies_remaining, library_spell.copies_remaining)
 
     for ritual in self.rituals:
       ritual.progress = 0
@@ -139,6 +154,7 @@ class Player(CombatEntity):
       self.facing = "front"
     else:
       raise ValueError(f"Facing is: {self.facing}")
+    play_sound("face.mp3")
 
   def render(self):
     entity_str = super().render()
