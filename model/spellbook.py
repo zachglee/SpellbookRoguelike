@@ -64,7 +64,7 @@ class Spell:
       encounter.handle_command(cmd)
 
     if sound_file := self.sound_file:
-      play_sound(sound_file)
+      play_sound(sound_file, channel=3)
 
   def __repr__(self):
     return self.description

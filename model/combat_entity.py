@@ -98,13 +98,13 @@ class CombatEntity:
     # play the proper sound
     if damage_dealt == 0:
       if damage <= 4:
-        play_sound("light-attack-blocked.mp3")
+        play_sound("light-attack-blocked.mp3", channel=1)
       else:
-        play_sound("heavy-attack-blocked.mp3")
+        play_sound("heavy-attack-blocked.mp3", channel=1)
     elif damage_dealt <= 4:
-      play_sound("light-attack.wav")
+      play_sound("light-attack.wav", channel=1)
     else:
-      play_sound("medium-attack.mp3")
+      play_sound("medium-attack.mp3", channel=1)
 
     return damage_dealt
 

@@ -66,6 +66,11 @@ def for_enemy_missing_hp(target, unit_hp, commands):
     return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
   return for_enemy_missing_hp_generator
 
+def for_enemies(commands):
+  def for_enemies_generator(encounter, targets_dict):
+    return [cmd.replace("*", str(len(encounter.back) + len(encounter.front))) for cmd in commands]
+  return for_enemies_generator
+
 # Red Color Identity:
 # - Straight big damage to facing side
 # - full AOE
@@ -158,7 +163,8 @@ red_spells = sum(red_pages, [])
 
 blue_block_hits = [
   [Spell("Passive: Whenever you’re attacked and take no damage, deal 4 damage to attacker.", color="blue", type="Passive"),
-  Spell("Producer: +1 Blue, gain 1 block per enemy.", color="blue", type="Producer"),
+  Spell("Producer: +1 Blue, gain 1 block per enemy.", color="blue", type="Producer",
+        generate_commands_pre=for_enemies(["block p *"])),
   Spell("Converter: 1 Blue -> 1 Gold: Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
   Spell("Consumer: 1 Blue: Gain 6 armor this turn.", color="blue", type="Consumer",
         raw_commands=["armor p 6", "delay 0 armor p -6"])],

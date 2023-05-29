@@ -18,7 +18,7 @@ def draft_player_library(player, spell_pool):
   other_spells = generate_library_spells(1, spell_pool=spell_pool)
   player.library += other_spells
   print(player.render_library())
-  for i in range(6):
+  for i in range(2):
     # Choose 1 of 2 spells
     choices = generate_library_spells(2, spell_pool=spell_pool)
     print("---\n" + numbered_list(choices))

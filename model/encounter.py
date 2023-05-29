@@ -133,9 +133,9 @@ class Encounter:
       idx = self.back.index(enemy)
       self.dead_enemies.append(self.back.pop(idx))
       if enemy.max_hp <= 10:
-        play_sound("enemy-death-small.mp3")
+        play_sound("enemy-death-small.mp3", channel=2)
       else:
-        play_sound("enemy-death-large.mp3")
+        play_sound("enemy-death-large.mp3", channel=2)
     except ValueError:
       pass
 
@@ -285,7 +285,7 @@ class Encounter:
             target.conditions["enduring"] = None
           if condition == "durable" and target.conditions["durable"] == 0:
             target.conditions["durable"] = None
-        play_sound(f"apply-{condition}.mp3")
+        play_sound(f"apply-{condition}.mp3", channel=1)
     except (KeyError, IndexError, ValueError, TypeError) as e:
       print(e)
     self.resolve_events()
