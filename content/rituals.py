@@ -28,14 +28,6 @@ def player_conditions_effect_factory(condition_names, condition_values):
 
 # Progressor factories
 
-def excess_energy_progressor_factory(color, progress):
-  def excess_energy_progressor(encounter):
-    excess_energy = encounter.player.conditions[color]
-    if excess_energy > 0:
-      return progress * excess_energy
-    else:
-      return 0
-  return excess_energy_progressor
 
 # Gold
 
@@ -44,14 +36,14 @@ strike_as_one = Ritual("Strike as One",
                        required_progress=6,
                        encounter_trigger=turn_trigger_factory([3]),
                        effect=player_condition_effect_factory("empower", 9),
-                       progressor=excess_energy_progressor_factory("gold", 2))
+                       energy_color="gold")
 
 glimpse_the_infinite = Ritual("Glimpse the Infinite",
                               "Gain inventive 1 and prolific 1 on turns 2 and 4.",
                               required_progress=6,
                               encounter_trigger=turn_trigger_factory([2, 4]),
                               effect=player_conditions_effect_factory(["inventive", "prolific"], [1, 1]),
-                              progressor=excess_energy_progressor_factory("gold", 2))
+                              energy_color="gold")
 
 # Red
 
@@ -61,7 +53,7 @@ boiling_blood = Ritual("Boiling Blood",
                        required_progress=6,
                        encounter_trigger=turn_trigger_factory(list(range(1, 10))),
                        effect=player_condition_effect_factory("regen", 1),
-                       progressor=excess_energy_progressor_factory("red", 2))
+                       energy_color="red")
 
 # Big burst of burn at end
 imminent_inferno = Ritual("Imminent Inferno",
@@ -69,7 +61,7 @@ imminent_inferno = Ritual("Imminent Inferno",
                           required_progress=6,
                           encounter_trigger=turn_trigger_factory([4, 5, 6]),
                           effect=enemy_condition_effect_factory("burn", 3),
-                          progressor=excess_energy_progressor_factory("red", 2))
+                          energy_color="red")
 
 # Blue
 
@@ -78,7 +70,7 @@ ambush_ensnarement = Ritual("Ambush Ensnarement",
                             required_progress=6,
                             encounter_trigger=turn_trigger_factory([4]),
                             effect=enemy_condition_effect_factory("stun", 1),
-                            progressor=excess_energy_progressor_factory("blue", 2))
+                            energy_color="blue")
 
 # Block at beginning of encounter
 armored_approach = Ritual("Armored Approach",
@@ -86,6 +78,6 @@ armored_approach = Ritual("Armored Approach",
                           required_progress=6,
                           encounter_trigger=turn_trigger_factory([1, 2]),
                           effect=player_condition_effect_factory("block", 8),
-                          progressor=excess_energy_progressor_factory("blue", 2))
+                          energy_color="blue")
 
 rituals = [strike_as_one, glimpse_the_infinite, boiling_blood, imminent_inferno, ambush_ensnarement, armored_approach]

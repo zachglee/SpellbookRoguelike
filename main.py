@@ -61,8 +61,8 @@ class GameState:
   def player_death(self):
     play_sound("player-death.mp3")
     print(self.player.render())
-    input("Gained 20xp...")
-    self.player.experience += 20
+    input("Gained 30xp...")
+    self.player.experience += 30
     input("Press enter to continue...")
     self.discovery_phase()
     self.player.wounds += 1
@@ -110,15 +110,14 @@ class GameState:
         passes += 1
         print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
         if passes >= passes_required:
-          self.map.current_region.destination_node.passages.append("fail") # make it harder for next time
           input(colored("You come out the other side!", "cyan"))
           return True
       elif drawn_passage == "fail":
         fail_damage = (1 + self.map.current_region.corruption)
         print(colored(f"A trap! You take {fail_damage} damage. ({passes}/{passes_required} progress)", "red"))
-        print(colored(f"You gained 1xp.", "green"))
+        print(colored(f"You gained 2xp.", "green"))
         self.player.hp -= fail_damage
-        self.player.experience += 1
+        self.player.experience += 2
       input(f"You press onwards... ({4 - i} turns remaining)")
     input(colored("You have failed to find the way through.", "red"))
     self.save()
@@ -244,16 +243,16 @@ class GameState:
         # Help out characters resting at this safehouse
         safehouse = self.map.current_region.current_node.safehouse
         for character in safehouse.resting_characters:
-          character.hp += 6
-          input(f"Healed {character.name} for 6 HP")
+          character.hp += 5
+          input(f"Healed {character.name} for 5 HP")
           print(self.player.render_library())
           print(f"{character.name} has requested: \"{character.request}\"")
           spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
           if spell_to_give is None:
             continue
           character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
+          self.player.experience += 20
         self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
-        self.player.experience += 30
         self.save()
         if not onwards:
           self.rest_phase()
@@ -265,7 +264,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Barrin.pkl")
 gs.play()

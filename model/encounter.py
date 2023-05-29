@@ -197,20 +197,6 @@ class Encounter:
       banished.spawned = False
     target.reset_conditions()
 
-  def cast(self, spell, cost_energy=True, cost_charges=True):
-    if cost_charges:
-      spell.charges -= 1
-    if cost_energy:
-      if spell.spell.type in ["Converter", "Consumer"]:
-        # TODO: eventually enforce that you must have the correct energy
-        self.player.conditions[spell.spell.color] -= 1
-    
-    for cmd in spell.spell.cast_commands:
-      self.handle_command(cmd)
-
-    if sound_file := spell.spell.sound_file:
-      play_sound(sound_file)
-
   def handle_command(self, cmd):
     cmd_tokens = cmd.split(" ")
     try:
@@ -247,12 +233,12 @@ class Encounter:
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         self.player.spend_time()
-        self.cast(target,
+        target.cast(self,
                   cost_energy=not cmd_tokens[0] == "ccast",
                   cost_charges=not cmd_tokens[0] == "ecast")
       elif cmd_tokens[0] == "fcast":
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-        self.cast(target, cost_energy=False, cost_charges=False)
+        target.cast(self, cost_energy=False, cost_charges=False)
       elif cmd_tokens[0] == "call":
         magnitude = int(cmd_tokens[1])
         non_imminent_spawns = [es for es in self.enemy_spawns
@@ -375,7 +361,7 @@ class Encounter:
   def end_encounter(self):
     # progress rituals
     for ritual in self.player.rituals:
-      ritual.progress += ritual.progressor(self)
+      ritual.progress(self)
       print(f"{ritual.name} progressed!")
       input(ritual.render())
 

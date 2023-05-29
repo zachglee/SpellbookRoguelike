@@ -1,25 +1,66 @@
 import os
 from termcolor import colored
-from utils import numbered_list
+from utils import numbered_list, get_combat_entities
 from sound_utils import play_sound
 
 class Spell:
-  def __init__(self, description, color, type, conversion_color=None, cost=None, cast_commands=None):
+  def __init__(self, description, color, type, conversion_color=None,
+               cost=None, raw_commands=None, targets=None,
+               generate_commands_pre=lambda e, t: [], generate_commands_post=lambda e, t: []):
     self.description = description
     self.color = color
     self.type = type
     self.conversion_color = conversion_color
     self.cost = cost
-    self.cast_commands = cast_commands or []
+    self.raw_commands = raw_commands or []
     self.sound_file = None
+    self.targets = targets or []
+    self.generate_commands_pre = generate_commands_pre
+    self.generate_commands_post = generate_commands_post
 
     if self.type == "Producer":
-      self.cast_commands.append(f"{color} p 1")
+      self.raw_commands.append(f"{color} p 1")
     if self.type == "Converter" and conversion_color is not None:
-      self.cast_commands.append(f"{conversion_color} p 1")
+      self.raw_commands.append(f"{conversion_color} p 1")
     if self.type == "Consumer":
       file_stem = f"{self.color}-consumer-cast"
       self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
+
+  def cast(self, encounter, cost_energy=True, cost_charges=True):
+    if cost_energy:
+      if self.type in ["Converter", "Consumer"]:
+        # TODO: eventually enforce that you must have the correct energy
+        encounter.player.conditions[self.color] -= 1
+    
+    # choose targets
+    chosen_targets = {}
+    for target_placeholder in self.targets:
+      if target_placeholder in ["_"]:
+        # FIXME: Add error handling for invalid targets
+        target_ref = input(f"Choose a target for {target_placeholder} > ")
+      else:
+        target_ref = target_placeholder
+      target_entities = get_combat_entities(encounter, target_ref)
+      chosen_targets[target_placeholder] = (target_ref, target_entities) 
+
+    # generate commands pre-execution
+    generated_commands_pre = self.generate_commands_pre(encounter, chosen_targets)
+    cast_commands = self.raw_commands + generated_commands_pre
+
+    # main execution
+    for cmd in cast_commands:
+      processed_command = cmd
+      for placeholder, (target, _) in chosen_targets.items():
+        processed_command = processed_command.replace(placeholder, target)
+      encounter.handle_command(processed_command)
+
+    # generate and execute commands post main execution (for effects like 'if this kills')
+    generated_commands_post = self.generate_commands_post(encounter, chosen_targets)
+    for cmd in generated_commands_post:
+      encounter.handle_command(cmd)
+
+    if sound_file := self.sound_file:
+      play_sound(sound_file)
 
   def __repr__(self):
     return self.description
@@ -56,6 +97,11 @@ class SpellbookSpell:
 
   def recharge(self):
     self.charges = min(self.charges + 1, self.max_charges)
+
+  def cast(self, encounter, cost_energy=True, cost_charges=True):
+    if cost_charges:
+      self.charges -= 1
+    self.spell.cast(encounter, cost_energy=cost_energy, cost_charges=cost_charges)
 
   def render(self):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
