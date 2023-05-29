@@ -18,16 +18,13 @@ def draft_player_library(player, spell_pool):
   other_spells = generate_library_spells(1, spell_pool=spell_pool)
   player.library += other_spells
   print(player.render_library())
-  # Choose 1 of 2 spells
-  choices = generate_library_spells(2, spell_pool=spell_pool)
-  print("---\n" + numbered_list(choices))
-  choice = choose_obj(choices, "Which spell have you been studying > ")
-  player.library.append(choice)
-  # Choose 1 of 2 spells
-  choices = generate_library_spells(2, spell_pool=spell_pool)
-  print("---\n" + numbered_list(choices))
-  choice = choose_obj(choices, "Which spell have you been studying > ")
-  player.library.append(choice)
+  for i in range(6):
+    # Choose 1 of 2 spells
+    choices = generate_library_spells(2, spell_pool=spell_pool)
+    print("---\n" + numbered_list(choices))
+    choice = choose_obj(choices, "Which spell have you been studying > ")
+    if choice:
+      player.library.append(choice)
 
 def destination_draft(player, destination_node):
   play_sound("build-spellbook.mp3")

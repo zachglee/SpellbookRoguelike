@@ -73,6 +73,7 @@ class Encounter:
     self.events = []
     self.max_turns = 9
     self.min_turns = 6
+    self.scheduled_commands = []
 
   # -------- @properties --------
 
@@ -198,6 +199,7 @@ class Encounter:
     target.reset_conditions()
 
   def handle_command(self, cmd):
+    print(f"Handling command '{cmd}' ...")
     cmd_tokens = cmd.split(" ")
     try:
       if cmd == "win":
@@ -269,6 +271,10 @@ class Encounter:
         magnitude = int(cmd_tokens[2])
         for target in targets:
           target.hp += magnitude
+      elif cmd_tokens[0] == "delay":
+        magnitude = int(cmd_tokens[1])
+        delayed_command = " ".join(cmd_tokens[2:])
+        self.scheduled_commands.append((delayed_command, self.turn + magnitude))
       else:
         condition = cmd_tokens[0]
         targets = get_combat_entities(self, cmd_tokens[1])
@@ -340,7 +346,6 @@ class Encounter:
     # Tick spell echoes
     for page in self.player.spellbook.pages:
       page.tick_echoes()
-    #
     self.resolve_events()
 
   def enemy_phase(self):
@@ -352,10 +357,17 @@ class Encounter:
         print(f"{enemy.name} is stunned!")
     self.resolve_events()
 
+  def post_enemy_scheduled_commands(self):
+    # execute any scheduled commands
+    for cmd, turn in self.scheduled_commands:
+      if self.turn == turn:
+        self.handle_command(cmd)
+
   def end_player_turn(self):
     play_sound("turn-end.mp3")
     self.player_end_phase()
     self.enemy_phase()
+    self.post_enemy_scheduled_commands()
     self.upkeep_phase()
 
   def end_encounter(self):

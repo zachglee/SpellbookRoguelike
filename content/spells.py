@@ -2,6 +2,18 @@ from model.spellbook import Spell
 
 # command_generator_factories
 
+# TODO: need a way to compose these
+
+# conditionals
+
+def if_facing_none(commands):
+  def if_facing_none_generator(encounter, targets_dict):
+    if encounter.faced_enemy_queue == []:
+      return commands
+    else:
+      return []
+  return if_facing_none_generator
+
 def if_kill(target, commands):
   def on_kill_generator(encounter, targets_dict):
     if targets_dict[target][1].hp <= 0:
@@ -9,6 +21,50 @@ def if_kill(target, commands):
     else:
       return []
   return on_kill_generator
+
+def if_player_hp(fraction, commands, above=True):
+  def if_player_hp_generator(encounter, targets_dict):
+    player_hp_fraction = encounter.player.hp / encounter.player.max_hp
+    if above:
+      if player_hp_fraction >= fraction:
+        return commands
+    else:
+      if player_hp_fraction <= fraction:
+        return commands
+    return []
+  return if_player_hp_generator
+
+def if_enemy_hp(target, hp_threshold, commands, above=True):
+  def if_enemy_hp_generator(encounter, targets_dict):
+    enemy_hp = targets_dict[target][1].hp
+    if above:
+      if enemy_hp >= hp_threshold:
+        return commands
+    else:
+      if enemy_hp <= hp_threshold:
+        return commands
+    return []
+  return if_enemy_hp_generator
+
+# scalers
+
+def for_burn(target, commands):
+  def for_burn_generator(encounter, targets_dict):
+    burn_magnitude = targets_dict[target][1].conditions["burn"]
+    return [cmd.replace("*", str(burn_magnitude)) for cmd in commands]
+  return for_burn_generator
+
+def for_player_missing_hp(unit_hp, commands):
+  def for_player_missing_hp_generator(encounter, targets_dict):
+    missing_hp_magnitude = int((encounter.player.max_hp - encounter.player.hp) / unit_hp)
+    return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
+  return for_player_missing_hp_generator
+
+def for_enemy_missing_hp(target, unit_hp, commands):
+  def for_enemy_missing_hp_generator(encounter, targets_dict):
+    missing_hp_magnitude = int((targets_dict[target][1].max_hp - targets_dict[target][1].hp) / unit_hp)
+    return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
+  return for_enemy_missing_hp_generator
 
 # Red Color Identity:
 # - Straight big damage to facing side
@@ -31,14 +87,16 @@ red_enemy_dies = [
   [Spell("Passive: Whenever an enemy dies, inflict its burn +3 on its side.", color="red", type="Passive"),
   Spell("Producer: +1 Red, inflict 2 burn.", color="red", type="Producer", raw_commands=["burn _ 2"]),
   Spell("Converter: 1 Red -> 1 Blue, Inflict 5 burn.", color="red", type="Converter", conversion_color="blue", raw_commands=["burn _ 5"]),
-  Spell("Consumer: 1 Red: Inflict 2 burn, then inflict their burn on all enemies.", color="red", type="Consumer", raw_commands=["burn _ 2"])],
+  Spell("Consumer: 1 Red: Inflict 2 burn, then inflict their burn on all enemies.", color="red", type="Consumer",
+        targets=["_"], raw_commands=["burn _ 2"], generate_commands_post=for_burn("_", ["burn a *"]))],
 ]
 
 red_take_damage = [
   [Spell("Passive: Whenever you lose hp, gain 4 empowered.", color="red", type="Passive"),
   Spell("Producer: +1 Red, deal 2 damage. If this kills an enemy, recharge, refresh, +1 time.", color="red", type="Producer",
         raw_commands=["damage _ 2"], generate_commands_post=if_kill("_", ["time -1"])),
-  Spell("Converter: 1 Red -> 1 Gold: Gain 1 sharp for every missing 4 health.", color="red", type="Converter", conversion_color="gold"),
+  Spell("Converter: 1 Red -> 1 Gold: Gain 1 sharp for every missing 4 health.", color="red", type="Converter", conversion_color="gold",
+        generate_commands_pre=for_player_missing_hp(4, ["sharp p *"])),
   Spell("Consumer: 1 Red: 8 damage to all enemies on target side.", color="red", type="Consumer", raw_commands=["damage iside 8"])],
   #
   [Spell("Passive: Whenever you lose hp, inflict 2 burn on all enemies.", color="red", type="Passive"),
@@ -49,12 +107,14 @@ red_take_damage = [
 
 red_big_attack = [
   [Spell("Passive: Gain 1 red, 1 sharp, and 1 prolific for every 7 damage you survive each round.", color="red", type="Passive"),
-  Spell("Producer: +1 Red, If you're below half health, +1 more red.", color="red", type="Producer"),
+  Spell("Producer: +1 Red, If you're at or below half health, +1 more red.", color="red", type="Producer",
+        generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
   Spell("Converter: 1 Red -> 1 Gold: Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold"),
   Spell("Consumer: 1 Red: Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
   [Spell("Passive: Gain 2 regen, deal 2 damage to all for every 7 damage you survive each round.", color="red", type="Passive"),
-  Spell("Producer: +1 Red, If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer"),
+  Spell("Producer: +1 Red, If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
+        generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], above=True)),
   Spell("Converter: 1 Red -> 1 Gold: Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
   Spell("Consumer: 1 Red: Deal 7 damage. Heal for unblocked.", color="red", type="Consumer", raw_commands=["lifesteal _ 7"])],
 ]
@@ -66,9 +126,12 @@ red_hit_big_enemy = [
   Spell("Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health.", color="red", type="Consumer")],
   #
   [Spell("Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive"),
-  Spell("Producer: +1 Red, Deal 6 damage to a target at or above 10 health.", color="red", type="Producer", raw_commands=["damage _ 6"]),
-  Spell("Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun 1 the target if it's at or above 10 health.", color="red", type="Converter", conversion_color="blue", raw_commands=["damage _ 6"]),
-  Spell("Consumer: 1 Red: Deal damage equal to target's missing health.", color="red", type="Consumer")],
+  Spell("Producer: +1 Red, Deal 6 damage to a target at or above 10 health.", color="red", type="Producer",
+        targets=["_"], generate_commands_pre=if_enemy_hp("_", 10, ["damage _ 6"], above=True)),
+  Spell("Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun 1 the target if 10 or more hp remains.", color="red", type="Converter", conversion_color="blue",
+        targets=["_"], raw_commands=["damage _ 6"], generate_commands_post=if_enemy_hp("_", 10, ["stun _ 1"], above=True)),
+  Spell("Consumer: 1 Red: Deal damage equal to target's missing health.", color="red", type="Consumer",
+        targets=["_"], generate_commands_pre=for_enemy_missing_hp("_", 1, ["damage _ *"]))],
 ]
 
 # red target access -- meteor strike, random hit target, hit any targets w/o facing
@@ -97,7 +160,8 @@ blue_block_hits = [
   [Spell("Passive: Whenever you’re attacked and take no damage, deal 4 damage to attacker.", color="blue", type="Passive"),
   Spell("Producer: +1 Blue, gain 1 block per enemy.", color="blue", type="Producer"),
   Spell("Converter: 1 Blue -> 1 Gold: Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
-  Spell("Consumer: 1 Blue: Gain 6 armor this turn.", color="blue", type="Consumer", raw_commands=["armor p 6"])],
+  Spell("Consumer: 1 Blue: Gain 6 armor this turn.", color="blue", type="Consumer",
+        raw_commands=["armor p 6", "delay 0 armor p -6"])],
   #
   [Spell("Passive: Whenever you’re attacked and take no damage, gain 2 retaliate.", color="blue", type="Passive"),
   Spell("Producer: +1 Blue, gain 1 block and Break: deal 6 damage to attacker.", color="blue", type="Producer", raw_commands=["block p 1"]),
@@ -113,7 +177,8 @@ blue_turn_3 = [
   #
   [Spell("Passive: At beginning of 3rd turn and onwards, deal 3 damage to all enemies.", color="blue", type="Passive"),
   Spell("Producer: +1 Blue, ward 1.", color="blue", type="Producer", raw_commands=["ward p 1"]),
-  Spell("Converter: 1 Blue -> 1 Red: At the end of next turn, all enemies take 6 damage.", color="blue", type="Converter", conversion_color="red"),
+  Spell("Converter: 1 Blue -> 1 Red: At the end of next turn, all enemies take 8 damage.", color="blue", type="Converter", conversion_color="red",
+        raw_commands=["delay 1 damage a 8"]),
   Spell("Consumer: 1 Blue: Ward 4.", color="blue", type="Consumer", raw_commands=["ward p 4"])],
 ]
 
@@ -125,8 +190,10 @@ blue_3_enemies = [
   #
   [Spell("Passive: At the beginning of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.", color="blue", type="Passive"),
   Spell("Producer: +1 Blue, deal 6 damage, call 1", color="blue", type="Producer", raw_commands=["damage _ 6", "call 1"]),
-  Spell("Converter: 1 Blue -> 1 Gold: Gain retaliate 6 this turn.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 6"]), # NOTE: Purple
-  Spell("Consumer: 1 Blue: Gain 3 enduring this turn.", color="blue", type="Consumer", raw_commands=["enduring p 3"])],
+  Spell("Converter: 1 Blue -> 1 Gold: Gain retaliate 6 this turn.", color="blue", type="Converter", conversion_color="gold",
+        raw_commands=["retaliate p 6", "delay 0 retaliate p -6"]), # NOTE: Purple
+  Spell("Consumer: 1 Blue: Gain 3 enduring this turn.", color="blue", type="Consumer",
+        raw_commands=["enduring p 3", "delay 0 enduring p -3"])],
 ]
 
 blue_excess_block = [
@@ -196,7 +263,8 @@ gold_face_noone = [
   Spell("Consumer: 1 Gold: Gain 2 armor.", color="gold", type="Consumer", raw_commands=["armor p 2"])],
   #
   [Spell("Passive: At end of turn, if facing no enemies, gain 3 shield.", color="gold", type="Passive"),
-  Spell("Producer: +1 Gold, if facing no enemies, empower 5.", color="gold", type="Producer"),
+  Spell("Producer: +1 Gold, if facing no enemies, empower 5.", color="gold", type="Producer",
+        generate_commands_pre=if_facing_none(["empower p 5"])),
   Spell("Converter: 1 Gold -> 1 Blue: Gain 5 shield.", color="gold", type="Converter", conversion_color="blue", raw_commands=["shield p 5"]),
   Spell("Consumer: 1 Gold: Deal 10 damage to immediate. If this kills an enemy, empower 10.", color="gold", type="Consumer",
         targets=["i"], raw_commands=["damage i 10"], generate_commands_post=if_kill("i", ["empower p 10"]))],

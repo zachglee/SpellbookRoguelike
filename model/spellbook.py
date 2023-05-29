@@ -41,6 +41,10 @@ class Spell:
       else:
         target_ref = target_placeholder
       target_entities = get_combat_entities(encounter, target_ref)
+      if len(target_entities) > 1:
+        raise ValueError("Targeting more than one entity is not yet supported.")
+      else:
+        target_entities = target_entities[0]
       chosen_targets[target_placeholder] = (target_ref, target_entities) 
 
     # generate commands pre-execution
