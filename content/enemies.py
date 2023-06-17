@@ -76,7 +76,7 @@ enemies = {
   "Bomber Zealot": Enemy(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
   "Grizzled Shieldmage": Enemy(10, "Grizzled Shieldmage",
                                NearFarAction(AttackAction(3),
-                                             MultiAction([AddConditionAction("block", 10, "immediate"), AddConditionAction("retaliate", 1, "immediate")])),
+                                             MultiAction([AddConditionAction("shield", 5, "immediate"), AddConditionAction("retaliate", 1, "immediate")])),
                                entry=AddConditionAction("block", 10, "self")),
   "Incubated Fleshling": Enemy(6, "Incubated Fleshling", AttackAction(1)),
   "Corrupting Spire": Enemy(1, "Corrupting Spire", NothingAction(), entry=MultiAction([

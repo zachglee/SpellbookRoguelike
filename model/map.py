@@ -14,7 +14,7 @@ from content.aspirations import aspirations
 from content.items import starting_weapons
 
 class Node:
-  def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1):
+  def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1, boss=False):
     self.safehouse = safehouse
     self.guardian_enemy_waves = guardian_enemy_waves
     self.ambient_energy = random.choice(["red", "blue", "gold"])
@@ -22,6 +22,7 @@ class Node:
     self.passages = ["fail" for i in range(4)]
     self.seen = seen
     self.difficulty = difficulty
+    self.boss = boss
 
   @property
   def guardian_enemy_sets(self):
@@ -110,7 +111,7 @@ class Region:
       library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
       guardian_enemy_wave1 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2], 0)
       guardian_enemy_wave2 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor + 2:enemy_set_pool_cursor + 3], 2)
-      boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j)))
+      boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j), boss=True))
       enemy_set_pool_cursor += 3
       spell_pool_cursor += 2
     self.nodes.append(boss_layer)
@@ -152,7 +153,8 @@ class Region:
     destination_node = self.nodes[i][j]
     encounter = Encounter(waves=destination_node.generate_encounter_waves(self.enemy_set_pool),
                           player=self.player,
-                          ambient_energy=destination_node.ambient_energy)
+                          ambient_energy=destination_node.ambient_energy,
+                          boss=destination_node.boss)
     return destination_node, encounter
 
 
@@ -230,7 +232,6 @@ class Region:
     return "\n\n".join(rendered_layers) + corruption_str
   
   def inspect(self):
-    print(self.render())
     while True:
       node = self.choose_node()
       if node is None:
@@ -241,10 +242,12 @@ class Map:
   def __init__(self, n_regions=3):
     enemy_set_pool = generate_enemy_set_pool(n=27)
     spell_pools = generate_spell_pools(n_pools=n_regions)
-    self.regions = [Region(i, 4, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
-                    for i, spell_pool in enumerate(spell_pools)]
+    self.regions = [
+      Region(i, 4, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
+      for i, spell_pool in enumerate(spell_pools)
+    ]
     self.current_region_idx = 0
-    self.active_ritual = None # random.choice(rituals)
+    self.active_ritual = None
     self.runs = 0
   
   @property
@@ -290,9 +293,6 @@ class Map:
         print(numbered_list(signature_spell_options))
         chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
         chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
-        # NOTE: not currently using aspirations
-        # chosen_aspiration = choose_str(aspirations, f"choose an aspiration ({', '.join(aspirations)}) > ")
-        chosen_aspiration = random.choice(aspirations)
         name = input("What shall they be called? > ")
         library = ([LibrarySpell(chosen_spell.spell, copies=4, signature=True)])
         player = Player(hp=30, name=name,
@@ -300,8 +300,7 @@ class Map:
                         inventory=[],
                         library=library,
                         signature_spell=chosen_spell,
-                        signature_color=chosen_color,
-                        aspiration=chosen_aspiration)
+                        signature_color=chosen_color)
         # TODO: possibly remove this later
         print(player.render_rituals())
         draft_player_library(player, self.current_region.spell_pool)

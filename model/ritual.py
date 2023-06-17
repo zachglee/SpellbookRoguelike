@@ -22,7 +22,7 @@ class Ritual:
   def activable(self):
     return self.progress >= self.required_progress
 
-  def progress(self, encounter):
+  def progressor(self, encounter):
     while self.progress < self.required_progress and encounter.player.conditions[self.energy_color] > 0:
       encounter.player.conditions[self.energy_color] -= 1
       self.progress += 1

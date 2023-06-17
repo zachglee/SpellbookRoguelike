@@ -160,7 +160,7 @@ class Player(CombatEntity):
     entity_str = super().render()
     return entity_str.replace(self.name, f"[{self.level_progress_str}"
                                          f"{colored(',' * self.wounds, 'red')}] "
-                                         f"{self.name}, {self.aspiration} ({'.' * self.time})")
+                                         f"{self.name} ({'.' * self.time})")
 
   def render_resources(self):
     resource_strs = [f"- {k}: {v}" for k, v in self.resources.items()]

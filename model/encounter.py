@@ -7,6 +7,7 @@ from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import NothingAction
 from content.rituals import rituals
+from content.items import starting_weapons, signature_items, minor_energy_potions
 from utils import energy_colors, colorize, get_combat_entities, choose_idx
 from sound_utils import play_sound
 
@@ -58,10 +59,11 @@ class EnemyWave:
     return enemy_spawns
 
 class Encounter:
-  def __init__(self, waves, player, ambient_energy=None):
+  def __init__(self, waves, player, ambient_energy=None, boss=False):
     self.waves = waves
     self.rituals = []
     self.ambient_energy = ambient_energy or random.choice(energy_colors)
+    self.boss = boss
     self.enemy_spawns = []
     for wave in self.waves:
       self.enemy_spawns += wave.instantiated_enemy_spawns
@@ -74,6 +76,7 @@ class Encounter:
     self.max_turns = 9
     self.min_turns = 6
     self.scheduled_commands = []
+    self.spells_cast_this_turn = []
 
   # -------- @properties --------
 
@@ -114,6 +117,11 @@ class Encounter:
   def overcome(self):
     all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns) 
     return (self.turn > self.escape_turn or all_defeated) and self.player.hp > 0
+
+  @property
+  def last_spell_cast(self):
+    if self.spells_cast_this_turn:
+      return self.spells_cast_this_turn[-1] 
 
   # -------- Helpers --------
 
@@ -198,6 +206,25 @@ class Encounter:
       banished.spawned = False
     target.reset_conditions()
 
+  def explore(self):
+    play_sound("explore.mp3")
+    self.player.explored += 1
+    r = random.random()
+    if r < 0.02:
+      play_sound("explore-find.mp3")
+      found_item = deepcopy(random.choice(signature_items))
+      input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"))
+      print(f"Found: {found_item.render()}")
+      self.player.inventory.append(found_item)
+    elif r < 0.10:
+      play_sound("explore-find.mp3")
+      found_item = deepcopy(random.choice(starting_weapons + minor_energy_potions))
+      input(colored("Something useful glints in the torchlight...", "green"))
+      print(f"Found: {found_item.render()}")
+      self.player.inventory.append(found_item)
+    else:
+      print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
+
   def handle_command(self, cmd):
     print(f"Handling command '{cmd}' ...")
     cmd_tokens = cmd.split(" ")
@@ -210,22 +237,21 @@ class Encounter:
       elif cmd_tokens[0] == "time":
         magnitude = int(cmd_tokens[1])
         self.player.spend_time(magnitude)
-      elif cmd == "use":
+      elif cmd_tokens[0] == "use":
+        item_index = int(cmd_tokens[1])
         self.player.spend_time()
-        self.use_item()
+        self.use_item(item_index)
         play_sound("inventory.mp3")
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
-        self.player.explored += 1
-        print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
-        play_sound("explore.mp3")
+        self.explore()
       elif cmd == "face":
         self.player.spend_time()
         self.player.switch_face()
       elif cmd == "page":
         self.player.spend_time()
         self.player.spellbook.switch_page()
-      elif cmd_tokens[0] == "recharge":
+      elif cmd_tokens[0] in ["recharge", "re"]:
         if cmd_tokens[1] == "r":
           spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
         else:
@@ -235,11 +261,13 @@ class Encounter:
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         self.player.spend_time()
+        self.spells_cast_this_turn.append(target)
         target.cast(self,
                   cost_energy=not cmd_tokens[0] == "ccast",
                   cost_charges=not cmd_tokens[0] == "ecast")
       elif cmd_tokens[0] == "fcast":
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        self.spells_cast_this_turn.append(target)
         target.cast(self, cost_energy=False, cost_charges=False)
       elif cmd_tokens[0] == "call":
         magnitude = int(cmd_tokens[1])
@@ -266,6 +294,7 @@ class Encounter:
         magnitude = int(cmd_tokens[2])
         for target in targets:
           target.hp -= magnitude
+        play_sound("suffer.mp3")
       elif cmd_tokens[0] == "heal":
         targets = get_combat_entities(self, cmd_tokens[1])
         magnitude = int(cmd_tokens[2])
@@ -311,8 +340,9 @@ class Encounter:
       entity.end_round()
     # begin new round
     self.turn += 1
-    self.ritual_upkeep()
+    self.spells_cast_this_turn = []
     self.player_upkeep()
+    # Spawn enemies
     to_spawn = [es for es in self.enemy_spawns if not es.enemy.spawned and es.turn <= self.turn]
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
@@ -325,6 +355,7 @@ class Encounter:
         enemy.spawned = True
         self.events += enemy.entry.act(enemy, self)
     self.resolve_events()
+    self.ritual_upkeep()
 
   def player_end_phase(self):
     self.resolve_events()
@@ -343,6 +374,9 @@ class Encounter:
                           sp.echoing is None]
     if len(recharge_candidates) > 0:
       random.choice(recharge_candidates).recharge()
+    # unexhaust all spells
+    for spell in self.player.spellbook.spells:
+      spell.exhausted = False
     # Tick spell echoes
     for page in self.player.spellbook.pages:
       page.tick_echoes()
@@ -373,7 +407,7 @@ class Encounter:
   def end_encounter(self):
     # progress rituals
     for ritual in self.player.rituals:
-      ritual.progress(self)
+      ritual.progressor(self)
       print(f"{ritual.name} progressed!")
       input(ritual.render())
 

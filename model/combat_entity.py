@@ -135,6 +135,7 @@ class CombatEntity:
 
   def heal(self, healing):
     self.hp = min(self.hp + healing, self.max_hp)
+    input(f"{self.name} heals {healing} hp!")
 
   # Game phase handlers and game logic
 
@@ -146,7 +147,7 @@ class CombatEntity:
   def execute_conditions(self):
     self.hp -= self.conditions["burn"]
     self.hp -= self.conditions["poison"]
-    self.heal(self.conditions["regen"])
+    if self.conditions["regen"] > 0: self.heal(self.conditions["regen"])
 
   def end_round(self):
     # zero out

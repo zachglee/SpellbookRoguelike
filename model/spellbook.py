@@ -105,6 +105,7 @@ class SpellbookSpell:
   def cast(self, encounter, cost_energy=True, cost_charges=True):
     if cost_charges:
       self.charges -= 1
+    self.exhausted = True
     self.spell.cast(encounter, cost_energy=cost_energy, cost_charges=cost_charges)
 
   def render(self):
@@ -117,15 +118,13 @@ class SpellbookSpell:
     rendered_str = rendered_str.replace("Producer", colored("Producer", "green"))
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
 
-    echoing_prefix = colored('~' * self.echoing, 'blue') if self.echoing else ''
-
     if self.spell.type == "Passive":
       charges_prefix = "*"
     else:
       charges_prefix = f"({self.charges}/{self.max_charges})"
-    if self.echoing: charges_prefix = colored(charges_prefix, "blue")
+    if self.exhausted: charges_prefix = colored(f"~{charges_prefix}", "red")
 
-    return f"{echoing_prefix}{charges_prefix} {rendered_str}"
+    return f"{charges_prefix} {rendered_str}"
 
 class SpellbookPage:
   def __init__(self, spells):

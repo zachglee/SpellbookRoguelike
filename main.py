@@ -9,7 +9,7 @@ from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpe
 from model.item import EnergyPotion
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_idx, get_combat_entities, choose_binary, numbered_list
+from utils import colorize, choose_obj, choose_binary, help_reference
 from drafting import destination_draft, safehouse_library_draft
 from sound_utils import play_sound
 
@@ -79,10 +79,14 @@ class GameState:
     play_sound("passage-discovery.mp3")
     while self.player.explored > 0:
       if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
-        self.map.current_region.destination_node.passages.append("pass")
         self.player.explored -= MAX_EXPLORE
         self.player.experience += PASSAGE_EXPERIENCE
-        print(colored(f"You found a passage and gained {PASSAGE_EXPERIENCE}xp!", "green"))
+        if self.map.current_region.destination_node.boss:
+          print(colored(f"You found a rest site and gained {PASSAGE_EXPERIENCE}xp and 1hp!", "green"))
+          self.player.heal(1)
+        else:
+          self.map.current_region.destination_node.passages.append("pass")
+          print(colored(f"You found a passage and gained {PASSAGE_EXPERIENCE}xp!", "green"))
         input(f"Press enter to continue exploring ({self.player.explored}/{MAX_EXPLORE}) ...")
       else:
         print(colored("Found nothing this time...", "blue"))
@@ -160,6 +164,9 @@ class GameState:
       elif cmd == "page?":
         encounter.player.spellbook.switch_page()
         return
+      elif cmd[-1] == "?":
+        subject = cmd[:-1]
+        help_reference(subject)
     except (KeyError, IndexError, ValueError, TypeError) as e:
       print(e)
 
@@ -205,7 +212,20 @@ class GameState:
     else:
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=1, spell_pool=self.map.current_region.spell_pool)
+    # Help out characters resting at this safehouse
+    safehouse = self.map.current_region.current_node.safehouse
+    for character in safehouse.resting_characters:
+      character.heal(10)
+      print(self.player.render_library())
+      print(f"{character.name} has requested: \"{character.request}\"")
+      spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
+      if spell_to_give is None:
+        continue
+      character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
+      self.player.experience += 20
+    self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
     self.save()
+    # Choose to press onwards or rest
     onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
     if onwards:
       print("Onwards...")
@@ -224,8 +244,7 @@ class GameState:
                     f"You take {corruption_damage} damage.", "red"))
 
     safehouse = self.map.current_region.current_node.safehouse
-    self.player.hp += 1
-    input("Healed 1 hp...")
+    self.player.heal(2)
     self.player.check_level_up()
 
     self.player.request = input("Broadcast a message to fellow Delvers? >")
@@ -240,20 +259,6 @@ class GameState:
     for i in range(len(self.map.regions)):
       while self.map.current_region.current_node.position[0] < len(self.map.current_region.nodes) - 1:
         onwards = self.play_route()
-        # Help out characters resting at this safehouse
-        safehouse = self.map.current_region.current_node.safehouse
-        for character in safehouse.resting_characters:
-          character.hp += 5
-          input(f"Healed {character.name} for 5 HP")
-          print(self.player.render_library())
-          print(f"{character.name} has requested: \"{character.request}\"")
-          spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
-          if spell_to_give is None:
-            continue
-          character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
-          self.player.experience += 20
-        self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
-        self.save()
         if not onwards:
           self.rest_phase()
           self.end_run()
@@ -264,7 +269,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
-# gs.init(map_file="saves/map.pkl", character_file="saves/Barrin.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
+# gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

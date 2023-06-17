@@ -46,6 +46,17 @@ def if_enemy_hp(target, hp_threshold, commands, above=True):
     return []
   return if_enemy_hp_generator
 
+def if_spell_charges(spell_charges, commands, above=True):
+  def if_spell_charges_generator(encounter, targets_dict):
+    if above:
+      if encounter.last_spell_cast.charges >= spell_charges:
+        return commands
+    else:
+      if encounter.last_spell_cast.charges <= spell_charges:
+        return commands
+    return []
+  return if_spell_charges_generator
+
 # scalers
 
 def for_burn(target, commands):
@@ -53,6 +64,12 @@ def for_burn(target, commands):
     burn_magnitude = targets_dict[target][1].conditions["burn"]
     return [cmd.replace("*", str(burn_magnitude)) for cmd in commands]
   return for_burn_generator
+
+def for_spells_cast(commands, magnitude_func=lambda x: x):
+  def for_spells_cast_generator(encounter, targets_dict):
+    spells_cast_magnitude = magnitude_func(len(encounter.spells_cast_this_turn))
+    return [cmd.replace("*", str(spells_cast_magnitude)) for cmd in commands]
+  return for_spells_cast_generator
 
 def for_player_missing_hp(unit_hp, commands):
   def for_player_missing_hp_generator(encounter, targets_dict):
@@ -66,10 +83,23 @@ def for_enemy_missing_hp(target, unit_hp, commands):
     return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
   return for_enemy_missing_hp_generator
 
+def for_enemy_remaining_hp(target, unit_hp, commands):
+  def for_enemy_remaining_hp_generator(encounter, targets_dict):
+    remaining_hp_magnitude = int(targets_dict[target][1].hp / unit_hp)
+    return [cmd.replace("*", str(remaining_hp_magnitude)) for cmd in commands]
+  return for_enemy_remaining_hp_generator
+
 def for_enemies(commands):
   def for_enemies_generator(encounter, targets_dict):
     return [cmd.replace("*", str(len(encounter.back) + len(encounter.front))) for cmd in commands]
   return for_enemies_generator
+
+def for_player_condition(condition, commands, magnitude_func=lambda x: x):
+  def for_player_condition_generator(encounter, targets_dict):
+    raw_condition_magnitude = encounter.player.conditions[condition]
+    processed_condition_magnitude = magnitude_func(raw_condition_magnitude)
+    return [cmd.replace("*", str(processed_condition_magnitude)) for cmd in commands]
+  return for_player_condition_generator
 
 # Red Color Identity:
 # - Straight big damage to facing side
@@ -99,25 +129,25 @@ red_enemy_dies = [
 red_take_damage = [
   [Spell("Passive: Whenever you lose hp, gain 4 empowered.", color="red", type="Passive"),
   Spell("Producer: +1 Red, deal 2 damage. If this kills an enemy, recharge, refresh, +1 time.", color="red", type="Producer",
-        raw_commands=["damage _ 2"], generate_commands_post=if_kill("_", ["time -1"])),
+        raw_commands=["damage _ 2"], generate_commands_post=if_kill("_", ["time -1", "recharge last"])),
   Spell("Converter: 1 Red -> 1 Gold: Gain 1 sharp for every missing 4 health.", color="red", type="Converter", conversion_color="gold",
         generate_commands_pre=for_player_missing_hp(4, ["sharp p *"])),
   Spell("Consumer: 1 Red: 8 damage to all enemies on target side.", color="red", type="Consumer", raw_commands=["damage iside 8"])],
   #
   [Spell("Passive: Whenever you lose hp, inflict 2 burn on all enemies.", color="red", type="Passive"),
-  Spell("Producer: +1 Red, when you take damage this turn, lose no life and gain half of it as burn.", color="red", type="Producer"),
-  Spell("Converter: 1 Red -> 1 Gold: Gain 2 regen. Inflict 2 burn.", color="red", type="Converter", conversion_color="gold", raw_commands=["regen p 2", "burn _ 2"]),  # NOTE: Purple
+  Spell("Producer: +1 Red, gain 2 regen and 2 burn.", color="red", type="Producer", raw_commands=["regen p 2", "burn p 2"]),
+  Spell("Converter: 1 Red -> 1 Gold: Gain 2 regen. Inflict 3 burn.", color="red", type="Converter", conversion_color="gold", raw_commands=["regen p 2", "burn _ 3"]),  # NOTE: Purple
   Spell("Consumer: 1 Red: Inflict 3 burn. Tick all burn and gain life equal to damage dealt in this way.", color="red", type="Consumer", raw_commands=["burn _ 3"])], 
 ]
 
 red_big_attack = [
-  [Spell("Passive: Gain 1 red, 1 sharp, and 1 prolific for every 7 damage you survive each round.", color="red", type="Passive"),
+  [Spell("Passive: Gain 1 red, 1 sharp, and 1 prolific for every 6 damage you survive each round.", color="red", type="Passive"),
   Spell("Producer: +1 Red, If you're at or below half health, +1 more red.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
   Spell("Converter: 1 Red -> 1 Gold: Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold"),
   Spell("Consumer: 1 Red: Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
-  [Spell("Passive: Gain 2 regen, deal 2 damage to all for every 7 damage you survive each round.", color="red", type="Passive"),
+  [Spell("Passive: Gain 1 regen, deal 3 damage to all for every 6 damage you survive each round.", color="red", type="Passive"),
   Spell("Producer: +1 Red, If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], above=True)),
   Spell("Converter: 1 Red -> 1 Gold: Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
@@ -127,8 +157,10 @@ red_big_attack = [
 red_hit_big_enemy = [
   [Spell("Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive"),
   Spell("Producer: +1 Red, Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
-  Spell("Converter: 1 Red -> 1 Blue: Apply 2 poison + 1 more for every 5 health above 10 the target has.", color="red", type="Converter", conversion_color="blue"), # NOTE: Purple
-  Spell("Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health.", color="red", type="Consumer")],
+  Spell("Converter: 1 Red -> 1 Blue: Apply 1 poison. Apply extra 1 poison for every 5 hp the target has.", color="red", type="Converter", conversion_color="blue",
+        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 5, ["poison _ 1", "poison _ *"])), # NOTE: Purple
+  Spell("Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health.", color="red", type="Consumer",
+        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["damage _ *"]))],
   #
   [Spell("Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive"),
   Spell("Producer: +1 Red, Deal 6 damage to a target at or above 10 health.", color="red", type="Producer",
@@ -210,8 +242,9 @@ blue_excess_block = [
   #
   [Spell("Passive: Excess block at the end of your turn becomes shield.", color="blue", type="Passive"),
   Spell("Producer: +1 Blue, +2 shield.", color="blue", type="Producer", raw_commands=["shield p 2"]),
-  Spell("Converter: 1 Blue -> 1 Gold: Convert block into 2x shield, or shield into 3x block.", color="blue", type="Converter", conversion_color="gold"),
-  Spell("Consumer: 1 Blue: Deal damage equal to thrice block+shield to target.", color="blue", type="Consumer")],
+  Spell("Converter: 1 Blue -> 1 Gold: Block 2. Convert block into 2x shield.", color="blue", type="Converter", conversion_color="gold",
+        raw_commands=["block p 2"], generate_commands_post=for_player_condition("block", ["shield p *"], lambda b: 2*b)),
+  Spell("Consumer: 1 Blue: Gain 6 block. Deal damage equal to block + shield to target.", color="blue", type="Consumer")],
 ]
 
 blue_page_sets = [blue_block_hits, blue_turn_3, blue_3_enemies, blue_excess_block]
@@ -238,26 +271,29 @@ gold_3rd_spell = [
 
 gold_turn_page = [
   [Spell("Passive: Every time you turn to this page, the next spell cast doesn’t cost charges or exhaust.", color="gold", type="Passive"),
-  Spell("Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer"),
+  Spell("Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer",
+        generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
   Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 6"]), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
   #
   [Spell("Passive: Every time you turn to this page, your next spell cast doesn’t cost energy.", color="gold", type="Passive"),
   Spell("Producer: +1 Gold, refresh a spell.", color="gold", type="Producer"),
-  Spell("Converter: 1 Gold -> 1 Red: +4 time, +1 inventive, refresh other spells on this page.", color="gold", type="Converter", conversion_color="red", raw_commands=["time -4", "inventive p 1"]), # NOTE: Green
-  Spell("Consumer: 1 Gold: Gain x shield and deal 2x to all where x is # of spells cast this turn.", color="gold", type="Consumer")], 
+  Spell("Converter: 1 Gold -> 1 Red: +4 time, +1 inventive, refresh other spells on this page.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["time -4", "inventive p 1"]), # NOTE: Green
+  Spell("Consumer: 1 Gold: Gain 2x shield and deal 2x to all where x is # of spells cast this turn.", color="gold", type="Consumer",
+        generate_commands_pre=for_spells_cast(["shield p *", "damage a *"], lambda s: 2*s))], 
 ]
 
 gold_1_spell = [
   [Spell("Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive"),
-  Spell("Producer: +1 Gold, you may convert 1 non-gold energy to gold.", color="gold", type="Producer"),
+  Spell("Producer: +1 Gold, you may convert 1 energy to another color.", color="gold", type="Producer"),
   Spell("Converter: 1 Gold -> 1 Red: Gold: 4 empower. Red: 4 damage. Blue: 4 shield.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color.", color="gold", type="Consumer", raw_commands=["inventive p 3"])],
   #
   [Spell("Passive: If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive"),
   Spell("Producer: +1 Gold, +1 time.", color="gold", type="Producer", raw_commands=["time -1"]),
   Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
-        targets=["i"], raw_commands=["damage i 6"]),
+        targets=["i"], raw_commands=["damage i 6"], generate_commands_post=if_kill("i", ["recharge last"])),
   Spell("Consumer: 1 Gold: Gain 3 prolific.", color="gold", type="Consumer", raw_commands=["prolific p 3"])],
 ]
 
