@@ -171,6 +171,14 @@ class Encounter:
       self.player.experience += enemy.experience
       self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(enemy)))
 
+  def run_event_triggers(self, event):
+    # run passive spell triggers
+    passive_spells = [spell.spell for spell in self.player.spellbook.current_page.spells
+                      if spell.spell.type == "Passive"]
+    for passive_spell in passive_spells:
+      if passive_spell.triggers_on(self, event):
+        passive_spell.cast(self, event=event)
+
   def resolve_events(self):
     self.run_state_triggers()
     while len(self.events) > 0:
@@ -178,6 +186,9 @@ class Encounter:
       for event in self.events:
         input(f"Resolving event {event}...")
         event.resolve()
+        # run triggers based on this event
+        self.run_event_triggers(event)
+
       self.events = []
 
       # state triggers
@@ -260,6 +271,9 @@ class Encounter:
         target.recharge()
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
+        if target.spell.type == "Passive":
+          input(colored("Cannot cast passive spells.", "red"))
+          return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
         target.cast(self,
@@ -334,6 +348,8 @@ class Encounter:
     if prolific: time += 4
     if slow: time -= 1
     self.player.time = time
+    self.events.append(Event("begin_turn"))
+    self.resolve_events()
 
   def upkeep_phase(self):
     for entity in self.combat_entities:
@@ -358,7 +374,7 @@ class Encounter:
     self.ritual_upkeep()
 
   def player_end_phase(self):
-    self.resolve_events()
+    # self.resolve_events()
     # player end step
     for entity in self.combat_entities:
       entity.execute_conditions()
@@ -366,6 +382,9 @@ class Encounter:
     if (faced := self.faced_enemy_queue) and (searing := self.player.conditions["searing"]):
       damage = faced[0].assign_damage(searing)
       print(f"{faced[0].name} took {damage} damage from searing presence!")
+    # add end_turn event
+    self.events.append(Event(["end_turn"]))
+    self.resolve_events()
     # recharge random spell
     recharge_candidates = [sp for sp in self.player.spellbook.spells
                           if sp.charges < sp.max_charges and
@@ -377,9 +396,6 @@ class Encounter:
     # unexhaust all spells
     for spell in self.player.spellbook.spells:
       spell.exhausted = False
-    # Tick spell echoes
-    for page in self.player.spellbook.pages:
-      page.tick_echoes()
     self.resolve_events()
 
   def enemy_phase(self):

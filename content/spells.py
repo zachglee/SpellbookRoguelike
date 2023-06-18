@@ -1,5 +1,19 @@
 from model.spellbook import Spell
 
+# Passive triggers_on
+
+def passive_face_noone_at_end(encounter, event):
+  return event.has_tag("end_turn") and encounter.faced_enemy_queue == []
+
+def passive_turn_3_onwards_at_begin(encounter, event):
+  return event.has_tag("begin_turn") and encounter.turn >= 3
+
+def passive_1_spell_in_turn(encounter, event):
+  return event.has_tag("end_turn") and len(encounter.spells_cast_this_turn) <= 1
+
+def passive_3_plus_enemies_at_begin(encounter, event):
+  return event.has_tag("begin_turn") and len(encounter.enemies) >= 3
+
 # command_generator_factories
 
 # TODO: need a way to compose these
@@ -208,12 +222,14 @@ blue_block_hits = [
 ]
 
 blue_turn_3 = [
-  [Spell("Passive: At beginning of 3rd turn and onwards, block 4.", color="blue", type="Passive"),
+  [Spell("Passive: At beginning of 3rd turn and onwards, block 4.", color="blue", type="Passive",
+         triggers_on=passive_turn_3_onwards_at_begin, raw_commands=["block p 4"]),
   Spell("Producer: +1 Blue, Inflict 1 stun on an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["stun _ 1"]),
   Spell("Converter: 1 Blue -> 1 Red: Stun 1 or deal 15 damage to a stunned enemy.", color="blue", type="Converter", conversion_color="red"), # NOTE: Purple
   Spell("Consumer: 1 Blue: Inflict 3 stun.", color="blue", type="Consumer", raw_commands=["stun _ 3"])],
   #
-  [Spell("Passive: At beginning of 3rd turn and onwards, deal 3 damage to all enemies.", color="blue", type="Passive"),
+  [Spell("Passive: At beginning of 3rd turn and onwards, deal 3 damage to all enemies.", color="blue", type="Passive",
+         triggers_on=passive_turn_3_onwards_at_begin, raw_commands=["damage a 3"]),
   Spell("Producer: +1 Blue, ward 1.", color="blue", type="Producer", raw_commands=["ward p 1"]),
   Spell("Converter: 1 Blue -> 1 Red: At the end of next turn, all enemies take 8 damage.", color="blue", type="Converter", conversion_color="red",
         raw_commands=["delay 1 damage a 8"]),
@@ -221,12 +237,14 @@ blue_turn_3 = [
 ]
 
 blue_3_enemies = [
-  [Spell("Passive: At the beginning of your turn if there are 3 or more enemies, stun 2 of them at random.", color="blue", type="Passive"),
+  [Spell("Passive: At the beginning of your turn if there are 3 or more enemies, stun 2 of them at random.", color="blue", type="Passive",
+         triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["stun r 1", "stun r 1"]),
   Spell("Producer: +1 Blue, gain 1 block and Break: stun 1.", color="blue", type="Producer", raw_commands=["block p 1"]),
   Spell("Converter: 1 Blue -> 1 Gold: Gain retaliate 2.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 2"]), # NOTE: Green
   Spell("Consumer: 1 Blue: Deal 4 damage to all stunned enemies. Stun 1 all enemies.", color="blue", type="Consumer", raw_commands=["stun a 1"])],
   #
-  [Spell("Passive: At the beginning of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.", color="blue", type="Passive"),
+  [Spell("Passive: At the beginning of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.", color="blue", type="Passive",
+         triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["damage r 15"]),
   Spell("Producer: +1 Blue, deal 6 damage, call 1", color="blue", type="Producer", raw_commands=["damage _ 6", "call 1"]),
   Spell("Converter: 1 Blue -> 1 Gold: Gain retaliate 6 this turn.", color="blue", type="Converter", conversion_color="gold",
         raw_commands=["retaliate p 6", "delay 0 retaliate p -6"]), # NOTE: Purple
@@ -285,12 +303,14 @@ gold_turn_page = [
 ]
 
 gold_1_spell = [
-  [Spell("Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive"),
+  [Spell("Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
+         triggers_on=passive_1_spell_in_turn, raw_commands=["gold p 1"]), # TODO fix this
   Spell("Producer: +1 Gold, you may convert 1 energy to another color.", color="gold", type="Producer"),
   Spell("Converter: 1 Gold -> 1 Red: Gold: 4 empower. Red: 4 damage. Blue: 4 shield.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color.", color="gold", type="Consumer", raw_commands=["inventive p 3"])],
   #
-  [Spell("Passive: If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive"),
+  [Spell("Passive: If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive",
+         triggers_on=passive_1_spell_in_turn, raw_commands=["empower p 6"]),
   Spell("Producer: +1 Gold, +1 time.", color="gold", type="Producer", raw_commands=["time -1"]),
   Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
         targets=["i"], raw_commands=["damage i 6"], generate_commands_post=if_kill("i", ["recharge last"])),
@@ -298,13 +318,15 @@ gold_1_spell = [
 ]
 
 gold_face_noone = [
-  [Spell("Passive: At end of turn, if facing no enemies, gain 2 searing presence.", color="gold", type="Passive"),
+  [Spell("Passive: At end of turn, if facing no enemies, gain 2 searing presence.", color="gold", type="Passive",
+         triggers_on=passive_face_noone_at_end, raw_commands=["searing p 2"]),
   Spell("Producer: +1 Gold, gain 2 searing presence.", color="gold", type="Producer", raw_commands=["searing p 2"]),
   Spell("Converter: 1 Gold -> 1 Red: Banish 1 immediate enemy.", color="gold", type="Converter", conversion_color="red",
         targets=["i"], raw_commands=["banish i"]),
   Spell("Consumer: 1 Gold: Gain 2 armor.", color="gold", type="Consumer", raw_commands=["armor p 2"])],
   #
-  [Spell("Passive: At end of turn, if facing no enemies, gain 3 shield.", color="gold", type="Passive"),
+  [Spell("Passive: At end of turn, if facing no enemies, gain 3 shield.", color="gold", type="Passive",
+         triggers_on=passive_face_noone_at_end, raw_commands=["shield p 3"]),
   Spell("Producer: +1 Gold, if facing no enemies, empower 5.", color="gold", type="Producer",
         generate_commands_pre=if_facing_none(["empower p 5"])),
   Spell("Converter: 1 Gold -> 1 Blue: Gain 5 shield.", color="gold", type="Converter", conversion_color="blue", raw_commands=["shield p 5"]),

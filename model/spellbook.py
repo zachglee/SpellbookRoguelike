@@ -6,7 +6,8 @@ from sound_utils import play_sound
 class Spell:
   def __init__(self, description, color, type, conversion_color=None,
                cost=None, raw_commands=None, targets=None,
-               generate_commands_pre=lambda e, t: [], generate_commands_post=lambda e, t: []):
+               generate_commands_pre=lambda e, t: [], generate_commands_post=lambda e, t: [],
+               triggers_on=lambda encounter, event: False):
     self.description = description
     self.color = color
     self.type = type
@@ -17,6 +18,7 @@ class Spell:
     self.targets = targets or []
     self.generate_commands_pre = generate_commands_pre
     self.generate_commands_post = generate_commands_post
+    self.triggers_on = triggers_on
 
     if self.type == "Producer":
       self.raw_commands.append(f"{color} p 1")
@@ -131,14 +133,6 @@ class SpellbookPage:
     self.spells = spells
     self.copy_count = 0
     self.notes = None
-  
-  # tick down echoing spells
-  def tick_echoes(self):
-    for spell in self.spells:
-      if spell.echoing is not None:
-        spell.echoing -= 1
-    self.spells = [spell for spell in self.spells
-                   if spell.echoing is None or spell.echoing > 0]
 
   def render(self):
     return numbered_list(self.spells)

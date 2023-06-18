@@ -9,7 +9,11 @@ class Event:
     self.effect = effect
 
   def resolve(self):
-    self.effect(self.source, self.target)
+    if self.effect:
+      self.effect(self.source, self.target)
+
+  def has_tag(self, tag):
+    return tag in self.tags
 
   def __repr__(self) -> str:
     return f"Event({self.tags})"
