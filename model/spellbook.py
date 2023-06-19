@@ -28,7 +28,7 @@ class Spell:
       file_stem = f"{self.color}-consumer-cast"
       self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
 
-  def cast(self, encounter, cost_energy=True, cost_charges=True):
+  def cast(self, encounter, cost_energy=True, cost_charges=True, trigger_magnitude=1):
     if cost_energy:
       if self.type in ["Converter", "Consumer"]:
         # TODO: eventually enforce that you must have the correct energy
@@ -58,6 +58,7 @@ class Spell:
       processed_command = cmd
       for placeholder, (target, _) in chosen_targets.items():
         processed_command = processed_command.replace(placeholder, target)
+      processed_command = processed_command.replace("^", str(trigger_magnitude))
       encounter.handle_command(processed_command)
 
     # generate and execute commands post main execution (for effects like 'if this kills')

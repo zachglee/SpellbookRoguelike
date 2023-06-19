@@ -301,6 +301,7 @@ class Map:
                         library=library,
                         signature_spell=chosen_spell,
                         signature_color=chosen_color)
+        print(f"------------ player.is_player() = {player.is_player()} ------------")
         # TODO: possibly remove this later
         print(player.render_rituals())
         draft_player_library(player, self.current_region.spell_pool)

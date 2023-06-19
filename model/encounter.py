@@ -176,27 +176,31 @@ class Encounter:
     passive_spells = [spell.spell for spell in self.player.spellbook.current_page.spells
                       if spell.spell.type == "Passive"]
     for passive_spell in passive_spells:
-      if passive_spell.triggers_on(self, event):
-        passive_spell.cast(self, event=event)
+      if magnitude := passive_spell.triggers_on(self, event):
+        print(f"-------------- TRIGGERED! {passive_spell.description} --------------")
+        passive_spell.cast(self, trigger_magnitude=int(magnitude))
+      else:
+        print(f"-------------- DID NOT TRIGGER! {passive_spell.description} --------------")
+      
+  def gather_events_from_combat_entities(self):
+    # gather any new events that were triggered
+    for entity in self.combat_entities:
+      self.events += entity.pop_events()
 
   def resolve_events(self):
     self.run_state_triggers()
+    self.gather_events_from_combat_entities()
     while len(self.events) > 0:
       # resolve every event
-      for event in self.events:
-        input(f"Resolving event {event}...")
-        event.resolve()
-        # run triggers based on this event
-        self.run_event_triggers(event)
+      event = self.events.pop(0)
+      input(f"Resolving event {event}...")
+      event.resolve()
+      # run triggers based on this event
+      self.run_event_triggers(event)
 
-      self.events = []
-
-      # state triggers
+      # Gather any more events
       self.run_state_triggers()
-
-      # gather any new events that were triggered
-      for entity in self.combat_entities:
-        self.events += entity.pop_events()
+      self.gather_events_from_combat_entities()
 
   def use_item(self, idx=None):
     if idx:
@@ -279,6 +283,7 @@ class Encounter:
         target.cast(self,
                   cost_energy=not cmd_tokens[0] == "ccast",
                   cost_charges=not cmd_tokens[0] == "ecast")
+        self.events.append(Event(["spell_cast"], metadata={"spell": target}))
       elif cmd_tokens[0] == "fcast":
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         self.spells_cast_this_turn.append(target)
@@ -307,7 +312,7 @@ class Encounter:
         targets = get_combat_entities(self, cmd_tokens[1])
         magnitude = int(cmd_tokens[2])
         for target in targets:
-          target.hp -= magnitude
+          target.suffer(magnitude)
         play_sound("suffer.mp3")
       elif cmd_tokens[0] == "heal":
         targets = get_combat_entities(self, cmd_tokens[1])
@@ -348,16 +353,13 @@ class Encounter:
     if prolific: time += 4
     if slow: time -= 1
     self.player.time = time
-    self.events.append(Event("begin_turn"))
+    self.events.append(Event(["begin_turn"]))
     self.resolve_events()
 
   def upkeep_phase(self):
-    for entity in self.combat_entities:
-      entity.end_round()
     # begin new round
     self.turn += 1
     self.spells_cast_this_turn = []
-    self.player_upkeep()
     # Spawn enemies
     to_spawn = [es for es in self.enemy_spawns if not es.enemy.spawned and es.turn <= self.turn]
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
@@ -370,7 +372,7 @@ class Encounter:
         destination.append(enemy)
         enemy.spawned = True
         self.events += enemy.entry.act(enemy, self)
-    self.resolve_events()
+    self.player_upkeep()
     self.ritual_upkeep()
 
   def player_end_phase(self):
@@ -413,11 +415,22 @@ class Encounter:
       if self.turn == turn:
         self.handle_command(cmd)
 
+  def round_end_phase(self):
+    for entity in self.combat_entities:
+      entity.end_round()
+    self.events.append(Event(["end_round"]))
+    self.resolve_events()
+
   def end_player_turn(self):
     play_sound("turn-end.mp3")
     self.player_end_phase()
     self.enemy_phase()
     self.post_enemy_scheduled_commands()
+    self.round_end_phase()
+
+    self.damage_taken_this_turn = 0
+    self.damage_survived_this_turn = 0
+
     self.upkeep_phase()
 
   def end_encounter(self):

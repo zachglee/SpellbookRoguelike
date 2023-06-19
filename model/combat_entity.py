@@ -18,6 +18,10 @@ class CombatEntity:
     self.location = {"side": None, "position": None}
     self.events = []
     self.damage_taken_this_turn = 0
+    self.damage_survived_this_turn = 0
+
+  def is_player(self):
+    return self.__class__.__name__ == "Player"
 
   def side(self, encounter):
     if self in encounter.back: return "back"
@@ -88,12 +92,15 @@ class CombatEntity:
     empower_to_spend = max(0, min(damage_to_kill, target_enduring) - damage)
     spent_empower = min(self.conditions["empower"], empower_to_spend)
     self.conditions["empower"] -= spent_empower
-    final_damage = damage + spent_empower + self.conditions["sharp"]
+    multiplier = 1.5 if target.conditions["vulnerable"] else 1
+    final_damage = (damage + spent_empower + self.conditions["sharp"]) * multiplier
     self.assign_damage(target.conditions["retaliate"])
     damage_dealt = target.assign_damage(final_damage)
     if lifesteal:
       self.heal(damage_dealt)
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
+    self.events.append(Event(["attack"], metadata={"damage": final_damage, "target": target}))
+    target.damage_survived_this_turn += final_damage
 
     # play the proper sound
     if damage_dealt == 0:
@@ -111,8 +118,6 @@ class CombatEntity:
     return damage_dealt
 
   def assign_damage(self, damage) -> int:
-    if self.conditions["vulnerable"]:
-      damage = int(damage * 1.5)
     damage_after_armor = max(0, damage - self.conditions["armor"])
 
     damage_to_block = min(damage_after_armor, self.conditions["block"])
@@ -130,10 +135,19 @@ class CombatEntity:
       remaining_potential_damage = enduring - self.damage_taken_this_turn
       taken_damage = min(taken_damage, remaining_potential_damage)
 
-    self.hp -= taken_damage
-    self.damage_taken_this_turn += taken_damage
+    self.suffer(taken_damage)
 
     return taken_damage
+
+  def suffer(self, damage):
+    self.hp -= damage
+    self.damage_taken_this_turn += damage
+    if damage > 0:
+      self.events.append(Event(["lose_hp"],
+                               metadata={
+                                 "damage": damage,
+                                 "target": self
+                               }))
 
   def heal(self, healing):
     self.hp = min(self.hp + healing, self.max_hp)
@@ -147,14 +161,13 @@ class CombatEntity:
     return events
 
   def execute_conditions(self):
-    self.hp -= self.conditions["burn"]
-    self.hp -= self.conditions["poison"]
+    self.suffer(self.conditions["burn"])
+    self.suffer(self.conditions["poison"])
     if self.conditions["regen"] > 0: self.heal(self.conditions["regen"])
 
   def end_round(self):
     # zero out
     self.conditions["block"] = 0
-    self.damage_taken_this_turn = 0
     
     # tick down
     self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
