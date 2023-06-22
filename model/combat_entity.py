@@ -38,7 +38,15 @@ class CombatEntity:
       return encounter.back.index(self)
     elif self in encounter.front:
       return encounter.front.index(self)
-    
+
+  def get_target_string(self, encounter) -> str:
+    if self in encounter.back:
+      return f"b{encounter.back.index(self)}"
+    elif self in encounter.front:
+      return f"f{encounter.front.index(self)}"
+    else:
+      return ""
+
   def get_immediate(self, encounter):
     pos = self.position(encounter)
     print(f"Get immediate: my position is {pos}")
@@ -101,6 +109,7 @@ class CombatEntity:
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
     self.events.append(Event(["attack"], metadata={"damage": final_damage, "target": target}))
     target.damage_survived_this_turn += final_damage
+    print(f"--------- {self.name} Damage survived: {target.damage_survived_this_turn}")
 
     # play the proper sound
     if damage_dealt == 0:
@@ -166,6 +175,8 @@ class CombatEntity:
     if self.conditions["regen"] > 0: self.heal(self.conditions["regen"])
 
   def end_round(self):
+    self.damage_survived_this_turn = 0
+    self.damage_taken_this_turn = 0
     # zero out
     self.conditions["block"] = 0
     

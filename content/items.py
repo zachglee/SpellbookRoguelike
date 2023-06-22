@@ -15,7 +15,7 @@ protection_charm = ConditionSelfWeapon("Protection Charm", 4, "ward", 1)
 starting_weapons = [rusty_sword, trusty_torch, battered_shield, protection_charm]
 
 # signature items (these are powerful items you get at level 9. Powerful mainly because they're as needed.)
-the_bomb = CustomItem("The Bomb", 1, "deal 20 to all enemies, 10 damage to self", ["damage a 20", "damage p 10"])
+the_bomb = CustomItem("The Bomb", 1, "At end of turn: deal 21 to all enemies, 7 damage to self", ["delay 0 damage a 21", "delay 0 damage p 7"])
 ignited_ichor = CustomItem("Ignited Ichor", 1, "burn 4 self, gain 8 block, 8 searing presence, 8 retaliate", ["burn p 4", "block p 8", "searing p 8", "retaliate p 8"])
 poison_darts = CustomItem("Poison Darts", 2, "inflict 2 stun and 4 poison", ["stun _ 2", "poison _ 4"])
 seekers_bow = CustomItem("Seeker's Bow", 3, "deal 4 to any target", ["damage _ 4"])

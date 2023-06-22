@@ -9,7 +9,7 @@ from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpe
 from model.item import EnergyPotion
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_binary, help_reference
+from utils import colorize, choose_obj, choose_binary, command_reference, help_reference
 from drafting import destination_draft, safehouse_library_draft
 from sound_utils import play_sound
 
@@ -144,6 +144,8 @@ class GameState:
       if cmd == "die":
         self.player_death()
         return
+      elif cmd == "help":
+        command_reference()
       elif cmd == "map":
         self.map.inspect()
         return
@@ -269,7 +271,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

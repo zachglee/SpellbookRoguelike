@@ -9,6 +9,19 @@ class Event:
     self.effect = effect
     self.metadata = metadata # for storing arbitrary stuff
 
+  @property
+  def blocking(self):
+    return not any(tag in self.tags for tag in [
+      "lose_hp",
+      "attack",
+      "enemy_death",
+      "spell_cast",
+      "end_turn",
+      "begin_turn",
+      "end_round",
+      "page",
+      "condition"])
+
   def resolve(self):
     if self.effect:
       self.effect(self.source, self.target)

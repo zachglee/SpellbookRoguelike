@@ -113,6 +113,40 @@ def get_combat_entities(enc, target_string):
     input_target_string = input(colored("Choose a target > ", "green"))
     return get_combat_entities(enc, input_target_string)
   
+def command_reference():
+  help_string = """
+  UI Commands:
+   - help: Display this message
+   - map: Display the map
+   - inventory,inv: Display your inventory
+   - intent,int: Toggle display of enemy intents
+  Targeting:
+    In many commands, you will see text like this: <target>. This is to be filled in by you with a 'target string'
+    that determines which entity you wish to target with this effect. 
+    - To target yourself, use `p`.
+    - To target an enemy on the front side, use `f<n>` where `<n>` is replaced by a number. 1 is the first enemy on the front side, 2 is the second, etc.
+    - To taget an enemy on the back side, use `b<n>`, see above for the meaning of `<n>`.
+    - To target all enemies on the front side, use `f`
+    - To target all enemies on the back side, use `b`
+    - To target all enemies, use `a`
+    - To target a random enemy, use `r`
+    - To target the immediate enemy (first enemy on the side you are facing), use `i`
+  Combat Commands: (text like <this> is placeholder, to be filled in by you)
+   - die: lose the game. Currently, you must manually use this command when you reach 0 hp.
+   - damage <target> <amount>: deal damage to given target.
+   - suffer <target> <amount>: same as damage, but bypasses all damage modifiers, like block, sharp, etc.
+   - heal <target> <amount>: heals the target for the specified amount of hp
+   - <condition_name> <target> <amount>: applies `amount` stacks of the condition to the target.
+   - face: turns your character to face the opposite side
+   - face?: same as `face`, but doesn't cost you a time
+   - page: flips to the next page
+   - page?: same as `page` but doesn't cost you a time (useful if you just want to check what's on the other page)
+   - use <n>: uses the n'th item in your inventory
+   - cast <n>: casts the n'th spell on this page
+   - time <n>: removes n units of time. If you want to get time back use negative numbers.
+  """
+  input(help_string)
+
 def help_reference(subject):
   if subject == "burn":
     help_text = ("Burn is a condition. At the end of every turn, an entity with burn"

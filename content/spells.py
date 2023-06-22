@@ -26,6 +26,7 @@ def passive_third_spell_in_turn(encounter, event):
 
 def passive_for_survive_6_damage_in_turn(encounter, event):
   if event.has_tag("end_round"):
+    print(f"----------------- damage survived: {encounter.player.damage_survived_this_turn}")
     return int(encounter.player.damage_survived_this_turn / 6)
   return False
   
@@ -38,6 +39,18 @@ def passive_block_and_shield_at_end(encounter, event):
   if event.has_tag("end_turn"):
     encounter.player.conditions["block"] + encounter.player.conditions["shield"]
   return False
+
+def passive_first_damage_10hp_remains(encounter, event):
+  if event.has_tag("attack") and not event.metadata["target"].is_player() and event.metadata["target"].hp >= 10:
+    return event.metadata["target"].get_target_string()
+  return False
+
+def passive_on_page(encounter, event):
+  return event.has_tag("page")
+
+def passive_for_death_overkill(encounter, event):
+  if event.has_tag("enemy_death"):
+    return max(1, -1*event.source.hp)
 
 # command_generator_factories
 
@@ -63,7 +76,7 @@ def if_kill(target, commands):
       return []
   return on_kill_generator
 
-def if_player_hp(fraction, commands, above=True):
+def if_player_hp(fraction, commands, else_commands=[], above=True):
   def if_player_hp_generator(encounter, targets_dict):
     player_hp_fraction = encounter.player.hp / encounter.player.max_hp
     if above:
@@ -72,7 +85,7 @@ def if_player_hp(fraction, commands, above=True):
     else:
       if player_hp_fraction <= fraction:
         return commands
-    return []
+    return else_commands
   return if_player_hp_generator
 
 def if_enemy_hp(target, hp_threshold, commands, above=True):
@@ -154,13 +167,15 @@ def for_player_condition(condition, commands, magnitude_func=lambda x: x):
 
 
 red_enemy_dies = [
-  [Spell("Passive: Whenever an enemy dies, deal overkill damage + 4 to immediate.", color="red", type="Passive"),
+  [Spell("Passive: Whenever an enemy dies, gain 4 empower and deal overkill damage to immediate.", color="red", type="Passive",
+         triggers_on=passive_for_death_overkill, raw_commands=["empower p 4", "damage i ^"]),
   Spell("Producer: +1 Red, inflict 1 vulnerable", color="red", type="Producer", raw_commands=["vulnerable _ 1"]),
   Spell("Converter: 1 Red -> 1 Gold, Deal 9 damage. If this kills, +1 red.", color="red", type="Converter", conversion_color="gold",
         targets=["_"], raw_commands=["damage _ 9"], generate_commands_post=if_kill("_", ["red p 1"])),
   Spell("Consumer: 1 Red: Deal 16 damage", color="red", type="Consumer", raw_commands=["damage _ 16"])],
   #
-  [Spell("Passive: Whenever an enemy dies, inflict its burn +3 on its side.", color="red", type="Passive"),
+  [Spell("Passive: Whenever an enemy dies, inflict 4 burn on random.", color="red", type="Passive",
+         triggers_on=passive_for_death_overkill, raw_commands=["burn r 4"]),
   Spell("Producer: +1 Red, inflict 2 burn.", color="red", type="Producer", raw_commands=["burn _ 2"]),
   Spell("Converter: 1 Red -> 1 Blue, Inflict 5 burn.", color="red", type="Converter", conversion_color="blue", raw_commands=["burn _ 5"]),
   Spell("Consumer: 1 Red: Inflict 2 burn, then inflict their burn on all enemies.", color="red", type="Consumer",
@@ -192,22 +207,24 @@ red_big_attack = [
   Spell("Consumer: 1 Red: Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
   [Spell("Passive: Gain 1 regen, deal 3 damage to all for every 6 damage you survive each round.", color="red", type="Passive",
-         triggers_on=passive_for_survive_6_damage_in_turn, raw_commands=["regen p ^"]), # TODO: add in the damage component
+         triggers_on=passive_for_survive_6_damage_in_turn, raw_commands=["regen p ^", "repeat ^ damage a 3"]), # TODO: add in the damage component
   Spell("Producer: +1 Red, If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
-        generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], above=True)),
+        generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], else_commands=["regen p 1"], above=True)),
   Spell("Converter: 1 Red -> 1 Gold: Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
   Spell("Consumer: 1 Red: Deal 7 damage. Heal for unblocked.", color="red", type="Consumer", raw_commands=["lifesteal _ 7"])],
 ]
 
 red_hit_big_enemy = [
-  [Spell("Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive"),
+  [Spell("Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive",
+         triggers_on=passive_first_damage_10hp_remains, raw_commands=["burn ^ 5"]),
   Spell("Producer: +1 Red, Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
   Spell("Converter: 1 Red -> 1 Blue: Apply 1 poison. Apply extra 1 poison for every 5 hp the target has.", color="red", type="Converter", conversion_color="blue",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 5, ["poison _ 1", "poison _ *"])), # NOTE: Purple
   Spell("Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health.", color="red", type="Consumer",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["damage _ *"]))],
   #
-  [Spell("Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive"),
+  [Spell("Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive",
+         triggers_on=passive_first_damage_10hp_remains, raw_commands=["regen p 3"]),
   Spell("Producer: +1 Red, Deal 6 damage to a target at or above 10 health.", color="red", type="Producer",
         targets=["_"], generate_commands_pre=if_enemy_hp("_", 10, ["damage _ 6"], above=True)),
   Spell("Converter: 1 Red -> 1 Blue: Deal 6 damage. Stun 1 the target if 10 or more hp remains.", color="red", type="Converter", conversion_color="blue",
@@ -325,13 +342,15 @@ gold_3rd_spell = [
 ]
 
 gold_turn_page = [
-  [Spell("Passive: Every time you turn to this page, the next spell cast doesn’t cost charges or exhaust.", color="gold", type="Passive"),
+  [Spell("Passive: Every time you turn to this page, recharge a random spell.", color="gold", type="Passive",
+         triggers_on=passive_on_page, raw_commands=["recharge r"]),
   Spell("Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
   Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 6"]), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
   #
-  [Spell("Passive: Every time you turn to this page, your next spell cast doesn’t cost energy.", color="gold", type="Passive"),
+  [Spell("Passive: Every time you turn to this page, gain 1 inventive.", color="gold", type="Passive",
+         triggers_on=passive_on_page, raw_commands=["inventive p 1"]),
   Spell("Producer: +1 Gold, refresh a spell.", color="gold", type="Producer"),
   Spell("Converter: 1 Gold -> 1 Red: +4 time, +1 inventive, refresh other spells on this page.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["time -4", "inventive p 1"]), # NOTE: Green

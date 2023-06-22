@@ -8,7 +8,7 @@ from model.event import Event
 from content.enemy_actions import NothingAction
 from content.rituals import rituals
 from content.items import starting_weapons, signature_items, minor_energy_potions
-from utils import energy_colors, colorize, get_combat_entities, choose_idx
+from utils import energy_colors, colorize, get_combat_entities, choose_idx, get_spell
 from sound_utils import play_sound
 
 
@@ -176,11 +176,9 @@ class Encounter:
     passive_spells = [spell.spell for spell in self.player.spellbook.current_page.spells
                       if spell.spell.type == "Passive"]
     for passive_spell in passive_spells:
-      if magnitude := passive_spell.triggers_on(self, event):
+      if trigger_output := passive_spell.triggers_on(self, event):
         print(f"-------------- TRIGGERED! {passive_spell.description} --------------")
-        passive_spell.cast(self, trigger_magnitude=int(magnitude))
-      else:
-        print(f"-------------- DID NOT TRIGGER! {passive_spell.description} --------------")
+        passive_spell.cast(self, trigger_output=trigger_output)
       
   def gather_events_from_combat_entities(self):
     # gather any new events that were triggered
@@ -193,7 +191,10 @@ class Encounter:
     while len(self.events) > 0:
       # resolve every event
       event = self.events.pop(0)
-      input(f"Resolving event {event}...")
+      if event.blocking:
+        input(f"Resolving event {event}...")
+      else:
+        print(f"Resolving event {event}...")
       event.resolve()
       # run triggers based on this event
       self.run_event_triggers(event)
@@ -266,12 +267,9 @@ class Encounter:
       elif cmd == "page":
         self.player.spend_time()
         self.player.spellbook.switch_page()
+        self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
-        if cmd_tokens[1] == "r":
-          spell_idx = random.choice(range(len(self.player.spellbook.current_page.spells)))
-        else:
-          spell_idx = int(cmd_tokens[1]) - 1
-        target = self.player.spellbook.current_page.spells[spell_idx]
+        target = get_spell(self, cmd_tokens[1])
         target.recharge()
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
@@ -288,6 +286,9 @@ class Encounter:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         self.spells_cast_this_turn.append(target)
         target.cast(self, cost_energy=False, cost_charges=False)
+      elif cmd_tokens[0] in energy_colors and cmd_tokens[1] == "to" and cmd_tokens[2] in energy_colors:
+        self.player.conditions[cmd_tokens[0]] -= 1
+        self.player.conditions[cmd_tokens[2]] += 1
       elif cmd_tokens[0] == "call":
         magnitude = int(cmd_tokens[1])
         non_imminent_spawns = [es for es in self.enemy_spawns
@@ -323,6 +324,11 @@ class Encounter:
         magnitude = int(cmd_tokens[1])
         delayed_command = " ".join(cmd_tokens[2:])
         self.scheduled_commands.append((delayed_command, self.turn + magnitude))
+      elif cmd_tokens[0] == "repeat":
+        magnitude = int(cmd_tokens[1])
+        repeated_command = " ".join(cmd_tokens[2:])
+        for _ in range(magnitude):
+          self.handle_command(repeated_command)
       else:
         condition = cmd_tokens[0]
         targets = get_combat_entities(self, cmd_tokens[1])
@@ -457,6 +463,9 @@ class Encounter:
     self.player.spellbook.current_page_idx = 0
     self.player.facing = "front"
     self.player.clear_conditions()
+    self.player.damage_survived_this_turn = 0
+    self.player.damage_taken_this_turn = 0
+    self.player.events = []
 
 
   # Rendering

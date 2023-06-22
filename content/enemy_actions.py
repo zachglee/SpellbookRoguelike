@@ -156,7 +156,7 @@ class SetConditionAction(Action):
     return events
 
   def __repr__(self):
-    return f"Set {self.magnitude} to {self.condition} on {self.target}"
+    return f"Set {self.condition} to {self.magnitude} on {self.target}"
 
 
 # Branching Actions
