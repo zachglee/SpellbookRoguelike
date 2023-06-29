@@ -189,7 +189,7 @@ class Region:
       routes.append(random.choice(side_routes))
     
     # prompt the player to choose a route
-    print(player.render_library())
+    print(player.render_library() + "\n")
     for i, (node, encounter) in enumerate(routes):
       print(node.render())
       print()
@@ -240,10 +240,12 @@ class Region:
 
 class Map:
   def __init__(self, n_regions=3):
-    enemy_set_pool = generate_enemy_set_pool(n=27)
+    enemy_set_pool = generate_enemy_set_pool(n=22)
     spell_pools = generate_spell_pools(n_pools=n_regions)
     self.regions = [
-      Region(i, 4, 2, spell_pool, enemy_set_pool[i*9:(i+1)*9])
+      # every region gets 8 enemy sets, and each region has 1 enemy-sets
+      # worth of overlap with the previous and next region
+      Region(i, 4, 2, spell_pool, enemy_set_pool[(i*8)-i:((i+1)*8)-i])
       for i, spell_pool in enumerate(spell_pools)
     ]
     self.current_region_idx = 0
@@ -280,6 +282,7 @@ class Map:
       character_idx = choose_idx(starting_node.safehouse.resting_characters, colored("Choose a character > ", "green"))
       if character_idx is not None:
         player = starting_node.safehouse.resting_characters.pop(character_idx)
+        player.inspect()
         self.current_region_idx = region.position
         self.current_region.current_node = starting_node
         if region.position == 0 and starting_node.position == (0, 0):

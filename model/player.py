@@ -5,7 +5,7 @@ from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
 from model.item import EnergyPotion, MeleeWeapon
-from utils import colorize, numbered_list, choose_obj
+from utils import choose_binary, colorize, numbered_list, choose_obj
 from sound_utils import play_sound
 from content.rituals import rituals
 from content.items import starting_weapons, signature_items
@@ -181,6 +181,13 @@ class Player(CombatEntity):
     render_str = "-------- PLAYER LIBRARY --------\n"
     render_str += numbered_list(self.library)
     return render_str
+  
+  def inspect(self):
+    print(self.render_inventory())
+    print(self.render_library())
+    print(self.render())
+    proceed = choose_binary("Proceed?")
+    return proceed
     
 
 

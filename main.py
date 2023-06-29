@@ -217,13 +217,16 @@ class GameState:
     # Help out characters resting at this safehouse
     safehouse = self.map.current_region.current_node.safehouse
     for character in safehouse.resting_characters:
-      character.heal(10)
+      character.heal(8)
+      print(self.player.render_inventory())
       print(self.player.render_library())
       print(f"{character.name} has requested: \"{character.request}\"")
       spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
-      if spell_to_give is None:
-        continue
-      character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
+      if spell_to_give:
+        character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
+      item_to_give = choose_obj(self.player.inventory, f"Give an item to {character.name}? > ")
+      if item_to_give:
+        character.inventory.append(item_to_give)
       self.player.experience += 20
     self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
     self.save()
@@ -271,7 +274,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

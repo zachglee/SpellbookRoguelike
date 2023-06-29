@@ -41,8 +41,9 @@ def passive_block_and_shield_at_end(encounter, event):
   return False
 
 def passive_first_damage_10hp_remains(encounter, event):
-  if event.has_tag("attack") and not event.metadata["target"].is_player() and event.metadata["target"].hp >= 10:
-    return event.metadata["target"].get_target_string()
+  if (event.has_tag("attack") and not event.metadata["target"].is_player() and
+      event.metadata["target"].hp >= 10 and event.metadata["damage"] == event.metadata["target"].damage_taken_this_turn):
+    return event.metadata["target"].get_target_string(encounter)
   return False
 
 def passive_on_page(encounter, event):
@@ -220,8 +221,8 @@ red_hit_big_enemy = [
   Spell("Producer: +1 Red, Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
   Spell("Converter: 1 Red -> 1 Blue: Apply 1 poison. Apply extra 1 poison for every 5 hp the target has.", color="red", type="Converter", conversion_color="blue",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 5, ["poison _ 1", "poison _ *"])), # NOTE: Purple
-  Spell("Consumer: 1 Red: Deal damage to an enemy equal to half target's remaining health.", color="red", type="Consumer",
-        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["damage _ *"]))],
+  Spell("Consumer: 1 Red: Target loses half its remaining health.", color="red", type="Consumer",
+        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["suffer _ *"]))],
   #
   [Spell("Passive: The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["regen p 3"]),

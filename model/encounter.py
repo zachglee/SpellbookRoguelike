@@ -25,6 +25,7 @@ class Enemy(CombatEntity):
 class EnemySpawn:
   def __init__(self, turn, side, enemy, wave=1):
     self.turn = turn
+    self.original_turn = turn # unaffected by ward
     self.side = side
     self.enemy = enemy
     self.wave = wave
@@ -108,7 +109,7 @@ class Encounter:
 
   @property
   def escape_turn(self):
-    last_enemy_spawn_turn = max(es.turn for es in self.enemy_spawns if es.turn <= self.max_turns)
+    last_enemy_spawn_turn = max(es.original_turn for es in self.enemy_spawns if es.turn <= self.max_turns)
     # you can escape 2 turns after the last enemy spawned,
     # but not earlier than turn 6, nor later than turn 9
     return min(max(last_enemy_spawn_turn + 2, self.min_turns), self.max_turns)
@@ -138,6 +139,7 @@ class Encounter:
 
   def move_to_grave(self, enemy):
     try:
+      enemy.dead = True
       idx = self.back.index(enemy)
       self.dead_enemies.append(self.back.pop(idx))
       if enemy.max_hp <= 10:
@@ -163,12 +165,13 @@ class Encounter:
       enemy.location = {"side": "front", "position": i}
 
   def run_state_triggers(self):
-    back_dead_enemies = [enemy for enemy in self.back if enemy.hp <= 0]
-    front_dead_enemies = [enemy for enemy in self.front if enemy.hp <= 0]
+    back_dead_enemies = [enemy for enemy in self.back if enemy.hp <= 0 and not enemy.dead]
+    front_dead_enemies = [enemy for enemy in self.front if enemy.hp <= 0 and not enemy.dead]
 
     dead_enemies = back_dead_enemies + front_dead_enemies
     for enemy in dead_enemies:
       self.player.experience += enemy.experience
+      enemy.dead = True
       self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(enemy)))
 
   def run_event_triggers(self, event):

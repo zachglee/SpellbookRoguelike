@@ -19,6 +19,7 @@ class CombatEntity:
     self.events = []
     self.damage_taken_this_turn = 0
     self.damage_survived_this_turn = 0
+    self.dead = False
 
   def is_player(self):
     return self.__class__.__name__ == "Player"
@@ -41,9 +42,9 @@ class CombatEntity:
 
   def get_target_string(self, encounter) -> str:
     if self in encounter.back:
-      return f"b{encounter.back.index(self)}"
+      return f"b{encounter.back.index(self)+1}"
     elif self in encounter.front:
-      return f"f{encounter.front.index(self)}"
+      return f"f{encounter.front.index(self)+1}"
     else:
       return ""
 
@@ -109,7 +110,7 @@ class CombatEntity:
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
     self.events.append(Event(["attack"], metadata={"damage": final_damage, "target": target}))
     target.damage_survived_this_turn += final_damage
-    print(f"--------- {self.name} Damage survived: {target.damage_survived_this_turn}")
+    print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
     # play the proper sound
     if damage_dealt == 0:
