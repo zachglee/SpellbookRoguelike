@@ -19,7 +19,7 @@ def passive_lose_hp(encounter, event):
   return event.has_tag("lose_hp") and event.metadata["damage"] > 0 and event.metadata["target"].is_player()
 
 def passive_attacked_for_no_damage(encounter, event):
-  return event.has_tag("attack") and event.metadata["damage"] == 0 and event.metadata["target"].is_player()
+  return event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player()
 
 def passive_third_spell_in_turn(encounter, event):
   return event.has_tag("spell_cast") and len(encounter.spells_cast_this_turn) == 3
@@ -42,7 +42,7 @@ def passive_block_and_shield_at_end(encounter, event):
 
 def passive_first_damage_10hp_remains(encounter, event):
   if (event.has_tag("attack") and not event.metadata["target"].is_player() and
-      event.metadata["target"].hp >= 10 and event.metadata["damage"] == event.metadata["target"].damage_taken_this_turn):
+      event.metadata["target"].hp >= 10 and event.metadata["damage_dealt"] == event.metadata["target"].damage_taken_this_turn):
     return event.metadata["target"].get_target_string(encounter)
   return False
 

@@ -108,7 +108,7 @@ class CombatEntity:
     if lifesteal:
       self.heal(damage_dealt)
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
-    self.events.append(Event(["attack"], metadata={"damage": final_damage, "target": target}))
+    self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
     target.damage_survived_this_turn += final_damage
     print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 

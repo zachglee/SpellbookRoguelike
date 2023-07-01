@@ -76,6 +76,35 @@ class AttackSide(Action):
   def __repr__(self):
     return f"{'Lifesteal ' if self.lifesteal else ''}Attack {self.damage} to side"
 
+class HealAction(Action):
+  def __init__(self, magnitude, target):
+    self.magnitude = magnitude
+    self.target = target
+  
+  def act(self, actor, enc) -> List[Event]:
+    def event_func_factory(combat_entity):
+      def event_func(actor, encounter):
+        combat_entity.heal(self.magnitude)
+      return event_func
+
+    if self.target == "player":
+      return [Event(["condition"], actor, enc, event_func_factory(enc.player))]
+    elif self.target == "self":
+      return [Event(["condition"], actor, enc, event_func_factory(actor))]
+    elif self.target == "all_enemies":
+      return [Event(["condition"], actor, enc, event_func_factory(enemy)) for enemy in enc.enemies]
+    elif self.target == "all":
+      return [Event(["condition"], actor, enc, event_func_factory(ce)) for ce in enc.enemies + [enc.player]]
+    elif self.target == "immediate":
+      return [Event(["condition"], actor, enc, event_func_factory(actor.get_immediate(enc)))]
+    elif self.target == "side":
+      return [Event(["condition"], actor, enc, event_func_factory(enemy)) for enemy in actor.side_queue(enc)]
+    else:
+      raise ValueError(f"{self.target} is not a valid target...")
+    
+  def __repr__(self):
+    return f"Heal {self.target} for {self.magnitude}"
+
 class MoveAction(Action):
   def __init__(self, movement):
     self.movement = movement

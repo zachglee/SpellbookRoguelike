@@ -146,14 +146,14 @@ class Encounter:
         play_sound("enemy-death-small.mp3", channel=2)
       else:
         play_sound("enemy-death-large.mp3", channel=2)
-    except ValueError:
-      pass
+    except Exception as e:
+      print(f"---------------------- {e}")
 
     try:
       idx = self.front.index(enemy)
       self.dead_enemies.append(self.front.pop(idx))
-    except ValueError:
-      pass
+    except Exception as e:
+      print(f"---------------------- {e}")
 
     print(f"{enemy.name} died!")
     return enemy
@@ -172,7 +172,7 @@ class Encounter:
     for enemy in dead_enemies:
       self.player.experience += enemy.experience
       enemy.dead = True
-      self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(enemy)))
+      self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(s)))
 
   def run_event_triggers(self, event):
     # run passive spell triggers
@@ -223,7 +223,7 @@ class Encounter:
     if target in self.front:
       banished = self.front.pop(idx)
       banished.spawned = False
-    target.reset_conditions()
+    target.clear_conditions()
 
   def explore(self):
     play_sound("explore.mp3")
@@ -425,10 +425,10 @@ class Encounter:
         self.handle_command(cmd)
 
   def round_end_phase(self):
-    for entity in self.combat_entities:
-      entity.end_round()
     self.events.append(Event(["end_round"]))
     self.resolve_events()
+    for entity in self.combat_entities:
+      entity.end_round()
 
   def end_player_turn(self):
     play_sound("turn-end.mp3")

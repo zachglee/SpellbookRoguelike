@@ -9,7 +9,7 @@ from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpe
 from model.item import EnergyPotion
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_binary, command_reference, help_reference
+from utils import colorize, choose_obj, choose_binary, command_reference, get_combat_entities, help_reference
 from drafting import destination_draft, safehouse_library_draft
 from sound_utils import play_sound
 
@@ -140,9 +140,15 @@ class GameState:
 
   def handle_command(self, cmd):
     encounter = self.encounter
+    cmd_tokens = cmd.split(" ")
     try:
       if cmd == "die":
         self.player_death()
+        return
+      elif cmd == "debug":
+        targets = get_combat_entities(self, cmd_tokens[1])
+        for target in targets:
+          print(target.__dict__)
         return
       elif cmd == "help":
         command_reference()
@@ -169,6 +175,7 @@ class GameState:
       elif cmd[-1] == "?":
         subject = cmd[:-1]
         help_reference(subject)
+        return
     except (KeyError, IndexError, ValueError, TypeError) as e:
       print(e)
 

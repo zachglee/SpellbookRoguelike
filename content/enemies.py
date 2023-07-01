@@ -4,7 +4,7 @@ from model.encounter import EnemySet, Enemy, EnemySpawn
 from model.event import Event
 from model.action import Action
 from content.enemy_actions import (
-  AttackAction, AttackSide, SelfDamageAction, AttackImmediate,
+  AttackAction, AttackSide, HealAction, SelfDamageAction, AttackImmediate,
   BackstabAction, NearFarAction, PackTacticsAction, MoveAction, CowardlyAction,
   CallAction, MultiAction, WindupAction, HealthThresholdAction,
   NothingAction, CautiousAction, AddConditionAction, SetConditionAction,
@@ -104,6 +104,13 @@ enemies = {
                                   HealthThresholdAction(
                                     MultiAction([AttackAction(4), AttackAction(4)]),
                                     AttackAction(2), 9)),
+  "Fickle Witch-Queen": Enemy(12, "Fickle Witch-Queen",
+                           CautiousAction(NothingAction(), WindupAction(MultiAction(
+                               SetConditionAction("poison", 0, "player"),
+                               AddConditionAction("prolific", 1, "player"),
+                               HealAction(10, "player")
+                               ), 2)),
+                           entry=AddConditionAction("poison", 5, "player"))
   # hit me I get stronger
   # does something good for you when there gets to be 5 enemies?
   # heal immediate?
@@ -214,7 +221,15 @@ enemy_sets = [
     EnemySpawn(3, "b", enemies["Witch of Withering"]),
     EnemySpawn(5, "f", enemies["Witch of Rebirth"]),
   ]),
+  EnemySet("Fickle Witch-Queen", [
+      EnemySpawn(2, "f", enemies["Fickle Witch-Queen"])
+  ]),
   # TODO faerie mage and queen?
+  # - Get regen + armor if you cast any spells this turn
+  # - Witchqueen that curses you but you need to keep her alive long enough
+  #   to remove the curse? Maybe she just curses you on entry, and
+  #   removes your curse after windup? Oh and if you hit her she stops
+  #   winding up?
 
   # Kingdom of Amar
   EnemySet("Knifehand", [
@@ -252,6 +267,7 @@ enemy_sets = [
     EnemySpawn(11, "f", enemies["Demon of the Inferno"]),
   ]),
   # TODO
+  # - burn up your energy? If you have excess energy, burn you?
 
   # Dominion of Drael
   EnemySet("Zealous Battlemages", [
