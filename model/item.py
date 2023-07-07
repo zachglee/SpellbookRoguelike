@@ -5,6 +5,7 @@ class Item:
   def __init__(self, charges, description):
     self.description = description
     self.charges = charges
+    self.time_cost = 1
 
   def use(self, encounter):
     pass

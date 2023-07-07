@@ -212,7 +212,7 @@ blue_excess_block = [
          triggers_on=passive_block_at_end, raw_commands=["shield p ^"]),
   Spell("Producer: +1 Blue, +2 shield.", color="blue", type="Producer", raw_commands=["shield p 2"]),
   Spell("Converter: 1 Blue -> 1 Gold: Block 2. Convert block into 2x shield.", color="blue", type="Converter", conversion_color="gold",
-        raw_commands=["block p 2"], generate_commands_post=for_player_condition("block", ["shield p *"], lambda b: 2*b)),
+        raw_commands=["block p 2"], generate_commands_post=for_player_condition("block", ["shield p *", "block p =0"], lambda b: 2*b)),
   Spell("Consumer: 1 Blue: Gain 6 block. Deal damage equal to block + shield to target.", color="blue", type="Consumer")],
 ]
 
@@ -276,7 +276,7 @@ gold_face_noone = [
   [Spell("Passive: At end of turn, if facing no enemies, gain 2 searing presence.", color="gold", type="Passive",
          triggers_on=passive_face_noone_at_end, raw_commands=["searing p 2"]),
   Spell("Producer: +1 Gold, gain 2 searing presence.", color="gold", type="Producer", raw_commands=["searing p 2"]),
-  Spell("Converter: 1 Gold -> 1 Red: Banish 1 immediate enemy.", color="gold", type="Converter", conversion_color="red",
+  Spell("Converter: 1 Gold -> 1 Red: Banish immediate enemy.", color="gold", type="Converter", conversion_color="red",
         targets=["i"], raw_commands=["banish i"]),
   Spell("Consumer: 1 Gold: Gain 2 armor.", color="gold", type="Consumer", raw_commands=["armor p 2"])],
   #

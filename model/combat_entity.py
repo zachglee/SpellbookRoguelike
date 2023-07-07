@@ -89,6 +89,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("slow", colored("slow", "magenta"))
     rendered_conditions = rendered_conditions.replace("inventive", colored("inventive", "cyan"))
     rendered_conditions = rendered_conditions.replace("dig", colored("dig", "yellow"))
+    rendered_conditions = rendered_conditions.replace("undying", colored("undying", "magenta"))
     return f"{self.name}: {self.hp}/{self.max_hp}hp ({rendered_conditions})"
 
   # Manipulations
@@ -100,13 +101,10 @@ class CombatEntity:
 
   def attack(self, target, damage, lifesteal=False):
     if target.conditions["evade"] > 0:
-      # TODO: add sound
+      play_sound("attack-evaded.mp3", channel=1)
       print(f"{self.name} attacks {target.name} but they evade!")
       target.conditions["evade"] -= 1
       return 0
-    
-    # if self.conditions["encase"] > 0:
-    #   damage_to_encase = min(self.conditions["encase"], damage)
 
     damage_to_kill = (target.conditions["block"] +
                       target.conditions["shield"] +

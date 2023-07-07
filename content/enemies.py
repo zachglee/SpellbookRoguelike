@@ -148,6 +148,15 @@ enemies = {
   "Dreamstalker": Enemy(20, "Dreamstalker",BackstabAction(
       AddConditionAction("slow", 1, "player"),
       AttackAction(6))),
+  "Shadow of a Doubt": Enemy(16, "Shadow of a Doubt", BackstabAction(
+      AddConditionAction("vulnerable", 1, "player"),
+      AttackAction(4))),
+  "Mov, the Necromancer": Enemy(12, "Mov, the Necromancer",
+      MultiAction([
+        MoveAction(1),
+        AddConditionAction("undying", 1, "immediate"),
+      ]),
+      entry=AddConditionAction("undying", 1, "all_enemies")),
   # hit me I get stronger
   # enemy that spawns at turn 4
   # does something good for you when there gets to be 5 enemies?
@@ -221,7 +230,9 @@ movs_horde = [
     EnemySpawn(5, "f", enemies["Skitterer"]),
     EnemySpawn(6, "b", enemies["Skitterer"]),
   ], faction="Mov's Horde"),
-  # TODO: Mov himself?
+  EnemySet("Mov, the Necromancer", [
+    EnemySpawn(4, "f", enemies["Mov, the Necromancer"]),
+  ]),
 ]
 
 company_of_blades = [
@@ -378,7 +389,9 @@ shadow_realm = [
   EnemySet("Dreamstalker", [
     EnemySpawn(3, "b", enemies["Dreamstalker"])
   ], faction="Shadow Realm"),
-  # TODO one more
+  EnemySet("Shadow of a Doubt", [
+    EnemySpawn(4, "b", enemies["Shadow of a Doubt"])
+  ])
 ]
 
 ancient_horrors = [

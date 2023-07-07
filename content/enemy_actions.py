@@ -136,7 +136,7 @@ class CallAction(Action):
     return f"Call {self.call_name} {self.call_amount}"
 
 class AddConditionAction(Action):
-  def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all"]):
+  def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all", "immediate"]):
     self.condition = condition
     self.magnitude = magnitude
     self.target = target

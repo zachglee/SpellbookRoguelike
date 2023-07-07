@@ -1,4 +1,6 @@
+from typing import Literal
 from termcolor import colored
+import time
 import random
 import math
 from abc import ABC, abstractmethod
@@ -23,7 +25,7 @@ class Enemy(CombatEntity):
     # add ability triggers?
 
 class EnemySpawn:
-  def __init__(self, turn, side, enemy, wave=1):
+  def __init__(self, turn, side: Literal["f", "b"], enemy, wave=1):
     self.turn = turn
     self.original_turn = turn # unaffected by ward
     self.side = side
@@ -61,12 +63,14 @@ class EnemyWave:
     return enemy_spawns
 
 class Encounter:
-  def __init__(self, waves, player, ambient_energy=None, boss=False):
+  def __init__(self, waves, player, ambient_energy=None, basic_items=[], special_items=[], boss=False):
     self.waves = waves
     self.rituals = []
     self.ambient_energy = ambient_energy or random.choice(energy_colors)
     self.boss = boss
     self.enemy_spawns = []
+    self.basic_items = basic_items
+    self.special_items = special_items
     for wave in self.waves:
       self.enemy_spawns += wave.instantiated_enemy_spawns
     self.player = player
@@ -234,18 +238,22 @@ class Encounter:
     r = random.random()
     if r < 0.02:
       play_sound("explore-find.mp3")
-      found_item = deepcopy(random.choice(signature_items))
+      found_item = deepcopy(random.choice(self.special_items))
       input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"))
-      print(f"Found: {found_item.render()}")
-      self.player.inventory.append(found_item)
-    elif r < 0.10:
-      play_sound("explore-find.mp3")
-      found_item = deepcopy(random.choice(starting_weapons + minor_energy_potions))
+    elif r < 0.08:
+      found_item = deepcopy(random.choice(self.basic_items))
       input(colored("Something useful glints in the torchlight...", "green"))
+    elif r < 0.12:
+      play_sound("explore-find.mp3")
+      found_item = deepcopy(random.choice(minor_energy_potions))
+      input(colored("Something useful glints in the torchlight...", "green"))
+    else:
+      found_item = None
+      print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
+    
+    if found_item:
       print(f"Found: {found_item.render()}")
       self.player.inventory.append(found_item)
-    else:
-      print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
 
   def handle_command(self, cmd):
     print(f"Handling command '{cmd}' ...")
@@ -263,11 +271,13 @@ class Encounter:
         item_index = int(cmd_tokens[1])
         item_idx = item_index - 1
         item = self.player.inventory[item_idx]
-        if item.time_cost >= self.player.time:
+        if self.player.time >= item.time_cost:
           self.player.spend_time(cost=item.time_cost)
           item.use(self)
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
+        else:
+          input(colored("Not enough time to use that item!", "red"))
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
         self.explore()
@@ -348,9 +358,19 @@ class Encounter:
       else:
         condition = cmd_tokens[0]
         targets = get_combat_entities(self, cmd_tokens[1])
-        magnitude = int(cmd_tokens[2])
+        if cmd_tokens[2][0] == "=":
+          magnitude = int(cmd_tokens[2][1:])
+          set_value = True
+        else:
+          magnitude = int(cmd_tokens[2])
+          set_value = False
+
         for target in targets:
-          target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
+          if set_value:
+            target.conditions[condition] = magnitude
+          else:
+            target.conditions[condition] = (target.conditions[condition] or 0) + magnitude
+
           if condition == "enduring" and target.conditions["enduring"] == 0:
             target.conditions["enduring"] = None
           if condition == "durable" and target.conditions["durable"] == 0:
@@ -374,10 +394,10 @@ class Encounter:
     time = 4
     if prolific:
       time += 4
-      self.conditions["prolific"] = max(self.conditions["prolific"] - 1, 0)
+      self.player.conditions["prolific"] = max(self.player.conditions["prolific"] - 1, 0)
     if slow:
       time -= 1
-      self.conditions["slow"] = max(self.conditions["slow"] - 1, 0)
+      self.player.conditions["slow"] = max(self.player.conditions["slow"] - 1, 0)
     self.player.time = time
     self.events.append(Event(["begin_turn"]))
     self.resolve_events()
@@ -388,6 +408,16 @@ class Encounter:
     self.spells_cast_this_turn = []
     # Spawn enemies
     to_spawn = [es for es in self.enemy_spawns if not es.enemy.spawned and es.turn <= self.turn]
+    # Resurrect enemies
+    for enemy in self.dead_enemies:
+      undying = enemy.conditions["undying"]
+      if undying:
+        enemy.hp = 3
+        enemy.clear_conditions()
+        enemy.conditions["undying"] = max(0, undying - 1)
+        enemy.spawned = False
+        enemy.dead = False
+        to_spawn.append(EnemySpawn(self.turn, "b", enemy))
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
     for enemy, destination in (front_spawns + back_spawns):
@@ -413,6 +443,7 @@ class Encounter:
     if (faced := self.faced_enemy_queue) and (searing := self.player.conditions["searing"]):
       damage = faced[0].assign_damage(searing)
       print(f"{faced[0].name} took {damage} damage from searing presence!")
+      play_sound("tick-searing.mp3")
     # add end_turn event
     self.events.append(Event(["end_turn"]))
     self.resolve_events()

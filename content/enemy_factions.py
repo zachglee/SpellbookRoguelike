@@ -56,7 +56,7 @@ factions = [
       CustomItem("Sleeper Darts", 2, "Inflict 1 stun and 3 poison.", ["stun _ 1", "poison _ 3"])
     ],
     special_items=[
-      CustomItem("Fae Favor", 1, "", ["delay 0 banish a 1", "delay 0 regen p 3"])
+      CustomItem("Fae Favor", 1, "Banish 1 all at end of round, then gain 3 regen.", ["delay 0 banish a 1", "delay 0 regen p 3"])
     ]
   ),
   Faction("Kingdom of Amar", kingdom_of_amar,
@@ -65,13 +65,13 @@ factions = [
       CustomItem("Animate Armor", 2, "Gain 1 armor.", ["armor p 1"]),
     ],
     special_items=[
-      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 3 prolific, and 4 sharp.")
+      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 3 prolific, and 4 sharp.", ["armor p 2", "prolific p 3", "sharp p 4"])
     ]
   ),
   Faction("Infernal Plane", infernal_plane,
     basic_items=[
       CustomItem("Hellfire Torch", 3, "Burn 2 immediate.", ["burn i 2"]),
-      CustomItem("Summoning Circle", 4, "Gain 1 regen and call 1.")
+      CustomItem("Summoning Circle", 4, "Gain 1 regen and call 1.", ["regen p 1", "call 1"])
     ],
     special_items=[
       CustomItem("Demon's Blood", 1, "burn 3 self, gain 9 searing presence, 9 retaliate", ["burn p 3", "searing p 8", "retaliate p 8"])

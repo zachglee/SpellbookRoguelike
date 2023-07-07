@@ -4,6 +4,7 @@ from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
 from content.rituals import rituals
+from content.enemy_factions import factions
 
 def generate_enemy_set_pool(n=10):
   random.shuffle(enemy_sets)
@@ -21,6 +22,10 @@ def generate_spell_pools(n_pools=1):
     spell_pool = red_spell_pool + blue_spell_pool + gold_spell_pool
     spell_pools.append(spell_pool)
   return spell_pools
+
+def generate_faction_sets(n_sets=1, set_size=3):
+  random.shuffle(factions)
+  return [factions[i*set_size:(i+1)*set_size] for i in range(n_sets)]
 
 def generate_library_spells(size, spell_pool=spells):
   random.shuffle(spell_pool)

@@ -9,9 +9,8 @@ from model.spellbook import LibrarySpell
 from model.encounter import Encounter, EnemyWave
 from model.player import Player
 from utils import energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
-from generators import generate_spell_pools, generate_enemy_set_pool, generate_library_spells, generate_rituals
-from content.aspirations import aspirations
-from content.items import starting_weapons
+from generators import generate_spell_pools, generate_faction_sets, generate_enemy_set_pool, generate_library_spells, generate_rituals
+from content.enemy_factions import factions
 
 class Node:
   def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1, boss=False):
@@ -73,11 +72,14 @@ class Node:
     return render_str
 
 class Region:
-  def __init__(self, position, width, height, spell_pool, enemy_set_pool):
+  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=8):
     # setup
     self.position = position
     self.spell_pool = spell_pool
-    self.enemy_set_pool = enemy_set_pool
+    self.faction_set = faction_set
+    
+    enemy_set_universe = sum([faction.enemy_sets for faction in faction_set], [])
+    self.enemy_set_pool = enemy_set_universe[0:enemy_set_pool_size]
     random.shuffle(self.spell_pool)
     random.shuffle(self.enemy_set_pool)
     spell_pool_cursor = 0
@@ -121,10 +123,19 @@ class Region:
     self.destination_node = None
     self.player = None
 
+  @property
+  def basic_items(self):
+    return sum([faction.basic_items for faction in self.faction_set], [])
+  
+  @property
+  def special_items(self):
+    return sum([faction.special_items for faction in self.faction_set], [])
+
   def corrupt(self):
     self.corruption += 1
     # make one node harder in each layer
     # TODO: this is a bit too punishing for now
+    # TODO: replace this with blockading
     # for layer in self.nodes:
     #   most_passes_node = max(layer, key=lambda node: node.pass_passages)
     #   most_passes_node.passages += ["fail"] * self.corruption * 3
@@ -154,6 +165,8 @@ class Region:
     encounter = Encounter(waves=destination_node.generate_encounter_waves(self.enemy_set_pool),
                           player=self.player,
                           ambient_energy=destination_node.ambient_energy,
+                          basic_items=self.basic_items,
+                          special_items=self.special_items,
                           boss=destination_node.boss)
     return destination_node, encounter
 
@@ -197,8 +210,8 @@ class Region:
     node, encounter = choose_obj(routes, colored("choose a route > ", "red"))
     self.destination_node = node
     if not node.seen:
-      player.experience += 12
-      input(colored("You gain 12 experience for exploring a new node!", "green"))
+      player.experience += 10
+      print(colored("You gain 10 experience for exploring a new node!", "green"))
     node.seen = True
     fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
     if fight:
@@ -229,10 +242,12 @@ class Region:
 
   def render(self):
     """Renders the region."""
+    faction_names = [faction.name for faction in self.faction_set]
+    faction_summary = colored(f"~~~~~~~~~~~~ {', '.join(faction_names)} ~~~~~~~~~~~~", "red")
     rendered_layers = [f"-------- Layer {i} --------\n{self.render_layer(i)}"
                        for i in reversed(range(1, len(self.nodes)))]
     corruption_str = colored(f"\nCorruption: {self.corruption}", "red") if self.corruption > 0 else ""
-    return "\n\n".join(rendered_layers) + corruption_str
+    return faction_summary + "\n" + "\n\n".join(rendered_layers) + corruption_str
   
   def inspect(self):
     while True:
@@ -243,14 +258,18 @@ class Region:
 
 class Map:
   def __init__(self, n_regions=3):
-    enemy_set_pool = generate_enemy_set_pool(n=22)
+    # enemy_set_pool = generate_enemy_set_pool(n=22)
     spell_pools = generate_spell_pools(n_pools=n_regions)
-    self.regions = [
-      # every region gets 8 enemy sets, and each region has 1 enemy-sets
-      # worth of overlap with the previous and next region
-      Region(i, 4, 2, spell_pool, enemy_set_pool[(i*8)-i:((i+1)*8)-i])
-      for i, spell_pool in enumerate(spell_pools)
-    ]
+    faction_sets = generate_faction_sets(n_sets=n_regions, set_size=3)
+    self.regions = [Region(i, 4, 2, spell_pool, faction_set) for i, spell_pool, faction_set
+                    in zip(range(n_regions), spell_pools, faction_sets)]
+    # TODO: REMOVE
+    # self.regions = [
+    #   # every region gets 8 enemy sets, and each region has 1 enemy-sets
+    #   # worth of overlap with the previous and next region
+    #   Region(i, 4, 2, spell_pool, enemy_set_pool[(i*8)-i:((i+1)*8)-i])
+    #   for i, spell_pool in enumerate(spell_pools)
+    # ]
     self.current_region_idx = 0
     self.active_ritual = None
     self.runs = 0
