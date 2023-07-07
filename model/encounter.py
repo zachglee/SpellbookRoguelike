@@ -31,10 +31,11 @@ class EnemySpawn:
     self.wave = wave
 
 class EnemySet:
-  def __init__(self, name, enemy_spawns, exp=None):
+  def __init__(self, name, enemy_spawns, faction="Unknown", exp=None):
     self.name = name
     self.enemy_spawns = enemy_spawns
     self.experience = exp or 15
+    self.faction = faction
   
   @property
   def instantiated_enemy_spawns(self):
@@ -215,15 +216,17 @@ class Encounter:
     item.use(self)
     self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
 
-  def banish(self, target):
+  def banish(self, target, ward=0):
     idx = target.position(self)
     if target in self.back:
-      banished = self.back.pop(idx)
-      banished.spawned = False
+      self.back.pop(idx)
     if target in self.front:
-      banished = self.front.pop(idx)
-      banished.spawned = False
+      self.front.pop(idx)
     target.clear_conditions()
+    target.spawned = False
+    target.conditions["ward"] += ward
+
+    
 
   def explore(self):
     play_sound("explore.mp3")
@@ -258,17 +261,26 @@ class Encounter:
         self.player.spend_time(magnitude)
       elif cmd_tokens[0] == "use":
         item_index = int(cmd_tokens[1])
-        self.player.spend_time()
-        self.use_item(item_index)
-        play_sound("inventory.mp3")
+        item_idx = item_index - 1
+        item = self.player.inventory[item_idx]
+        if item.time_cost >= self.player.time:
+          self.player.spend_time(cost=item.time_cost)
+          item.use(self)
+          self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
+          play_sound("inventory.mp3")
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
         self.explore()
+      elif cmd == "face?":
+        self.player.switch_face()
       elif cmd == "face":
         self.player.spend_time()
         self.player.switch_face()
       elif cmd == "page":
         self.player.spend_time()
+        self.player.spellbook.switch_page()
+        self.events.append(Event(["page"]))
+      elif cmd == "page?":
         self.player.spellbook.switch_page()
         self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
@@ -299,9 +311,10 @@ class Encounter:
         if non_imminent_spawns:
           sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
       elif cmd_tokens[0] == "banish":
+        ward = int(cmd_tokens[2]) if len(cmd_tokens) > 2 else 0
         targets = get_combat_entities(self, cmd_tokens[1])
         for target in targets:
-          self.banish(target)
+          self.banish(target, ward=ward)
       elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
         targets = get_combat_entities(self, cmd_tokens[1])
         magnitude = int(cmd_tokens[2])
@@ -359,8 +372,12 @@ class Encounter:
     prolific = self.player.conditions["prolific"]
     slow = self.player.conditions["slow"]
     time = 4
-    if prolific: time += 4
-    if slow: time -= 1
+    if prolific:
+      time += 4
+      self.conditions["prolific"] = max(self.conditions["prolific"] - 1, 0)
+    if slow:
+      time -= 1
+      self.conditions["slow"] = max(self.conditions["slow"] - 1, 0)
     self.player.time = time
     self.events.append(Event(["begin_turn"]))
     self.resolve_events()
@@ -377,6 +394,9 @@ class Encounter:
       if self.player.conditions["ward"] > 0:
         print(f"{enemy.name} was warded!")
         self.player.conditions["ward"] -= 1
+      elif enemy.conditions["ward"] > 0:
+        print(f"{enemy.name} was warded!")
+        enemy.conditions["ward"] -= 1
       else:
         destination.append(enemy)
         enemy.spawned = True

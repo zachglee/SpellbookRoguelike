@@ -1,6 +1,7 @@
 from typing import List, Literal
 from model.event import Event
 from model.action import Action
+from utils import energy_colors
 
 # Event functions
 
@@ -225,6 +226,23 @@ class HealthThresholdAction(Action):
   
   def __repr__(self):
     return f"If below {self.threshold}: {self.below_threshold_action} otherwise {self.meet_threshold_action}"
+
+class EnergyThresholdAction(Action):
+  def __init__(self, meet_threshold_action, below_threshold_action, threshold,
+               colors=energy_colors):
+    self.meet_threshold_action = meet_threshold_action
+    self.below_threshold_action = below_threshold_action
+    self.threshold = threshold
+    self.colors = colors
+  
+  def act(self, actor, enc) -> List[Event]:
+    if enc.player.total_energy(colors=self.colors) >= self.threshold:
+      return self.meet_threshold_action.act(actor, enc)
+    else:
+      return self.below_threshold_action.act(actor, enc)
+    
+  def __repr__(self):
+    return f"If player has {self.threshold} or more energy: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):

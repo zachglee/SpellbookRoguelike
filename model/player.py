@@ -5,7 +5,7 @@ from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
 from model.item import EnergyPotion, MeleeWeapon
-from utils import choose_binary, colorize, numbered_list, choose_obj
+from utils import choose_binary, colorize, numbered_list, choose_obj, energy_colors
 from sound_utils import play_sound
 from content.rituals import rituals
 from content.items import starting_weapons, signature_items
@@ -40,6 +40,10 @@ class Player(CombatEntity):
     self.experience = 0
     self.aspiration = aspiration
     self.wounds = 0
+
+  def total_energy(self, colors=energy_colors):
+    player_energy = sum(self.conditions[color] for color in colors)
+    return player_energy
 
   @property
   def next_exp_milestone(self):
@@ -138,13 +142,13 @@ class Player(CombatEntity):
     self.inventory = inventory
     self.request = None
 
-  def get_immediate(self, encounter):
+  def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,
     or None if there are no enemies on that side."""
     if self.facing == "front":
-      immediate = encounter.front[0:1]
+      immediate = encounter.front[offset:offset+1]
     if self.facing == "back":
-      immediate = encounter.back[0:1]
+      immediate = encounter.back[offset:offset+1]
     return immediate[0] if immediate else None
 
   def switch_face(self):
@@ -186,7 +190,7 @@ class Player(CombatEntity):
     print(self.render_inventory())
     print(self.render_library())
     print(self.render())
-    proceed = choose_binary("Proceed?")
+    proceed = choose_binary("Proceed with this character?")
     return proceed
     
 

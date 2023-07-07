@@ -92,11 +92,13 @@ def get_combat_entities(enc, target_string):
   elif target_string == "a":
     return enc.front + enc.back
   elif target_string == "i":
-    return [enc.faced_enemy_queue[0]]
+    return [enc.player.get_immediate(enc)]
   elif target_string == "iside":
     return enc.faced_enemy_queue
   elif target_string == "bi":
     return [enc.unfaced_enemy_queue[0]]
+  elif target_string[0] == "i" and (n := target_string[1:].isnumeric()):
+    return [enc.player.get_immediate(enc, offset=n-1)]
   elif target_string == "f":
     return enc.front
   elif target_string == "r":

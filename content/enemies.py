@@ -1,10 +1,8 @@
 from copy import deepcopy
 from typing import List
 from model.encounter import EnemySet, Enemy, EnemySpawn
-from model.event import Event
-from model.action import Action
 from content.enemy_actions import (
-  AttackAction, AttackSide, HealAction, SelfDamageAction, AttackImmediate,
+  AttackAction, AttackSide, EnergyThresholdAction, HealAction, SelfDamageAction, AttackImmediate,
   BackstabAction, NearFarAction, PackTacticsAction, MoveAction, CowardlyAction,
   CallAction, MultiAction, WindupAction, HealthThresholdAction,
   NothingAction, CautiousAction, AddConditionAction, SetConditionAction,
@@ -30,7 +28,7 @@ enemies = {
   "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(3))),
   "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
-  "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("enduring", 2, "self"), exp=10),
+  "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
   "Stoneguard": Enemy(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
   "Conniving Impfiend": Enemy(5, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy(20, "Insistent Duelist",
@@ -105,13 +103,53 @@ enemies = {
                                     MultiAction([AttackAction(4), AttackAction(4)]),
                                     AttackAction(2), 9)),
   "Fickle Witch-Queen": Enemy(12, "Fickle Witch-Queen",
-                           CautiousAction(NothingAction(), WindupAction(MultiAction(
+                           CautiousAction(NothingAction(), WindupAction(MultiAction([
                                SetConditionAction("poison", 0, "player"),
-                               AddConditionAction("prolific", 1, "player"),
-                               HealAction(10, "player")
-                               ), 2)),
-                           entry=AddConditionAction("poison", 5, "player"))
+                               AddConditionAction("regen", 4, "player")
+                               ]), 2)),
+                           entry=AddConditionAction("poison", 4, "player")),
+  "Screeching Fury": Enemy(18, "Screeching Fury",
+                           HealthThresholdAction(AttackAction(2),
+                                                 MultiAction([
+                                                     AttackAction(4),
+                                                     AttackAction(4),
+                                                     AddConditionAction("sharp", 1, "self")]
+                                                 ), 18)),
+  "Witch-Burner Devil": Enemy(18, "Witch-Burner Devil",
+                              EnergyThresholdAction(AddConditionAction("burn", 3, "player"), AttackAction(1), 1)),
+  "Tithetaker": Enemy(25, "Tithetaker",
+                      EnergyThresholdAction(
+                          AddConditionAction("regen", 1, "player"),
+                          AttackAction(16, lifesteal=True), 4)),
+  "Generous Sprite": Enemy(1, "Generous Sprite",
+                         BackstabAction(
+                             WindupAction(AddConditionAction("green", 1, "player"), 3),
+                             SelfDamageAction(1),
+                         )),
+  "Blue Spirit-Hunter": Enemy(12, "Blue Spirit-Hunter", EnergyThresholdAction(
+      MultiAction([
+          AddConditionAction("shield", 3, "self"),
+          AttackAction(3),
+      ]),
+      NothingAction(), 1, colors=["blue"])),
+  "Red Spirit-Hunter": Enemy(12, "Red Spirit-Hunter", EnergyThresholdAction(
+      AddConditionAction("burn", 3, "player"),
+      NothingAction(), 1, colors=["red"])),
+  "Gold Spirit-Hunter": Enemy(12, "Gold Spirit-Hunter", EnergyThresholdAction(
+      AttackAction(6),
+      NothingAction(), 1, colors=["gold"])),
+  "Font of Magic": Enemy(16, "Font of Magic",
+                         MultiAction([
+                            AddConditionAction("red", 1, "player"),
+                            AddConditionAction("gold", 1, "player"),
+                            AddConditionAction("blue", 1, "player"),
+                         ])),
+  "Nightmare Remnant": Enemy(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
+  "Dreamstalker": Enemy(20, "Dreamstalker",BackstabAction(
+      AddConditionAction("slow", 1, "player"),
+      AttackAction(6))),
   # hit me I get stronger
+  # enemy that spawns at turn 4
   # does something good for you when there gets to be 5 enemies?
   # heal immediate?
   # more call action enemies?
@@ -125,50 +163,56 @@ enemies = {
   # another backstab enemy? side-hopping backstabber?
 }
 
-enemy_sets = [
+saik_collective = [
   # Sa'ik Collective
   EnemySet("Harpy Harriers", [
     EnemySpawn(1, "b", enemies["Harpy Harrier"]),
     EnemySpawn(2, "f", enemies["Harpy Harrier"]),
     EnemySpawn(3, "b", enemies["Harpy Harrier"])
-  ]),
+  ], faction="Sa'ik Collective"),
   EnemySet("Evasive Skydancer", [
     EnemySpawn(2, "f", enemies["Evasive Skydancer"])
-  ]),
+  ], faction="Sa'ik Collective"),
   EnemySet("Sa'ik Descenders", [
     EnemySpawn(3, "f", enemies["Cocky Descender"]),
     EnemySpawn(3, "b", enemies["Cocky Descender"]),
-  ]),
-  # more stuff
+  ], faction="Sa'ik Collective"),
+  EnemySet("Screeching Fury", [
+    EnemySpawn(3, "b", enemies["Screeching Fury"]),
+  ], faction="Sa'ik Collective")
+]
 
+house_of_imir = [
   # House of Imir
   EnemySet("Ravenous Hounds", [
     EnemySpawn(2, "f", enemies["Ravenous Hound"]),
     EnemySpawn(3, "b", enemies["Ravenous Hound"]),
     EnemySpawn(4, "f", enemies["Ravenous Hound"])
-  ]),
+  ], faction="House of Imir"),
   EnemySet("Wanton Vampire", [
     EnemySpawn(3, "b", enemies["Bat"]),
     EnemySpawn(4, "f", enemies["Vampire"])
-  ]),
+  ], faction="House of Imir"),
   EnemySet("Lurking Scavengers", [
     EnemySpawn(1, "b", enemies["Lurking Scavenger"]),
     EnemySpawn(3, "b", enemies["Lurking Scavenger"]),
     EnemySpawn(5, "b", enemies["Lurking Scavenger"]),
-  ]),
+  ], faction="House of Imir"),
   EnemySet("Vampire Lord", [
     EnemySpawn(3, "f", enemies["Vampire Lord"]),
-  ]),
+  ], faction="House of Imir"),
+]
 
+movs_horde = [
   # Mov's Horde
   EnemySet("Zombie Mob", [
     EnemySpawn(3, "f", enemies["Zombie"]),
     EnemySpawn(4, "f", enemies["Zombie"]),
     EnemySpawn(5, "f", enemies["Zombie"])
-  ]),
+  ], faction="Mov's Horde"),
   EnemySet("Decaying Corpse", [
     EnemySpawn(1, "f", enemies["Decaying Corpse"])
-  ]),
+  ], faction="Mov's Horde"),
   EnemySet("Skittering Swarm", [
     EnemySpawn(1, "f", enemies["Skitterer"]),
     EnemySpawn(2, "f", enemies["Skitterer"]),
@@ -176,149 +220,214 @@ enemy_sets = [
     EnemySpawn(4, "b", enemies["Skitterer"]),
     EnemySpawn(5, "f", enemies["Skitterer"]),
     EnemySpawn(6, "b", enemies["Skitterer"]),
-  ]),
+  ], faction="Mov's Horde"),
   # TODO: Mov himself?
+]
 
+company_of_blades = [
   # Company of Blades
   EnemySet("Bandit Ambush", [
     EnemySpawn(2, "f", enemies["Bandit"]),
     EnemySpawn(2, "b", enemies["Bandit"])
-  ]),
+  ], faction="Company of Blades"),
   EnemySet("Hunter and Hawk", [
     EnemySpawn(3, "b", enemies["Hawk"]),
     EnemySpawn(4, "f", enemies["Hunter"])
-  ]),
+  ], faction="Company of Blades"),
   EnemySet("Insistent Duelist", [
     EnemySpawn(2, "f", enemies["Insistent Duelist"])
-  ]),
+  ], faction="Company of Blades"),
   EnemySet("Crossbow Deadeyes", [
     EnemySpawn(2, "b", enemies["Crossbow Deadeye"]),
     EnemySpawn(4, "f", enemies["Crossbow Deadeye"]),
     EnemySpawn(6, "b", enemies["Crossbow Deadeye"]),
-  ]),
+  ], faction="Company of Blades"),
+]
 
+giantkin = [
   # Giantkin
   EnemySet("Charging Ogre", [
     EnemySpawn(4, "f", enemies["Charging Ogre"])
-  ]),
+  ], faction="Giantkin"),
   EnemySet("Injured Troll", [
     EnemySpawn(2, "f", enemies["Injured Troll"])
-  ]),
+  ], faction="Giantkin"),
   EnemySet("Slumbering Giant", [
     EnemySpawn(1, "f", enemies["Slumbering Giant"]),
-  ]),
+  ], faction="Giantkin"),
   EnemySet("The Executioner", [
     EnemySpawn(4, "b", enemies["Herald of Doom"]),
     EnemySpawn(6, "f", enemies["The Executioner"]),
-  ]),
+  ], faction="Giantkin"),
+]
 
+fae_realm = [
   # Fae Realm
   EnemySet("Faerie Assassins", [
     EnemySpawn(2, "b", enemies["Faerie Assassin"]),
     EnemySpawn(4, "b", enemies["Faerie Assassin"]),
-  ]),
+  ], faction="Fae Realm"),
   EnemySet("Witches of the Cycle", [
     EnemySpawn(3, "b", enemies["Witch of Withering"]),
     EnemySpawn(5, "f", enemies["Witch of Rebirth"]),
-  ]),
+  ], faction="Fae Realm"), # TODO rework
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", enemies["Fickle Witch-Queen"])
-  ]),
-  # TODO faerie mage and queen?
-  # - Get regen + armor if you cast any spells this turn
-  # - Witchqueen that curses you but you need to keep her alive long enough
-  #   to remove the curse? Maybe she just curses you on entry, and
-  #   removes your curse after windup? Oh and if you hit her she stops
-  #   winding up?
+  ], faction="Fae Realm"),
+  EnemySet("Tithetaker", [
+      EnemySpawn(1, "b", enemies["Generous Sprite"]),
+      EnemySpawn(5, "f", enemies["Tithetaker"])
+  ], faction="Fae Realm"),
+]
 
+kingdom_of_amar = [
   # Kingdom of Amar
   EnemySet("Knifehand", [
     EnemySpawn(5, "f", enemies["Knifehand"])
-  ]),
+  ], faction="Kingdom of Amar"),
   EnemySet("Stoneguard Patrol", [
     EnemySpawn(3, "f", enemies["Stoneguard"]),
     EnemySpawn(3, "f", enemies["Stoneguard"]),
     EnemySpawn(5, "b", enemies["Stoneguard"]),
     EnemySpawn(5, "b", enemies["Stoneguard"]),
-  ]),
+  ], faction="Kingdom of Amar"),
   EnemySet("Cloud of Daggers", [
     EnemySpawn(3, "f", enemies["Cloud of Daggers"]),
     EnemySpawn(3, "b", enemies["Cloud of Daggers"]),
-  ]),
+  ], faction="Kingdom of Amar"),
   EnemySet("Princess' Entourage", [
     EnemySpawn(2, "f", enemies["Stoneguard"]),
     EnemySpawn(2, "f", enemies["Stoneguard"]),
     EnemySpawn(5, "f", enemies["Artificer Princess"]),
-  ]),
+  ], faction="Kingdom of Amar"),
+]
 
+infernal_plane = [
   # Infernal Plane
   EnemySet("Blazing Eye", [
     EnemySpawn(3, "f", enemies["Blazing Eye"])
-  ]),
+  ], faction="Infernal Plane"),
   EnemySet("Conniving Impfiends", [
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
-  ]),
+  ], faction="Infernal Plane"),
   EnemySet("Cult of the Inferno", [
     EnemySpawn(1, "b", enemies["Cultist"]),
     EnemySpawn(2, "b", enemies["Cultist"]),
     EnemySpawn(3, "b", enemies["Cultist"]),
     EnemySpawn(11, "f", enemies["Demon of the Inferno"]),
-  ]),
-  # TODO
-  # - burn up your energy? If you have excess energy, burn you?
+  ], faction="Infernal Plane"),
+  EnemySet("Witch-Burner Devil", [
+      EnemySpawn(2, "f", enemies["Witch-Burner Devil"])
+  ], faction="Infernal Plane"),
+]
 
+dominion_of_drael = [
   # Dominion of Drael
   EnemySet("Zealous Battlemages", [
     EnemySpawn(1, "f", enemies["Zealous Battlemage"]),
     EnemySpawn(2, "f", enemies["Zealous Battlemage"]),
-  ]),
+  ], faction="Dominion of Drael"),
   EnemySet("Draelish Patrol", [
     EnemySpawn(3, "f", enemies["Conscript"]),
     EnemySpawn(4, "f", enemies["Conscript"]),
     EnemySpawn(5, "f", enemies["Draelish Captain"])
-  ]),
+  ], faction="Dominion of Drael"),
   EnemySet("Draelish Bombsquad", [
     EnemySpawn(2, "f", enemies["Bomber Zealot"]),
     EnemySpawn(4, "b", enemies["Bomber Zealot"]),
-  ]),
+  ], faction="Dominion of Drael"),
   EnemySet("Shieldmage Squad", [
     EnemySpawn(3, "f", enemies["Grizzled Shieldmage"]),
     EnemySpawn(4, "f", enemies["Grizzled Shieldmage"]),
     EnemySpawn(5, "f", enemies["Grizzled Shieldmage"]),
-  ]),
+  ], faction="Dominion of Drael"),
+]
 
+spirits = [
   # Spirits
-  EnemySet("Creeping Shadow", [
-    EnemySpawn(1, "b", enemies["Creeping Shadow"])
-  ]),
   EnemySet("Lightning Elemental", [
     EnemySpawn(1, "f", enemies["Lightning Elemental"])
-  ]),
+  ], faction="Spirits"),
   EnemySet("Frost Elemental", [
     EnemySpawn(2, "f", enemies["Frost Elemental"])
-  ]),
+  ], faction="Spirits"),
   EnemySet("Fire Elemental", [
     EnemySpawn(3, "f", enemies["Fire Elemental"])
-  ]),
+  ], faction="Spirits"),
+  EnemySet("Font of Magic", [
+      EnemySpawn(4, "f", enemies["Blue Spirit-Hunter"]),
+      EnemySpawn(4, "f", enemies["Red Spirit-Hunter"]),
+      EnemySpawn(4, "f", enemies["Gold Spirit-Hunter"]),
+      EnemySpawn(5, "b", enemies["Font of Magic"])
+  ], faction="Spirits"),
+]
 
+shadow_realm = [
+  # Shadow Realm
+  EnemySet("Creeping Shadow", [
+    EnemySpawn(1, "b", enemies["Creeping Shadow"])
+  ], faction="Shadow Realm"),
+  EnemySet("Nightmare Remnant", [
+    EnemySpawn(2, "b", enemies["Nightmare Remnant"]),
+    EnemySpawn(2, "f", enemies["Nightmare Remnant"]),
+    EnemySpawn(4, "b", enemies["Nightmare Remnant"]),
+    EnemySpawn(4, "f", enemies["Nightmare Remnant"]),
+  ], faction="Shadow Realm"),
+  EnemySet("Dreamstalker", [
+    EnemySpawn(3, "b", enemies["Dreamstalker"])
+  ], faction="Shadow Realm"),
+  # TODO one more
+]
+
+ancient_horrors = [
   # Ancient Horrors
   EnemySet("Vengeful Minefield", [
     EnemySpawn(1, "f", enemies["Vengeful Mine"]),
     EnemySpawn(2, "b", enemies["Vengeful Mine"]),
     EnemySpawn(3, "f", enemies["Vengeful Mine"]),
     EnemySpawn(4, "b", enemies["Vengeful Mine"]),
-  ]),
+  ], faction="Ancient Horrors"),
   EnemySet("Corrupting Spire", [
     EnemySpawn(2, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(3, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(5, "b", enemies["Corrupting Spire"]),
-  ]),
+  ], faction="Ancient Horrors"),
   EnemySet("Mindless Maw", [
     EnemySpawn(4, "f", enemies["Mindless Maw"]),
-  ]),
+  ], faction="Ancient Horrors"),
   EnemySet("The Vulture", [
     EnemySpawn(6, "b", enemies["The Vulture"])
-  ]),
+  ], faction="Ancient Horrors"),
 ]
+
+factions = [
+    saik_collective,
+    house_of_imir,
+    movs_horde,
+    company_of_blades,
+    giantkin,
+    fae_realm,
+    kingdom_of_amar,
+    infernal_plane,
+    dominion_of_drael,
+    spirits,
+    shadow_realm,
+    ancient_horrors
+]
+
+enemy_sets = (
+    saik_collective +
+    house_of_imir +
+    movs_horde +
+    company_of_blades +
+    giantkin +
+    fae_realm +
+    kingdom_of_amar +
+    infernal_plane +
+    dominion_of_drael +
+    spirits +
+    shadow_realm +
+    ancient_horrors
+)

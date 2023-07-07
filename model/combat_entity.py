@@ -1,4 +1,5 @@
 from typing import List
+import math
 from collections import defaultdict
 from termcolor import colored
 from model.event import Event
@@ -69,6 +70,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("burn", colored("burn", "red"))
     rendered_conditions = rendered_conditions.replace("block", colored("block", "blue"))
     rendered_conditions = rendered_conditions.replace("shield", colored("shield", "blue"))
+    rendered_conditions = rendered_conditions.replace("encase", colored("encase", "cyan"))
     rendered_conditions = rendered_conditions.replace("armor", colored("armor", "cyan"))
     rendered_conditions = rendered_conditions.replace("durable", colored("durable", "cyan"))
     rendered_conditions = rendered_conditions.replace("enduring", colored("enduring", "magenta"))
@@ -76,6 +78,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("poison", colored("poison", "magenta"))
     rendered_conditions = rendered_conditions.replace("empower", colored("empower", "yellow"))
     rendered_conditions = rendered_conditions.replace("searing", colored("searing", "yellow"))
+    rendered_conditions = rendered_conditions.replace("evade", colored("evade", "cyan"))
     rendered_conditions = rendered_conditions.replace("charge", colored("charge", "yellow"))
     rendered_conditions = rendered_conditions.replace("stun", colored("stun", "blue"))
     rendered_conditions = rendered_conditions.replace("ward", colored("ward", "blue"))
@@ -96,21 +99,45 @@ class CombatEntity:
     self.conditions["enduring"] = None
 
   def attack(self, target, damage, lifesteal=False):
-    damage_to_kill = target.conditions["block"] + target.conditions["shield"] + target.conditions["armor"] + target.hp - self.conditions["sharp"]
+    if target.conditions["evade"] > 0:
+      # TODO: add sound
+      print(f"{self.name} attacks {target.name} but they evade!")
+      target.conditions["evade"] -= 1
+      return 0
+    
+    # if self.conditions["encase"] > 0:
+    #   damage_to_encase = min(self.conditions["encase"], damage)
+
+    damage_to_kill = (target.conditions["block"] +
+                      target.conditions["shield"] +
+                      target.conditions["armor"] +
+                      self.conditions["encase"] +
+                      target.conditions["encase"] +
+                      target.hp - self.conditions["sharp"])
     target_enduring = target.conditions["enduring"] or 1000
     empower_to_spend = max(0, min(damage_to_kill, target_enduring) - damage)
     spent_empower = min(self.conditions["empower"], empower_to_spend)
     self.conditions["empower"] -= spent_empower
     multiplier = 1.5 if target.conditions["vulnerable"] else 1
-    final_damage = (damage + spent_empower + self.conditions["sharp"]) * multiplier
-    self.assign_damage(target.conditions["retaliate"])
-    damage_dealt = target.assign_damage(final_damage)
-    if lifesteal:
-      self.heal(damage_dealt)
-    print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
-    self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
-    target.damage_survived_this_turn += final_damage
-    print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
+    final_damage = math.ceil((damage + spent_empower + self.conditions["sharp"]) * multiplier)
+    final_damage = max(0, final_damage) # make sure it can't be negative
+
+    # first break through encase if there is any
+    if self.conditions["encase"] > 0:
+      damage_to_encase = min(self.conditions["encase"], damage)
+      self.conditions["encase"] -= damage_to_encase
+      final_damage -= damage_to_encase
+      print(f"{self.name} attacks it encasement for {damage_to_encase} damage!")
+    
+    if final_damage > 0:
+      self.assign_damage(target.conditions["retaliate"])
+      damage_dealt = target.assign_damage(final_damage)
+      if lifesteal:
+        self.heal(damage_dealt)
+      print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
+      self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
+      target.damage_survived_this_turn += final_damage
+      print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
     # play the proper sound
     if damage_dealt == 0:
@@ -128,7 +155,11 @@ class CombatEntity:
     return damage_dealt
 
   def assign_damage(self, damage) -> int:
-    damage_after_armor = max(0, damage - self.conditions["armor"])
+    damage_to_encase = min(damage, self.conditions["encase"])
+    self.conditions["encase"] -= damage_to_encase
+    damage_after_encase = damage - damage_to_encase
+
+    damage_after_armor = max(0, damage_after_encase - self.conditions["armor"])
 
     damage_to_block = min(damage_after_armor, self.conditions["block"])
     self.conditions["block"] -= damage_to_block
@@ -152,6 +183,7 @@ class CombatEntity:
   def suffer(self, damage):
     self.hp -= damage
     self.damage_taken_this_turn += damage
+    self.damage_survived_this_turn += damage
     if damage > 0:
       self.events.append(Event(["lose_hp"],
                                metadata={
@@ -185,8 +217,6 @@ class CombatEntity:
     self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
     self.conditions["regen"] = max(self.conditions["regen"] - 1, 0)
     self.conditions["stun"] = max(self.conditions["stun"] - 1, 0)
-    self.conditions["prolific"] = max(self.conditions["prolific"] - 1, 0)
-    self.conditions["slow"] = max(self.conditions["slow"] - 1, 0)
     self.conditions["inventive"] = max(self.conditions["inventive"] - 1, 0)
     self.conditions["vulnerable"] = max(self.conditions["vulnerable"] - 1, 0)
     self.conditions["dig"] = max(self.conditions["dig"] - 1, 0)

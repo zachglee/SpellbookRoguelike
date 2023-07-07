@@ -13,13 +13,20 @@ class Item:
     return self.description
   
 class CustomItem(Item):
-  def __init__(self, name, charges, description, use_commands):
+  def __init__(self, name, charges, description, use_commands,
+               generate_commands_pre=lambda e, t: [], time_cost=1):
     super().__init__(charges, description)
     self.name = name
     self.use_commands = use_commands
+    self.time_cost = time_cost
+    self.generate_commands_pre = generate_commands_pre
 
   def use(self, encounter):
-    for command in self.use_commands:
+    # generate commands pre-execution
+    generated_commands_pre = self.generate_commands_pre(encounter, None)
+    raw_commands = self.use_commands + generated_commands_pre
+
+    for command in raw_commands:
       encounter.handle_command(command)
     self.charges -= 1
 

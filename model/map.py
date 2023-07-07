@@ -196,6 +196,9 @@ class Region:
     
     node, encounter = choose_obj(routes, colored("choose a route > ", "red"))
     self.destination_node = node
+    if not node.seen:
+      player.experience += 12
+      input(colored("You gain 12 experience for exploring a new node!", "green"))
     node.seen = True
     fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
     if fight:
@@ -304,7 +307,6 @@ class Map:
                         library=library,
                         signature_spell=chosen_spell,
                         signature_color=chosen_color)
-        print(f"------------ player.is_player() = {player.is_player()} ------------")
         # TODO: possibly remove this later
         print(player.render_rituals())
         draft_player_library(player, self.current_region.spell_pool)

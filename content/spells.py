@@ -1,4 +1,5 @@
 from model.spellbook import Spell
+from content.command_generators import *
 
 # Passive triggers_on
 
@@ -53,109 +54,6 @@ def passive_for_death_overkill(encounter, event):
   if event.has_tag("enemy_death"):
     return max(1, -1*event.source.hp)
 
-# command_generator_factories
-
-# TODO: need a way to compose these
-
-# conditionals
-
-def if_facing_none(commands):
-  def if_facing_none_generator(encounter, targets_dict):
-    if encounter.faced_enemy_queue == []:
-      return commands
-    else:
-      return []
-  return if_facing_none_generator
-
-def if_kill(target, commands):
-  def on_kill_generator(encounter, targets_dict):
-    print(f"-------- {targets_dict[target][1].__dict__}")
-    print(f"-------- {targets_dict[target][1].hp}")
-    if targets_dict[target][1].hp <= 0:
-      return commands
-    else:
-      return []
-  return on_kill_generator
-
-def if_player_hp(fraction, commands, else_commands=[], above=True):
-  def if_player_hp_generator(encounter, targets_dict):
-    player_hp_fraction = encounter.player.hp / encounter.player.max_hp
-    if above:
-      if player_hp_fraction >= fraction:
-        return commands
-    else:
-      if player_hp_fraction <= fraction:
-        return commands
-    return else_commands
-  return if_player_hp_generator
-
-def if_enemy_hp(target, hp_threshold, commands, above=True):
-  def if_enemy_hp_generator(encounter, targets_dict):
-    enemy_hp = targets_dict[target][1].hp
-    if above:
-      if enemy_hp >= hp_threshold:
-        return commands
-    else:
-      if enemy_hp <= hp_threshold:
-        return commands
-    return []
-  return if_enemy_hp_generator
-
-def if_spell_charges(spell_charges, commands, above=True):
-  def if_spell_charges_generator(encounter, targets_dict):
-    if above:
-      if encounter.last_spell_cast.charges >= spell_charges:
-        return commands
-    else:
-      if encounter.last_spell_cast.charges <= spell_charges:
-        return commands
-    return []
-  return if_spell_charges_generator
-
-# scalers
-
-def for_burn(target, commands):
-  def for_burn_generator(encounter, targets_dict):
-    burn_magnitude = targets_dict[target][1].conditions["burn"]
-    return [cmd.replace("*", str(burn_magnitude)) for cmd in commands]
-  return for_burn_generator
-
-def for_spells_cast(commands, magnitude_func=lambda x: x):
-  def for_spells_cast_generator(encounter, targets_dict):
-    spells_cast_magnitude = magnitude_func(len(encounter.spells_cast_this_turn))
-    return [cmd.replace("*", str(spells_cast_magnitude)) for cmd in commands]
-  return for_spells_cast_generator
-
-def for_player_missing_hp(unit_hp, commands):
-  def for_player_missing_hp_generator(encounter, targets_dict):
-    missing_hp_magnitude = int((encounter.player.max_hp - encounter.player.hp) / unit_hp)
-    return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
-  return for_player_missing_hp_generator
-
-def for_enemy_missing_hp(target, unit_hp, commands):
-  def for_enemy_missing_hp_generator(encounter, targets_dict):
-    missing_hp_magnitude = int((targets_dict[target][1].max_hp - targets_dict[target][1].hp) / unit_hp)
-    return [cmd.replace("*", str(missing_hp_magnitude)) for cmd in commands]
-  return for_enemy_missing_hp_generator
-
-def for_enemy_remaining_hp(target, unit_hp, commands):
-  def for_enemy_remaining_hp_generator(encounter, targets_dict):
-    remaining_hp_magnitude = int(targets_dict[target][1].hp / unit_hp)
-    return [cmd.replace("*", str(remaining_hp_magnitude)) for cmd in commands]
-  return for_enemy_remaining_hp_generator
-
-def for_enemies(commands):
-  def for_enemies_generator(encounter, targets_dict):
-    return [cmd.replace("*", str(len(encounter.back) + len(encounter.front))) for cmd in commands]
-  return for_enemies_generator
-
-def for_player_condition(condition, commands, magnitude_func=lambda x: x):
-  def for_player_condition_generator(encounter, targets_dict):
-    raw_condition_magnitude = encounter.player.conditions[condition]
-    processed_condition_magnitude = magnitude_func(raw_condition_magnitude)
-    return [cmd.replace("*", str(processed_condition_magnitude)) for cmd in commands]
-  return for_player_condition_generator
-
 # Red Color Identity:
 # - Straight big damage to facing side
 # - full AOE
@@ -165,7 +63,6 @@ def for_player_condition(condition, commands, magnitude_func=lambda x: x):
 # * getting kills matters
 # * slaying big enemies (attack enemy with more max hp than your current hp?)
 # * taking big hits (6+ damage in hit?)
-
 
 red_enemy_dies = [
   [Spell("Passive: Whenever an enemy dies, gain 4 empower and deal overkill damage to immediate.", color="red", type="Passive",
@@ -204,7 +101,8 @@ red_big_attack = [
          triggers_on=passive_for_survive_6_damage_in_turn, raw_commands=["red p ^", "sharp p ^", "prolific p ^"]),
   Spell("Producer: +1 Red, If you're at or below half health, +1 more red.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
-  Spell("Converter: 1 Red -> 1 Gold: Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold"),
+  Spell("Converter: 1 Red -> 1 Gold: Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold",
+        generate_commands_pre=for_player_energy(["repeat * damage _ 2"])),
   Spell("Consumer: 1 Red: Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
   [Spell("Passive: Gain 1 regen, deal 3 damage to all for every 6 damage you survive each round.", color="red", type="Passive",
@@ -262,8 +160,8 @@ blue_block_hits = [
   Spell("Producer: +1 Blue, gain 1 block per enemy.", color="blue", type="Producer",
         generate_commands_pre=for_enemies(["block p *"])),
   Spell("Converter: 1 Blue -> 1 Gold: Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
-  Spell("Consumer: 1 Blue: Gain 6 armor this turn.", color="blue", type="Consumer",
-        raw_commands=["armor p 6", "delay 0 armor p -6"])],
+  Spell("Consumer: 1 Blue: Gain 8 armor this turn.", color="blue", type="Consumer",
+        raw_commands=["armor p 8", "delay 0 armor p -8"])],
   #
   [Spell("Passive: Whenever you’re attacked and take no damage, gain 2 retaliate.", color="blue", type="Passive",
          triggers_on=passive_attacked_for_no_damage, raw_commands=["retaliate p 2"]),
