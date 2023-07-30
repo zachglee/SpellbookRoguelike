@@ -25,7 +25,7 @@ enemies = {
   #
   "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
   "Decaying Corpse": Enemy(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
-  "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(3))),
+  "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(4))),
   "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
   "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
@@ -62,7 +62,7 @@ enemies = {
                         SetConditionAction("burn", 0, "self")])),
   "Frost Elemental": Enemy(25, "Frost Elemental",
                        MultiAction([
-                          AddConditionAction("slow", 3, "player"),
+                          AddConditionAction("slow", 2, "player"),
                           AddConditionAction("blue", 1, "player"),
                           AttackAction(1)])),
   "Lightning Elemental": Enemy(15, "Lightning Elemental",
@@ -107,7 +107,7 @@ enemies = {
                                SetConditionAction("poison", 0, "player"),
                                AddConditionAction("regen", 4, "player")
                                ]), 2)),
-                           entry=AddConditionAction("poison", 4, "player")),
+                           entry=AddConditionAction("poison", 3, "player")),
   "Screeching Fury": Enemy(18, "Screeching Fury",
                            HealthThresholdAction(AttackAction(2),
                                                  MultiAction([
@@ -120,10 +120,10 @@ enemies = {
   "Tithetaker": Enemy(25, "Tithetaker",
                       EnergyThresholdAction(
                           AddConditionAction("regen", 1, "player"),
-                          AttackAction(16, lifesteal=True), 4)),
+                          AttackAction(16, lifesteal=True), 5)),
   "Generous Sprite": Enemy(1, "Generous Sprite",
                          BackstabAction(
-                             WindupAction(AddConditionAction("green", 1, "player"), 3),
+                             WindupAction(AddConditionAction("green", 1, "player"), 2),
                              SelfDamageAction(1),
                          )),
   "Blue Spirit-Hunter": Enemy(12, "Blue Spirit-Hunter", EnergyThresholdAction(
@@ -145,12 +145,12 @@ enemies = {
                             AddConditionAction("blue", 1, "player"),
                          ])),
   "Nightmare Remnant": Enemy(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
-  "Dreamstalker": Enemy(20, "Dreamstalker",BackstabAction(
+  "Dreamstalker": Enemy(20, "Dreamstalker", BackstabAction(
       AddConditionAction("slow", 1, "player"),
-      AttackAction(6))),
+      AttackAction(5))),
   "Shadow of a Doubt": Enemy(16, "Shadow of a Doubt", BackstabAction(
-      AddConditionAction("vulnerable", 1, "player"),
-      AttackAction(4))),
+      AttackAction(6),
+      AddConditionAction("vulnerable", 1, "player"))),
   "Mov, the Necromancer": Enemy(12, "Mov, the Necromancer",
       MultiAction([
         MoveAction(1),
@@ -158,6 +158,9 @@ enemies = {
       ]),
       entry=AddConditionAction("undying", 1, "all_enemies")),
   # hit me I get stronger
+  # More durable enemies
+  # Enemy with decaying shield, so you need to wait a bit to kill it.
+  # more armor enemies
   # enemy that spawns at turn 4
   # does something good for you when there gets to be 5 enemies?
   # heal immediate?

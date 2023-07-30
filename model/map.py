@@ -1,5 +1,6 @@
 import random
 from copy import deepcopy
+from typing import List
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
@@ -13,7 +14,7 @@ from generators import generate_spell_pools, generate_faction_sets, generate_ene
 from content.enemy_factions import factions
 
 class Node:
-  def __init__(self, safehouse, guardian_enemy_waves: EnemyWave, position, seen=False, difficulty=1, boss=False):
+  def __init__(self, safehouse, guardian_enemy_waves: List[EnemyWave], position, seen=False, difficulty=1, boss=False):
     self.safehouse = safehouse
     self.guardian_enemy_waves = guardian_enemy_waves
     self.ambient_energy = random.choice(["red", "blue", "gold"])
@@ -22,6 +23,7 @@ class Node:
     self.seen = seen
     self.difficulty = difficulty
     self.boss = boss
+    self.blockaded = False
 
   @property
   def guardian_enemy_sets(self):
@@ -45,13 +47,17 @@ class Node:
   def render_preview(self):
     if not self.seen:
       return colored("???", "cyan")
+    passages_str = f"{self.pass_passages}/{len(self.passages)} "
+    if self.blockaded:
+      passages_str = passages_str + " BLOCK  "
     return (f"{colored('*', energy_color_map[self.ambient_energy])}"
-            f"{self.pass_passages}/{len(self.passages)} "
+            + passages_str
             + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
 
   def render(self):
     total = len(self.passages)
-    render_str = f"-------- Node {self.position} : ({self.pass_passages}/{total} passages) --------\n"
+    blockaded_str = colored(" [BLOCKADED]", "red") if self.blockaded else ""
+    render_str = f"-------- Node{blockaded_str} {self.position} : ({self.pass_passages}/{total} passages) --------\n"
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
     # render known enemy waves
     if self.seen:
@@ -133,13 +139,12 @@ class Region:
 
   def corrupt(self):
     self.corruption += 1
-    # make one node harder in each layer
-    # TODO: this is a bit too punishing for now
-    # TODO: replace this with blockading
-    # for layer in self.nodes:
-    #   most_passes_node = max(layer, key=lambda node: node.pass_passages)
-    #   most_passes_node.passages += ["fail"] * self.corruption * 3
-    pass
+    eligible_nodes = [node for node in self.nodes[-2] if not node.blockaded and node.seen]
+    node_to_blockade = sorted(eligible_nodes, reverse=True, key=lambda n: n.pass_passages)[0]
+    node_to_blockade.blockaded = True
+    new_enemy_set = random.choice(random.choice(self.faction_set).enemy_sets)
+    new_enemy_wave = EnemyWave([new_enemy_set], 2)
+    node_to_blockade.guardian_enemy_waves.append(new_enemy_wave)
 
   def choose_node(self):
     print(self.render())
@@ -213,7 +218,13 @@ class Region:
       player.experience += 10
       print(colored("You gain 10 experience for exploring a new node!", "green"))
     node.seen = True
-    fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
+
+    if node.blockaded:
+      input(colored("This node is blockaded. You must fight.", "red"))
+      fight = True
+    else:
+      fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
+
     if fight:
       return encounter
     else:
@@ -227,8 +238,14 @@ class Region:
     characters = sum([node.safehouse.resting_characters for node in layer], [])
     node_overviews = [node.render_preview() for node in layer]
     enemy_preview_lines = []
-    for i in range(len(layer[0].guardian_enemy_sets)):
-      enemy_preview_line = [node.guardian_enemy_sets[i].name if node.seen else "???" for node in layer]
+    for i in range(max(len(n.guardian_enemy_sets) for n in layer)):
+      enemy_preview_line = []
+      for node in layer:
+        if i < len(node.guardian_enemy_sets):
+          enemy_preview_line.append(node.guardian_enemy_sets[i].name if node.seen else "???")
+        else:
+          enemy_preview_line.append("   ")
+      # enemy_preview_line = [node.guardian_enemy_sets[i].name if node.seen else "???" for node in layer]
       enemy_preview_lines.append(enemy_preview_line)
     # have to use a bigger format spacing to account for 'invisible' color code characters
     overview_render_template = " ".join("{" + str(i) + ":<31} " for i in range(len(layer)))
@@ -263,13 +280,6 @@ class Map:
     faction_sets = generate_faction_sets(n_sets=n_regions, set_size=3)
     self.regions = [Region(i, 4, 2, spell_pool, faction_set) for i, spell_pool, faction_set
                     in zip(range(n_regions), spell_pools, faction_sets)]
-    # TODO: REMOVE
-    # self.regions = [
-    #   # every region gets 8 enemy sets, and each region has 1 enemy-sets
-    #   # worth of overlap with the previous and next region
-    #   Region(i, 4, 2, spell_pool, enemy_set_pool[(i*8)-i:((i+1)*8)-i])
-    #   for i, spell_pool in enumerate(spell_pools)
-    # ]
     self.current_region_idx = 0
     self.active_ritual = None
     self.runs = 0
@@ -313,7 +323,6 @@ class Map:
         self.current_region_idx = 0
         self.current_region.current_node = self.current_region.nodes[0][0]
         print("Starting a new character...")
-        # TODO: let player choose spell color and type of their signature!
         signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
         print(numbered_list(signature_spell_options))
         chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))

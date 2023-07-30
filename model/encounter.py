@@ -9,7 +9,7 @@ from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import NothingAction
 from content.rituals import rituals
-from content.items import starting_weapons, signature_items, minor_energy_potions
+from content.items import starting_weapons, minor_energy_potions
 from utils import energy_colors, colorize, get_combat_entities, choose_idx, get_spell
 from sound_utils import play_sound
 
@@ -175,7 +175,8 @@ class Encounter:
 
     dead_enemies = back_dead_enemies + front_dead_enemies
     for enemy in dead_enemies:
-      self.player.experience += enemy.experience
+      if not enemy.conditions["undying"]:
+        self.player.experience += enemy.experience
       enemy.dead = True
       self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(s)))
 
@@ -254,6 +255,7 @@ class Encounter:
     if found_item:
       print(f"Found: {found_item.render()}")
       self.player.inventory.append(found_item)
+      self.player.seen_items.append(found_item)
 
   def handle_command(self, cmd):
     print(f"Handling command '{cmd}' ...")
@@ -396,8 +398,9 @@ class Encounter:
       time += 4
       self.player.conditions["prolific"] = max(self.player.conditions["prolific"] - 1, 0)
     if slow:
-      time -= 1
-      self.player.conditions["slow"] = max(self.player.conditions["slow"] - 1, 0)
+      slow_applied = min(3, slow)
+      time -= slow_applied
+      self.player.conditions["slow"] -= slow_applied
     self.player.time = time
     self.events.append(Event(["begin_turn"]))
     self.resolve_events()
@@ -431,6 +434,7 @@ class Encounter:
         destination.append(enemy)
         enemy.spawned = True
         self.events += enemy.entry.act(enemy, self)
+        self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     self.player_upkeep()
     self.ritual_upkeep()
 
@@ -488,8 +492,9 @@ class Encounter:
     self.post_enemy_scheduled_commands()
     self.round_end_phase()
 
-    self.damage_taken_this_turn = 0
-    self.damage_survived_this_turn = 0
+    # TODO: remove these? They're modifying Encounter which is incorrect?
+    # self.damage_taken_this_turn = 0
+    # self.damage_survived_this_turn = 0
 
     self.upkeep_phase()
 

@@ -111,6 +111,8 @@ def get_combat_entities(enc, target_string):
   elif target_string[0] == "f":
     target_pos = int(target_string[1])
     return [enc.front[target_pos - 1]]
+  elif target_string == "distant":
+    return [enc.faced_enemy_queue[-1]]
   elif target_string == "_":
     input_target_string = input(colored("Choose a target > ", "green"))
     return get_combat_entities(enc, input_target_string)
@@ -207,6 +209,7 @@ def help_reference(subject):
     help_text = ("Vulnerable is a condition. An entity with vulnerable takes 50% more damage from all attacks.")
   elif subject == "durable":
     help_text = ("Durable is a condition. An entity with x durable cannot lose more than x hp in a single attack.")
+  # TODO: encase, undying, evade
   else:
     help_text = (f"Sorry, there is no help entry for '{subject}'")
   input(help_text)

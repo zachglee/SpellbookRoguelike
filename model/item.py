@@ -15,7 +15,7 @@ class Item:
   
 class CustomItem(Item):
   def __init__(self, name, charges, description, use_commands,
-               generate_commands_pre=lambda e, t: [], time_cost=1):
+               generate_commands_pre=lambda e, t: [], time_cost=1, rare=False):
     super().__init__(charges, description)
     self.name = name
     self.use_commands = use_commands
@@ -38,6 +38,7 @@ class SpellPotion(Item):
   def __init__(self, spell):
     self.spell = spell
     self.charges = 1
+    self.time_cost = 1
 
   def use(self, encounter):
     spellbook_spell = SpellbookSpell(self.spell)
@@ -53,6 +54,7 @@ class EnergyPotion(Item):
     self.energy_color = energy_color
     self.energy_amount = energy_amount
     self.charges = 1
+    self.time_cost = 1
 
   def use(self, encounter):
     encounter.player.conditions[self.energy_color] += self.energy_amount
@@ -66,6 +68,7 @@ class MeleeWeapon(Item):
     self.name = name
     self.charges = charges
     self.damage = damage
+    self.time_cost = 1
   
   def use(self, encounter):
     encounter.player.attack(encounter.player.get_immediate(encounter), self.damage)
@@ -80,6 +83,7 @@ class ConditionMeleeWeapon(Item):
     self.charges = charges
     self.condition = condition
     self.magnitude = magnitude
+    self.time_cost = 1
 
   def use(self, encounter):
     encounter.player.get_immediate(encounter).conditions[self.condition] += self.magnitude
@@ -94,6 +98,7 @@ class ConditionSelfWeapon(Item):
     self.charges = charges
     self.condition = condition
     self.magnitude = magnitude
+    self.time_cost = 1
 
   def use(self, encounter):
     encounter.player.conditions[self.condition] += self.magnitude

@@ -4,6 +4,10 @@
 # - refactor enemy actions so that I can compose targets with effects easier
 # - enemy that steals or strips your conditions?
 
+# Micaela playtest:
+# - something to do with extra mana (rituals?)
+# - 
+
 # Plane playtest:
 # - `set` command for setting conditions (set block to 0)
 # - Would maybe be better if progressing rituals involved a choice.

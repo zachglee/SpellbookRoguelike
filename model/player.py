@@ -8,7 +8,8 @@ from model.item import EnergyPotion, MeleeWeapon
 from utils import choose_binary, colorize, numbered_list, choose_obj, energy_colors
 from sound_utils import play_sound
 from content.rituals import rituals
-from content.items import starting_weapons, signature_items
+from content.items import starting_weapons
+from content.enemy_factions import all_special_items
 
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
@@ -40,6 +41,7 @@ class Player(CombatEntity):
     self.experience = 0
     self.aspiration = aspiration
     self.wounds = 0
+    self.seen_items = []
 
   def total_energy(self, colors=energy_colors):
     player_energy = sum(self.conditions[color] for color in colors)
@@ -78,8 +80,11 @@ class Player(CombatEntity):
     self.rituals.append(deepcopy(chosen_ritual))
 
   def gain_signature_item(self):
-    random.shuffle(signature_items)
-    signature_item_choices = signature_items[0:3]
+    seen_rare_items = [item for item in self.seen_items if item.rare]
+    random.shuffle(seen_rare_items)
+    signature_item_choices = seen_rare_items[0:3]
+    if len(signature_item_choices) == 0:
+      signature_item_choices = [random.choice(all_special_items)]
     print(numbered_list(signature_item_choices))
     chosen_item = choose_obj(signature_item_choices, colored("Choose a signature item > ", "cyan"))
     self.inventory.append(deepcopy(chosen_item))

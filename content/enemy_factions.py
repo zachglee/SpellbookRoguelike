@@ -8,10 +8,10 @@ factions = [
   Faction("Sa'ik Collective", saik_collective,
     basic_items=[
       CustomItem("Soaring Javelin", 1, "Deal 6 damage.", ["damage _ 6"]),
-      CustomItem("Harrier's Cloak", 1, "Gain 1 evade this turn.", ["evade p 1", "delay 0 evade p -1"]),
+      CustomItem("Harrier's Cloak", 2, "Gain 1 evade.", ["evade p 1"]),
     ],
     special_items=[
-      CustomItem("Skydancer's Talon", 3, "Deal 2 damage to a single target twice.", ["repeat 2 damage _ 2"]),
+      CustomItem("Skydancer's Talon", 3, "Deal 2 damage to a single target twice.", ["repeat 2 damage _ 2"], rare=True)
     ],
   ),
   Faction("House of Imir", house_of_imir,
@@ -20,7 +20,7 @@ factions = [
       CustomItem("Sacrifice Dagger", 2, "Suffer 2 and deal 10 damage to immediate", ["suffer p 2", "damage i 10"]),
     ],
     special_items=[
-      CustomItem("Imir Blood Ward", 1, "Suffer 5 and banish an enemy for 2 turns.", ["suffer p 5", "banish _ 2"]),
+      CustomItem("Imir Blood Ward", 1, "Suffer 5 and banish an enemy for 2 turns.", ["suffer p 5", "banish _ 2"], rare=True,)
     ]
   ),
   Faction("Mov's Horde", movs_horde,
@@ -29,7 +29,7 @@ factions = [
       CustomItem("Ichor of Undeath", 1, "Gain 4 enduring this turn.", ["enduring p 4", "delay 0 enduring p -4"]),
     ],
     special_items=[
-      CustomItem("Soul-Catcher Siphon", 1, "", [], generate_commands_pre=for_dead_enemies(["regen p *"])) # effect per dead enemies
+      CustomItem("Soul-Catcher Siphon", 1, "", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies
     ]
   ),
   Faction("Company of Blades", company_of_blades,
@@ -38,7 +38,7 @@ factions = [
       CustomItem("Battered Shield", 3, "Block 4.", ["block p 4"]),
     ],
     special_items=[
-      CustomItem("Duelist's Blade", 3, "Deal 4 damage to immediate and block 4", ["damage i 4", "block p 4"])
+      CustomItem("Duelist's Blade", 3, "Deal 4 damage to immediate and block 4", ["damage i 4", "block p 4"], rare=True)
     ]
   ),
   Faction("Giantkin", giantkin,
@@ -47,7 +47,7 @@ factions = [
       CustomItem("Potion of Strength", 3, "Gain 3 empower.", ["empower p 3"])
     ],
     special_items=[
-      CustomItem("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"])
+      CustomItem("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"], rare=True)
     ],
   ),
   Faction("Fae Realm", fae_realm,
@@ -56,7 +56,7 @@ factions = [
       CustomItem("Sleeper Darts", 2, "Inflict 1 stun and 3 poison.", ["stun _ 1", "poison _ 3"])
     ],
     special_items=[
-      CustomItem("Fae Favor", 1, "Banish 1 all at end of round, then gain 3 regen.", ["delay 0 banish a 1", "delay 0 regen p 3"])
+      CustomItem("Fae Favor", 1, "Banish 1 all at end of round, then gain 3 regen.", ["delay 0 banish a 1", "delay 0 regen p 3"], rare=True)
     ]
   ),
   Faction("Kingdom of Amar", kingdom_of_amar,
@@ -65,7 +65,7 @@ factions = [
       CustomItem("Animate Armor", 2, "Gain 1 armor.", ["armor p 1"]),
     ],
     special_items=[
-      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 3 prolific, and 4 sharp.", ["armor p 2", "prolific p 3", "sharp p 4"])
+      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 3 prolific, and 4 sharp.", ["armor p 2", "prolific p 3", "sharp p 4"], rare=True)
     ]
   ),
   Faction("Infernal Plane", infernal_plane,
@@ -74,7 +74,7 @@ factions = [
       CustomItem("Summoning Circle", 4, "Gain 1 regen and call 1.", ["regen p 1", "call 1"])
     ],
     special_items=[
-      CustomItem("Demon's Blood", 1, "burn 3 self, gain 9 searing presence, 9 retaliate", ["burn p 3", "searing p 8", "retaliate p 8"])
+      CustomItem("Demon's Blood", 1, "burn 3 self, gain 9 searing presence, 9 retaliate", ["burn p 3", "searing p 8", "retaliate p 8"], rare=True)
     ]
   ),
   Faction("Dominion of Drael", dominion_of_drael,
@@ -83,7 +83,7 @@ factions = [
       CustomItem("Shieldmage's Gauntlets", 2, "Gain 3 shield and 2 retaliate.", ["shield p 3", "retaliate p 2"]),
     ],
     special_items=[
-      CustomItem("Draelish Bomb", 1, "At end of turn: deal 21 to all enemies, 7 damage to self", ["delay 0 damage a 21", "delay 0 damage p 7"])
+      CustomItem("Draelish Bomb", 1, "At end of turn: deal 21 to all enemies, 7 damage to self", ["delay 0 damage a 21", "delay 0 damage p 7"], rare=True)
     ]
   ),
   Faction("Spirits", spirits,
@@ -92,7 +92,7 @@ factions = [
       CustomItem("Spirit Snare", 2, "At end of next round, stun 3 immediate.", ["delay 1 stun i 3"]),
     ],
     special_items=[
-      CustomItem("Unbridled Energy", 1, "Gain 2 energy of each color and prolific 2.", ["blue p 2", "red p 2", "gold p 2", "prolific p 2"])
+      CustomItem("Unbridled Energy", 1, "Gain 2 energy of each color and prolific 2.", ["blue p 2", "red p 2", "gold p 2", "prolific p 2"], rare=True)
     ]
   ),
   Faction("Shadow Realm", shadow_realm,
@@ -101,7 +101,7 @@ factions = [
       CustomItem("Mirror Blade", 1, "Deal 6 damage immediately behind.", ["damage bi 6"])
     ],
     special_items=[
-      CustomItem("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"])
+      CustomItem("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"], rare=True)
     ]
   ),
   Faction("Ancient Horrors", ancient_horrors,
@@ -110,8 +110,9 @@ factions = [
       CustomItem("Forbidden Text", 4, "Gain 1 inventive.", ["inventive p 1"]),
     ],
     special_items=[
-      CustomItem("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"])
+      CustomItem("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ]
   )
 ]
 
+all_special_items = sum([faction.special_items for faction in factions], [])

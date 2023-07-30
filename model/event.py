@@ -15,6 +15,7 @@ class Event:
       "lose_hp",
       "attack",
       "enemy_death",
+      "enemy_spawn",
       "spell_cast",
       "end_turn",
       "begin_turn",

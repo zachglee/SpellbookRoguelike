@@ -33,7 +33,6 @@ def destination_draft(player, destination_node):
   player.spellbook.pages = [SpellbookPage([first_spell]), SpellbookPage([second_spell])]
   edit_page_from_inventory(player, 1)
   edit_page_from_inventory(player, 2)
-  # TODO get a random echo spell filled in on each page
 
 
 def edit_page_from_inventory(player, page_number):

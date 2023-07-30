@@ -194,6 +194,7 @@ class GameState:
 
   def encounter_phase(self):
     encounter = self.encounter
+    # TODO: call a page choosing helper here
     while not encounter.overcome:
       self.run_encounter_round()
     self.encounter.render_combat()
@@ -281,7 +282,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

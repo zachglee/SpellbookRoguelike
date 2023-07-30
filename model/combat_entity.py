@@ -85,6 +85,7 @@ class CombatEntity:
     rendered_conditions = rendered_conditions.replace("retaliate", colored("retaliate", "magenta"))
     rendered_conditions = rendered_conditions.replace("sharp", colored("sharp", "red"))
     rendered_conditions = rendered_conditions.replace("vulnerable", colored("vulnerable", "red"))
+    rendered_conditions = rendered_conditions.replace("doom", colored("doom", "magenta"))
     rendered_conditions = rendered_conditions.replace("prolific", colored("prolific", "yellow"))
     rendered_conditions = rendered_conditions.replace("slow", colored("slow", "magenta"))
     rendered_conditions = rendered_conditions.replace("inventive", colored("inventive", "cyan"))
@@ -100,10 +101,8 @@ class CombatEntity:
     self.conditions["enduring"] = None
 
   def attack(self, target, damage, lifesteal=False):
-    if target.conditions["evade"] > 0:
-      play_sound("attack-evaded.mp3", channel=1)
-      print(f"{self.name} attacks {target.name} but they evade!")
-      target.conditions["evade"] -= 1
+    if target is None:
+      print(f"{self.name} attacks nothing.")
       return 0
 
     damage_to_kill = (target.conditions["block"] +
@@ -127,15 +126,21 @@ class CombatEntity:
       final_damage -= damage_to_encase
       print(f"{self.name} attacks it encasement for {damage_to_encase} damage!")
     
-    if final_damage > 0:
-      self.assign_damage(target.conditions["retaliate"])
-      damage_dealt = target.assign_damage(final_damage)
-      if lifesteal:
-        self.heal(damage_dealt)
-      print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
-      self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
-      target.damage_survived_this_turn += final_damage
-      print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
+    if target.conditions["evade"] > 0:
+      play_sound("attack-evaded.mp3", channel=1)
+      print(f"{self.name} attacks {target.name} but they evade!")
+      target.conditions["evade"] -= 1
+      final_damage = 0
+
+    # if final_damage > 0:
+    self.assign_damage(target.conditions["retaliate"])
+    damage_dealt = target.assign_damage(final_damage)
+    if lifesteal:
+      self.heal(damage_dealt)
+    print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
+    self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
+    target.damage_survived_this_turn += final_damage
+    print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
     # play the proper sound
     if damage_dealt == 0:
@@ -202,20 +207,31 @@ class CombatEntity:
 
   def execute_conditions(self):
     self.suffer(self.conditions["burn"])
+    self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
+
     self.suffer(self.conditions["poison"])
-    if self.conditions["regen"] > 0: self.heal(self.conditions["regen"])
+    if doom := self.conditions["doom"] >= self.hp:
+      self.suffer(doom)
+    if self.conditions["regen"] > 0:
+      self.heal(self.conditions["regen"])
+      self.conditions["regen"] -= 1
+    # TODO: Tick searing presence
 
   def end_round(self):
     self.damage_survived_this_turn = 0
     self.damage_taken_this_turn = 0
     # zero out
     self.conditions["block"] = 0
+    self.conditions["evade"] = 0
     
-    # tick down
-    self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
-    self.conditions["regen"] = max(self.conditions["regen"] - 1, 0)
+    # progress conditions
+    # self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
+    # self.conditions["regen"] = max(self.conditions["regen"] - 1, 0)
     self.conditions["stun"] = max(self.conditions["stun"] - 1, 0)
     self.conditions["inventive"] = max(self.conditions["inventive"] - 1, 0)
     self.conditions["vulnerable"] = max(self.conditions["vulnerable"] - 1, 0)
     self.conditions["dig"] = max(self.conditions["dig"] - 1, 0)
+
+    # doom
+    self.conditions["doom"] = max(self.conditions["doom"] * 2, 0)
     
