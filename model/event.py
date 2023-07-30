@@ -21,6 +21,7 @@ class Event:
       "begin_turn",
       "end_round",
       "page",
+      "face",
       "condition"])
 
   def resolve(self):

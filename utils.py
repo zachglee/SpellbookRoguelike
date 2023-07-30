@@ -86,6 +86,11 @@ def get_spell(enc, target_string):
   target = enc.player.spellbook.current_page.spells[spell_idx]
   return target
 
+TARGET_RESTRICTION_PREDICATES = {
+  "damaged": lambda ce, enc: ce.hp < ce.max_hp,
+  "entered": lambda ce, enc: ce.spawned_turn == enc.turn
+}
+
 def get_combat_entities(enc, target_string):
   if target_string == "p":
     return [enc.player]
@@ -113,9 +118,18 @@ def get_combat_entities(enc, target_string):
     return [enc.front[target_pos - 1]]
   elif target_string == "distant":
     return [enc.faced_enemy_queue[-1]]
-  elif target_string == "_":
+  elif target_string[0] == "_":
+    restriction = target_string[1:]
+    is_valid = TARGET_RESTRICTION_PREDICATES[restriction]
+
     input_target_string = input(colored("Choose a target > ", "green"))
-    return get_combat_entities(enc, input_target_string)
+    target = get_combat_entities(enc, input_target_string)
+    while not is_valid(target, enc):
+      print(colored("Invalid target!", "red"))
+      input_target_string = input(colored("Choose a target > ", "green"))
+      target = get_combat_entities(enc, input_target_string)
+    return target
+      
   
 def command_reference():
   help_string = """

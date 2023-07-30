@@ -18,9 +18,13 @@ class CombatEntity:
     self.conditions["durable"] = None
     self.location = {"side": None, "position": None}
     self.events = []
+    self.dead = False
+
+    # combat bookkeeping
     self.damage_taken_this_turn = 0
     self.damage_survived_this_turn = 0
-    self.dead = False
+    self.face_count = 0 # relevant for player only
+    self.spawned_turn = None # relevant for enemies only
 
   def is_player(self):
     return self.__class__.__name__ == "Player"
@@ -138,7 +142,7 @@ class CombatEntity:
     if lifesteal:
       self.heal(damage_dealt)
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
-    self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target}))
+    self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target, "attacker": self}))
     target.damage_survived_this_turn += final_damage
     print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
@@ -220,6 +224,7 @@ class CombatEntity:
   def end_round(self):
     self.damage_survived_this_turn = 0
     self.damage_taken_this_turn = 0
+    self.face_count = 0
     # zero out
     self.conditions["block"] = 0
     self.conditions["evade"] = 0

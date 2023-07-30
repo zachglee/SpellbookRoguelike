@@ -23,7 +23,9 @@ def passive_lose_hp(encounter, event):
   return event.has_tag("lose_hp") and event.metadata["damage"] > 0 and event.metadata["target"].is_player()
 
 def passive_attacked_for_no_damage(encounter, event):
-  return event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player()
+  if event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player():
+    return event.metadata["attacker"].get_target_string(encounter)
+  return False
 
 def passive_third_spell_in_turn(encounter, event):
   return event.has_tag("spell_cast") and len(encounter.spells_cast_this_turn) == 3
@@ -67,6 +69,12 @@ def passive_on_entry(encounter, event):
 
 def passive_first_3_turns(encounter, event):
   return event.has_tag("begin_turn") and encounter.turn <= 3
+
+def passive_first_face(encounter, event):
+  return event.has_tag("face") and encounter.player.face_count == 1
+
+def passive_use_last_charge(encounter, event):
+  return event.has_tag("spell_cast") and event.metadata["spell"].charges <= 0
 
 # Red Color Identity:
 
@@ -167,21 +175,21 @@ red_random_target = [
   [Spell("Passive: At the start of your turn, inflict 2 poison on a random enemy", color="red", type="Passive",
           triggers_on=passive_turn_start, raw_commands=["poison r 2"]),
   Spell("Producer: +1 Red, deal 1 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 1", "damage r 1"]),
-  Spell("Converter: 1 Red -> 1 Blue: Inflict 6 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _ 6"]), # TODO: make target restrictions work
+  Spell("Converter: 1 Red -> 1 Blue: Inflict 6 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 6"]),
   Spell("Consumer: 1 Red: Gain 4 regen and 4 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 4", "vulnerable p 4"])]
 ]
 
 # red_page_sets = [red_enemy_dies, red_take_damage, red_big_attack, red_hit_big_enemy]
 # red_pages = red_enemy_dies + red_take_damage + red_big_attack + red_hit_big_enemy
 red_page_sets = [red_first_3_turns, red_random_target]
-red_pages = [red_first_3_turns, red_random_target]
+red_pages = red_first_3_turns + red_random_target
 red_spells = sum(red_pages, [])
 
 # Blue Color Identity
 
 blue_block_hits = [
   [Spell("Passive: Whenever you’re attacked and take no damage, deal 5 damage to attacker.", color="blue", type="Passive",
-         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage _ 5"]), # TODO fix this so it auto targets attacker
+         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 5"]),
   Spell("Producer: +1 Blue, gain 1 block per enemy.", color="blue", type="Producer",
         generate_commands_pre=for_enemies(["block p *"])),
   Spell("Converter: 1 Blue -> 1 Gold: Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
@@ -198,9 +206,8 @@ blue_block_hits = [
 blue_turn_3 = [
   [Spell("Passive: At beginning of 3rd turn and onwards, block 4.", color="blue", type="Passive",
          triggers_on=passive_turn_3_onwards_at_begin, raw_commands=["block p 4"]),
-  # TODO: make 'entered this turn' actually work.
-  Spell("Producer: +1 Blue, Inflict 1 stun on an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["stun _ 1"]),
-  Spell("Converter: 1 Blue -> 1 Red: Stun 1 or deal 15 damage to a stunned enemy.", color="blue", type="Converter", conversion_color="red"), # NOTE: Purple
+  Spell("Producer: +1 Blue, Inflict 1 stun on an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["stun _entered 1"]),
+  Spell("Converter: 1 Blue -> 1 Red: Stun 1 or deal 15 damage to a stunned enemy.", color="blue", type="Converter", conversion_color="red"), # NOTE: Purple # TODO
   Spell("Consumer: 1 Blue: Inflict 3 stun.", color="blue", type="Consumer", raw_commands=["stun _ 3"])],
   #
   [Spell("Passive: At beginning of 3rd turn and onwards, deal 3 damage to all enemies.", color="blue", type="Passive",
@@ -273,24 +280,20 @@ blue_on_entry = [
   #
   [Spell("Passive: When an enemy enters, deal it 3 damage.", color="blue", type="Passive",
           triggers_on=passive_on_entry, raw_commands=["damage ^ 3"]),
-  Spell("Producer: +1 Blue, deal 5 damage to an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["damage _ 5"]),
+  Spell("Producer: +1 Blue, deal 5 damage to an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["damage _entered 5"]),
   Spell("Converter: 1 Blue -> 1 Gold: Deal 10 damage to the furthest faced enemy.", color="blue", type="Converter", conversion_color="gold",
         raw_commands=["damage distant 10"]),
-  Spell("Consumer: 1 Blue: Banish 2 an enemy.", color="blue", type="Consumer", raw_commands=["banish _ 2"])],
+  Spell("Consumer: 1 Blue: Banish 2 an enemy.", color="blue", type="Consumer", raw_commands=["banish _ 2"])]
 ]
 
 # blue_page_sets = [blue_block_hits, blue_turn_3, blue_3_enemies, blue_excess_block]
 # blue_pages = blue_block_hits + blue_turn_3 + blue_3_enemies + blue_excess_block
 blue_page_sets = [blue_no_enemy_deaths, blue_on_entry]
-blue_pages = [blue_no_enemy_deaths, blue_on_entry]
+blue_pages = blue_no_enemy_deaths + blue_on_entry
 blue_spells = sum(blue_pages, [])
 
 # Gold Color Identity:
-# - buffs (regen, searing presence, empower, sharp)
-# - rulebreaking
-# * play slow matters? (when you cast 1 or less spell in a turn, get 1 blue energy)
 
-# gold_spells = [
 gold_3rd_spell = [
   [Spell("Passive: Whenever you cast your 3rd spell in a turn, gain 3 sharp.", color="gold", type="Passive",
          triggers_on=passive_third_spell_in_turn, raw_commands=["sharp p 3"]),
@@ -310,8 +313,8 @@ gold_turn_page = [
          triggers_on=passive_on_page, raw_commands=["recharge r"]),
   Spell("Producer: +1 Gold, if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
-  # TODO: Implement the gain 4 empower part
-  Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. Gain 4 empower for every spell on this page with <= 0 charges.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 6"]), # NOTE: Green
+  Spell("Converter: 1 Gold -> 1 Red: Deal 6 damage to immediate. Gain 1 empower for each missing spell charge on this page.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["damage i 6"], generate_commands_post=for_missing_charges(["empower p *"])),
   Spell("Consumer: 1 Gold: Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
   #
   [Spell("Passive: Every time you turn to this page, gain 1 inventive.", color="gold", type="Passive",
@@ -327,7 +330,7 @@ gold_1_spell = [
   [Spell("Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
          triggers_on=passive_1_spell_in_turn, raw_commands=["gold p 1"]), # TODO fix this
   Spell("Producer: +1 Gold, you may convert 1 energy to another color.", color="gold", type="Producer"),
-  # TODO: Make this work:
+  # TODO: Make this work: Or just re-work it?
   Spell("Converter: 1 Gold -> 1 Red: Gold: 4 empower. Red: 4 damage. Blue: 4 shield.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color.", color="gold", type="Consumer", raw_commands=["inventive p 3"])],
   #
@@ -356,8 +359,47 @@ gold_face_noone = [
         targets=["i"], raw_commands=["damage i 10"], generate_commands_post=if_kill("i", ["empower p 10"]))],
 ]
 
-gold_page_sets = [gold_3rd_spell, gold_turn_page, gold_1_spell, gold_face_noone]
-gold_pages = gold_3rd_spell + gold_turn_page + gold_1_spell + gold_face_noone
+gold_first_face = [
+  [Spell("Passive: The first time you face in a round, gain 6 block.", color="gold", type="Passive",
+          triggers_on=passive_first_face, raw_commands=["block p 6"]),
+  Spell("Producer: +1 Gold, Stun 1 immediate behind.", color="gold", type="Producer", raw_commands=["stun bi 1"]),
+  Spell("Converter: 1 Gold -> 1 Blue: Face, gain 2 shield for each enemy behind.", color="gold", type="Converter", conversion_color="blue",
+        raw_commands=["face"], generate_commands_post=for_enemies(["shield p *"], magnitude_func=lambda e: 2*e, specifier="behind")),
+  Spell("Consumer: 1 Gold: Stun faced side 1, face, deal 8 damage to immediate.", color="gold", type="Consumer",
+        raw_commands=["stun iside 1", "face", "damage i 8"])],
+  #
+  [Spell("Passive: The first time you face in a round, deal 6 damage to immediate.", color="gold", type="Passive",
+          triggers_on=passive_first_face, raw_commands=["damage i 6"]),
+  Spell("Producer: +1 Gold, inflict 3 vulnerable on immediate behind.", color="gold", type="Producer", raw_commands=["vulnerable bi 3"]),
+  Spell("Converter: 1 Gold -> 1 Red: Gain 2 sharp this turn, face, deal 4 to immediate.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["sharp p 2", "delay 0 sharp p -2", "face", "damage i 4"]),
+  Spell("Consumer: 1 Gold: Deal 8 damage to immediate. If facing no enemies, face and deal 16 damage to immediate.", color="gold", type="Consumer",
+        raw_commands=["damage i 8"], generate_commands_post=if_facing_none(["face", "damage i 16"]))]
+]
+
+gold_use_last_charge = [
+  [Spell("Passive: Whenever you cast a spell's last charge, gain 3 shield.", color="gold", type="Passive",
+         triggers_on=passive_use_last_charge, raw_commands=["shield p 3"]),
+  Spell("Producer: +1 Gold, gain 1 inventive", color="gold", type="Producer", raw_commands=["inventive p 1"]),
+  Spell("Converter: 1 Gold -> 1 Blue: Gain 1 evade, turn the page, +1 time.", color="gold", type="Converter", conversion_color="blue",
+        raw_commands=["evade p 1", "page", "time -1"]),
+  Spell("Consumer: 1 Gold: Deal 5 to a random enemy x times, where x is amount of energy.", color="gold", type="Consumer",
+        generate_commands_pre=for_player_energy(["repeat * damage r 5"]))],
+  #
+  [Spell("Passive: Whenever you cast a spell's last charge, gain 2 searing presence.", color="gold", type="Passive",
+          triggers_on=passive_use_last_charge, raw_commands=["searing p 2"]),
+  Spell("Producer: +1 Gold, If this has 0 or less charges, damage immediate 8.", color="gold", type="Producer",
+        generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),
+  Spell("Converter: 1 Gold -> 1 Red: Gain 1 prolific, 2 dig deep, 3 block.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["prolific p 1", "dig p 2", "block p 3"]),
+  Spell("Consumer: Gain block and searing presence equal to missing charges.", color="gold", type="Consumer",
+        generate_commands_pre=for_missing_charges(["block p *", "searing p *"]))]
+]
+
+# gold_page_sets = [gold_3rd_spell, gold_turn_page, gold_1_spell, gold_face_noone]
+# gold_pages = gold_3rd_spell + gold_turn_page + gold_1_spell + gold_face_noone
+gold_page_sets = [gold_first_face, gold_use_last_charge]
+gold_pages = gold_first_face + gold_use_last_charge
 gold_spells = sum(gold_pages, [])
 
 spells = red_spells + blue_spells + gold_spells
@@ -367,22 +409,3 @@ spells = red_spells + blue_spells + gold_spells
 # Red new spells:
 
 # Gold new spells:
-# - Passive: The first time you face in a round, gain 6 block.
-# - Producer: +1 Gold, Stun 1 immediate behind.
-# - Converter: 1 Gold -> 1 Blue: Face, gain 2 shield for each enemy behind.
-# - Consumer: 1 Gold: Stun faced side 1, face, deal 8 damage to immediate.
-
-# - Passive: The first time you face in a round, deal 6 damage to immediate.
-# - Producer: +1 Gold, inflict 3 vulnerable on immediate behind.
-# - Converter: 1 Gold -> 1 Red: Gain 2 sharp this turn, face, deal 4 to immediate.
-# - Consumer: 1 Gold: Deal 8 damage to immediate. If facing no enemies, face and deal 16 damage to immediate.
-
-# - Passive: Whenever you cast a spell's last charge, gain 3 shield.
-# - Producer: +1 Gold, gain 1 inventive
-# - Converter: 1 Gold -> 1 Blue: Gain 1 evade, turn the page, +1 time.
-# - Consumer: 1 Gold: Deal 5 to a random enemy x times, where x is amount of energy.
-
-# - Passive: Whenever you cast a spell's last charge, gain 2 searing presence.
-# - Producer: +1 Gold, If this has 0 or less charges, damage immediate 8.
-# - Converter: 1 Gold -> 1 Red: Gain 1 prolific, 2 dig deep, 3 block.
-# - Consumer: Gain block and searing presence equal to missing charges.

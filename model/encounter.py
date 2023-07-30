@@ -284,7 +284,7 @@ class Encounter:
         self.player.spend_time()
         self.explore()
       elif cmd == "face?":
-        self.player.switch_face()
+        self.player.switch_face(event=False)
       elif cmd == "face":
         self.player.spend_time()
         self.player.switch_face()
@@ -433,6 +433,7 @@ class Encounter:
       else:
         destination.append(enemy)
         enemy.spawned = True
+        enemy.spawned_turn = self.turn
         self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     self.player_upkeep()

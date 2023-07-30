@@ -4,6 +4,9 @@
 
 # conditionals
 
+from typing import Literal
+
+
 def if_facing_none(commands):
   def if_facing_none_generator(encounter, targets_dict):
     if encounter.faced_enemy_queue == []:
@@ -101,9 +104,20 @@ def for_enemy_remaining_hp(target, unit_hp, commands):
     return [cmd.replace("*", str(remaining_hp_magnitude)) for cmd in commands]
   return for_enemy_remaining_hp_generator
 
-def for_enemies(commands):
+def for_enemies(commands, magnitude_func=lambda x: x, specifier: Literal["total", "behind", "ahead", "front", "back"] = "total"):
   def for_enemies_generator(encounter, targets_dict):
-    return [cmd.replace("*", str(len(encounter.back) + len(encounter.front))) for cmd in commands]
+    if specifier == "total":
+      enemies_raw = len(encounter.back) + len(encounter.front)
+    elif specifier == "behind":
+      enemies_raw = len(encounter.unfaced_enemy_queue)
+    elif specifier == "ahead":
+      enemies_raw = len(encounter.faced_enemy_queue)
+    elif specifier == "front":
+      enemies_raw = len(encounter.front)
+    elif specifier == "back":
+      enemies_raw = len(encounter.back)
+    enemies_magnitude = magnitude_func(enemies_raw)
+    return [cmd.replace("*", str(enemies_magnitude)) for cmd in commands]
   return for_enemies_generator
 
 def for_player_condition(condition, commands, magnitude_func=lambda x: x):
@@ -118,3 +132,10 @@ def for_turn_number(commands, magnitude_func=lambda x: x):
     turn_number_magnitude = magnitude_func(encounter.turn_number)
     return [cmd.replace("*", str(turn_number_magnitude)) for cmd in commands]
   return for_turn_number_generator
+
+def for_missing_charges(commands, magnitude_func=lambda x: x):
+  def for_missing_charges_generator(encounter, targets_dict):
+    missing_charges_raw = sum([spell.max_charges - spell.charges for spell in encounter.player.spellbook.current_page.spells], 0)
+    missing_charges_magnitude = magnitude_func(missing_charges_raw)
+    return [cmd.replace("*", str(missing_charges_magnitude)) for cmd in commands]
+  return for_missing_charges_generator

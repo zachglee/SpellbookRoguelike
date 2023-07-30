@@ -167,7 +167,7 @@ class GameState:
         print(self.player.render_rituals())
         return
       elif cmd == "face?":
-        encounter.player.switch_face()
+        encounter.player.switch_face(event=False)
         return
       elif cmd == "page?":
         encounter.player.spellbook.switch_page()
@@ -282,7 +282,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

@@ -10,6 +10,7 @@ from sound_utils import play_sound
 from content.rituals import rituals
 from content.items import starting_weapons
 from content.enemy_factions import all_special_items
+from model.event import Event
 
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
@@ -156,7 +157,7 @@ class Player(CombatEntity):
       immediate = encounter.back[offset:offset+1]
     return immediate[0] if immediate else None
 
-  def switch_face(self):
+  def switch_face(self, event=True):
     if self.facing == "front":
       self.facing = "back"
     elif self.facing == "back":
@@ -164,6 +165,9 @@ class Player(CombatEntity):
     else:
       raise ValueError(f"Facing is: {self.facing}")
     play_sound("face.mp3")
+    if event:
+      self.events.append(Event(["face"]))
+      self.face_count += 1
 
   def render(self):
     entity_str = super().render()
