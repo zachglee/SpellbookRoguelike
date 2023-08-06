@@ -129,7 +129,7 @@ def for_player_condition(condition, commands, magnitude_func=lambda x: x):
 
 def for_turn_number(commands, magnitude_func=lambda x: x):
   def for_turn_number_generator(encounter, targets_dict):
-    turn_number_magnitude = magnitude_func(encounter.turn_number)
+    turn_number_magnitude = magnitude_func(encounter.turn)
     return [cmd.replace("*", str(turn_number_magnitude)) for cmd in commands]
   return for_turn_number_generator
 

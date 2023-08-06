@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from model.combat_entity import CombatEntity
 from model.event import Event
-from content.enemy_actions import NothingAction
+from content.enemy_actions import AddConditionAction, NothingAction, involves_add_undying
 from content.rituals import rituals
 from content.items import starting_weapons, minor_energy_potions
 from utils import energy_colors, colorize, get_combat_entities, choose_idx, get_spell
@@ -96,7 +96,13 @@ class Encounter:
 
   @property
   def enemies(self):
-    return self.back + self.front
+    enemies_list = []
+    for i in range(max(len(self.back), len(self.front))):
+      if i < len(self.front):
+        enemies_list.append(self.front[i])
+      if i < len(self.back):
+        enemies_list.append(self.back[i])
+    return enemies_list
     
   @property
   def faced_enemy_queue(self):
@@ -121,8 +127,9 @@ class Encounter:
 
   @property
   def overcome(self):
-    all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns) 
-    return (self.turn > self.escape_turn or all_defeated) and self.player.hp > 0
+    all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns)
+    no_undying = not any(enemy.conditions["undying"] > 0 for enemy in self.dead_enemies)
+    return (self.turn > self.escape_turn or all_defeated) and self.player.hp > 0 and no_undying
 
   @property
   def last_spell_cast(self):
@@ -230,8 +237,17 @@ class Encounter:
     target.clear_conditions()
     target.spawned = False
     target.conditions["ward"] += ward
-
+    target.resurrected = False
     
+  def call(self, magnitude, random=False):
+    non_imminent_spawns = [es for es in self.enemy_spawns
+                            if es.turn > self.turn + 1]
+    if non_imminent_spawns:
+      if random:
+        target_spawn = random.choice(non_imminent_spawns)
+      else:
+        target_spawn = sorted(non_imminent_spawns, key=lambda es: es.turn)[0]
+      target_spawn.turn -= magnitude
 
   def explore(self):
     play_sound("explore.mp3")
@@ -318,10 +334,7 @@ class Encounter:
         self.player.conditions[cmd_tokens[2]] += 1
       elif cmd_tokens[0] == "call":
         magnitude = int(cmd_tokens[1])
-        non_imminent_spawns = [es for es in self.enemy_spawns
-                                if es.turn > self.turn + 1]
-        if non_imminent_spawns:
-          sorted(non_imminent_spawns, key=lambda es: es.turn)[0].turn -= magnitude
+        self.call(magnitude)
       elif cmd_tokens[0] == "banish":
         ward = int(cmd_tokens[2]) if len(cmd_tokens) > 2 else 0
         targets = get_combat_entities(self, cmd_tokens[1])
@@ -420,6 +433,7 @@ class Encounter:
         enemy.conditions["undying"] = max(0, undying - 1)
         enemy.spawned = False
         enemy.dead = False
+        enemy.resurrected = True
         to_spawn.append(EnemySpawn(self.turn, "b", enemy))
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
@@ -434,7 +448,9 @@ class Encounter:
         destination.append(enemy)
         enemy.spawned = True
         enemy.spawned_turn = self.turn
-        self.events += enemy.entry.act(enemy, self)
+        skip_undying = (enemy.resurrected and involves_add_undying(enemy.entry)) 
+        if not skip_undying:
+          self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     self.player_upkeep()
     self.ritual_upkeep()
@@ -492,10 +508,6 @@ class Encounter:
     self.enemy_phase()
     self.post_enemy_scheduled_commands()
     self.round_end_phase()
-
-    # TODO: remove these? They're modifying Encounter which is incorrect?
-    # self.damage_taken_this_turn = 0
-    # self.damage_survived_this_turn = 0
 
     self.upkeep_phase()
 

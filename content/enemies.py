@@ -2,9 +2,9 @@ from copy import deepcopy
 from typing import List
 from model.encounter import EnemySet, Enemy, EnemySpawn
 from content.enemy_actions import (
-  AttackAction, AttackSide, EnergyThresholdAction, HealAction, SelfDamageAction, AttackImmediate,
+  AttackAction, AttackSide, AttackAll, EnergyThresholdAction, HealAction, SelfDamageAction, AttackImmediate,
   BackstabAction, NearFarAction, PackTacticsAction, MoveAction, CowardlyAction,
-  CallAction, MultiAction, WindupAction, HealthThresholdAction,
+  CallAction, MultiAction, SpellcastThresholdAction, WindupAction, HealthThresholdAction,
   NothingAction, CautiousAction, AddConditionAction, SetConditionAction,
   TheVultureEntryAction, OverwhelmAction, SideOverwhelmAction)
 
@@ -146,34 +146,153 @@ enemies = {
                          ])),
   "Nightmare Remnant": Enemy(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
   "Dreamstalker": Enemy(20, "Dreamstalker", BackstabAction(
-      AddConditionAction("slow", 1, "player"),
-      AttackAction(5))),
+      AddConditionAction("slow", 2, "player"),
+      AttackAction(6))),
   "Shadow of a Doubt": Enemy(16, "Shadow of a Doubt", BackstabAction(
       AttackAction(6),
-      AddConditionAction("vulnerable", 1, "player"))),
+      AddConditionAction("vulnerable", 2, "player"))),
   "Mov, the Necromancer": Enemy(12, "Mov, the Necromancer",
       MultiAction([
         MoveAction(1),
         AddConditionAction("undying", 1, "immediate"),
       ]),
       entry=AddConditionAction("undying", 1, "all_enemies")),
-  # hit me I get stronger
-  # More durable enemies
-  # Enemy with decaying shield, so you need to wait a bit to kill it.
-  # more armor enemies
-  # enemy that spawns at turn 4
+  "Assault Golem": Enemy(10, "Assault Golem", CautiousAction(AttackAction(10), AddConditionAction("shield", 3, "self"))),
+  "Aegis Orb": Enemy(20, "Aegis Orb", AddConditionAction("shield", 3, "all_enemies")),
+  "Defective Shieldbot": Enemy(10, "Defective Shieldbot",
+                               MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
+                               entry=AddConditionAction("shield", 30, "self")),
+  "Plated Warmech": Enemy(12, "Plated Warmech", AttackAction(4), entry=AddConditionAction("armor", 6, "self")),
+  "Relentless Legionnaire": Enemy(8, "Relentless Legionnaire", AttackAction(2),
+    entry=MultiAction([AddConditionAction("undying", 1, "self"), AddConditionAction("empower", 3, "self")])),
+  "Eternal Berserker": Enemy(12, "Eternal Berserker", MultiAction([AttackAction(1), AddConditionAction("sharp", 2, "self")]),
+    entry=MultiAction([AddConditionAction("undying", 3, "self"), AddConditionAction("regen", 4, "self")])),
+  "Risen Warrior": Enemy(16, "Risen Warrior", AttackAction(8), entry=AddConditionAction("encase", 16, "self")),
+  "Intrepid Bannerman": Enemy(12, "Intrepid Bannerman", AddConditionAction("empower", 3, "side"),
+    entry=AddConditionAction("undying", 1, "self")),
+  "Enterprising Eye": Enemy(4, "Enterprising Eye", CallAction(None, 1)),
+  "Collector's Cage": Enemy(4, "Collector's Cage", AddConditionAction("encase", 4, "player")),
+  "Grasping Hand": Enemy(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
+  "Collector of Bodies": Enemy(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
+                               entry=AddConditionAction("encase", 16, "player")),
+  "Collector of Magic": Enemy(20, "Collector of Magic", EnergyThresholdAction(AttackAction(10), NothingAction(), 1)),
+  "Collector of Still-lifes": Enemy(20, "Collector of Still-lifes", SpellcastThresholdAction(
+      AttackAction(10), AddConditionAction("slow", 1, "player"), 1)),
+  "Doom of Blades": Enemy(40, "Doom of Blades", MultiAction([AttackAll(15), AttackAction(15)])),
+  "Doom of Plagues": Enemy(40, "Doom of Plagues", AddConditionAction("poison", 3, "player"),
+                           entry=AddConditionAction("poison", 6, "player")),
+  "Wave of Doom": Enemy(15, "Wave of Doom", WindupAction(AttackAction(8), 1),
+                         entry=AddConditionAction("retaliate", 1, "self")),
+  "Horde Beast": Enemy(10, "Horde Beast", OverwhelmAction(AttackAction(8), AttackAction(4), 4)),
+  "Blade Forger": Enemy(8, "Blade Forger", SideOverwhelmAction(
+      NothingAction(), AddConditionAction("sharp", 2, "player"), 2)),
+  "Wandering Healer": Enemy(8, "Wandering Healer", CautiousAction(NothingAction(),
+      AddConditionAction("regen", 2, "player")), entry=AddConditionAction("regen", 3, "player")),
+  "Defiant Survivor": Enemy(8, "Defiant Survivor", CautiousAction(
+      NothingAction(), AddConditionAction("searing", 3, "player"))),
+  "Grizzled Armorer": Enemy(8, "Grizzled Armorer", SideOverwhelmAction(
+      NothingAction(), AddConditionAction("armor", 1, "player"), 2)),
+
+  # Hoarding Dragons? Wound them and they go away. Or they go into neutral mode They interact with your items?
+
+  # Gets stronger if other enemies dead
+  # Really late-spawning enemies where you actually do just need to survive them?
+  # Swarm of late spawning enemies?
+  # Calling enemies?
+  # * really big burst of enemies where the main issue is just burst kill them all in one turn?
+  # More cowardly enemies? ^^ Swarm of low hp cowardly enemies?
+
+  # reverse cowardly? It's good if there's noone higher hp than them? Commander?
   # does something good for you when there gets to be 5 enemies?
   # heal immediate?
   # more call action enemies?
   # enemy that rewards you for full blocking its attacks
-  # another 1-turn spawn enemy
-  # elder one
   # energy vampire -- rylie ellam
   # enemies where damage is not the best option
-  # enemies that make doing defense survival mode fun and feel powerful
-  # 4 armor 12 hp
-  # another backstab enemy? side-hopping backstabber?
 }
+
+doombringers = [
+  # Doombringers
+  EnemySet("Doom of Blades", [
+    EnemySpawn(4, "b", enemies["Blade Forger"]),
+    EnemySpawn(6, "f", enemies["Doom of Blades"]),
+  ], faction="Doombringers"),
+  EnemySet("Doom of Plagues", [
+    EnemySpawn(3, "b", enemies["Wandering Healer"]),
+    EnemySpawn(5, "f", enemies["Doom of Plagues"]),
+  ], faction="Doombringers"),
+  EnemySet("Doom of Waves", [
+    EnemySpawn(3, "b", enemies["Defiant Survivor"]),
+    EnemySpawn(4, "f", enemies["Wave of Doom"]),
+    EnemySpawn(5, "f", enemies["Wave of Doom"]),
+    EnemySpawn(6, "f", enemies["Wave of Doom"]),
+  ], faction="Doombringers"),
+  EnemySet("Doom of Hordes", [
+    EnemySpawn(4, "b", enemies["Grizzled Armorer"]),
+    EnemySpawn(6, "f", enemies["Horde Beast"]),
+    EnemySpawn(6, "f", enemies["Horde Beast"]),
+    EnemySpawn(6, "b", enemies["Horde Beast"]),
+    EnemySpawn(6, "b", enemies["Horde Beast"]),
+  ], faction="Doombringers")
+]
+
+the_collectors = [
+  # The Collectors
+  EnemySet("Collector of Bodies", [
+    EnemySpawn(1, "b", enemies["Collector's Cage"]),
+    EnemySpawn(4, "f", enemies["Collector of Bodies"]),
+  ], faction="The Collectors"),
+  EnemySet("Collector of Magic", [
+    EnemySpawn(1, "b", enemies["Enterprising Eye"]),
+    EnemySpawn(4, "f", enemies["Collector of Magic"]),
+  ], faction="The Collectors"),
+  EnemySet("Collector of Still-lifes", [
+    EnemySpawn(1, "b", enemies["Grasping Hand"]),
+    EnemySpawn(4, "f", enemies["Collector of Still-lifes"]),
+  ], faction="The Collectors"),
+  EnemySet("Acquisitions Party", [
+    EnemySpawn(1, "b", enemies["Enterprising Eye"]),
+    EnemySpawn(1, "f", enemies["Enterprising Eye"]),
+    EnemySpawn(2, "b", enemies["Collector's Cage"]),
+    EnemySpawn(2, "f", enemies["Collector's Cage"]),
+    EnemySpawn(3, "b", enemies["Grasping Hand"]),
+    EnemySpawn(3, "f", enemies["Grasping Hand"])
+  ], faction="The Collectors")
+]
+
+undying_legion = [
+  # Undying Legion
+  EnemySet("Relentless Legionnaire", [
+    EnemySpawn(2, "f", enemies["Relentless Legionnaire"]),
+    EnemySpawn(3, "b", enemies["Relentless Legionnaire"]),
+    EnemySpawn(4, "f", enemies["Relentless Legionnaire"])
+  ], faction="Undying Legion"),
+  EnemySet("Eternal Berserker", [
+    EnemySpawn(1, "f", enemies["Eternal Berserker"]),
+  ], faction="Undying Legion"),
+  EnemySet("Risen Warrior", [
+    EnemySpawn(1, "b", enemies["Risen Warrior"]),
+  ], faction="Undying Legion"),
+  EnemySet("Intrepid Bannerman", [
+    EnemySpawn(3, "f", enemies["Intrepid Bannerman"]),
+  ], faction="Undying Legion")
+]
+
+freed_automata = [
+  # Freed Automata
+  EnemySet("Assault Golem", [
+    EnemySpawn(2, "f", enemies["Assault Golem"])
+  ], faction="Freed Automata"),
+  EnemySet("Aegis Orb", [
+    EnemySpawn(1, "f", enemies["Aegis Orb"])
+  ], faction="Freed Automata"),
+  EnemySet("Defective Shieldbot", [
+    EnemySpawn(1, "f", enemies["Defective Shieldbot"])
+  ], faction="Freed Automata"),
+  EnemySet("Plated Warmech", [
+    EnemySpawn(3, "f", enemies["Plated Warmech"])
+  ], faction="Freed Automata")
+]
 
 saik_collective = [
   # Sa'ik Collective
@@ -386,6 +505,8 @@ shadow_realm = [
   EnemySet("Nightmare Remnant", [
     EnemySpawn(2, "b", enemies["Nightmare Remnant"]),
     EnemySpawn(2, "f", enemies["Nightmare Remnant"]),
+    EnemySpawn(3, "b", enemies["Nightmare Remnant"]),
+    EnemySpawn(3, "f", enemies["Nightmare Remnant"]),
     EnemySpawn(4, "b", enemies["Nightmare Remnant"]),
     EnemySpawn(4, "f", enemies["Nightmare Remnant"]),
   ], faction="Shadow Realm"),

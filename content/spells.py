@@ -131,7 +131,7 @@ red_hit_big_enemy = [
   [Spell("Passive: The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["burn ^ 5"]),
   Spell("Producer: +1 Red, Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
-  Spell("Converter: 1 Red -> 1 Blue: Apply 1 poison. Apply extra 1 poison for every 5 hp the target has.", color="red", type="Converter", conversion_color="blue",
+  Spell("Converter: 1 Red -> 1 Blue: Apply 1 poison. Apply extra 1 poison for every 4 hp the target has.", color="red", type="Converter", conversion_color="blue",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 5, ["poison _ 1", "poison _ *"])), # NOTE: Purple
   Spell("Consumer: 1 Red: Target loses half its remaining health.", color="red", type="Consumer",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["suffer _ *"]))],
@@ -153,7 +153,7 @@ red_first_3_turns = [
   Spell("Producer: +1 Red, call 1, +3 time", color="red", type="Producer", raw_commands=["call 1", "time -3"]),
   Spell("Converter: 1 Red -> 1 Blue: Deal 2 damage to random x times, where x is 8 - turn number", color="red", type="Converter", conversion_color="blue",
         generate_commands_pre=for_turn_number(["repeat * damage r 2"], lambda t: 8 - t)),
-  Spell("Consumer: Call 1 three times. Gain 6 sharp.", color="red", type="Consumer", raw_commands=["call 1", "call 1", "call 1", "sharp p 6"])],
+  Spell("Consumer: 1 Red: Call 1 three times. Gain 6 sharp.", color="red", type="Consumer", raw_commands=["call 1", "call 1", "call 1", "sharp p 6"])],
   #
   [Spell("Passive: At the start of first 3 turns, gain 1 inventive and 1 prolific.", color="red", type="Passive",
           triggers_on=passive_first_3_turns, raw_commands=["inventive p 1", "prolific p 1"]),
@@ -179,10 +179,8 @@ red_random_target = [
   Spell("Consumer: 1 Red: Gain 4 regen and 4 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 4", "vulnerable p 4"])]
 ]
 
-# red_page_sets = [red_enemy_dies, red_take_damage, red_big_attack, red_hit_big_enemy]
-# red_pages = red_enemy_dies + red_take_damage + red_big_attack + red_hit_big_enemy
-red_page_sets = [red_first_3_turns, red_random_target]
-red_pages = red_first_3_turns + red_random_target
+red_page_sets = [red_enemy_dies, red_take_damage, red_big_attack, red_hit_big_enemy, red_first_3_turns, red_random_target]
+red_pages = red_enemy_dies + red_take_damage + red_big_attack + red_hit_big_enemy + red_first_3_turns + red_random_target
 red_spells = sum(red_pages, [])
 
 # Blue Color Identity
@@ -249,7 +247,6 @@ blue_excess_block = [
   Spell("Consumer: 1 Blue: Gain 6 block. Deal damage equal to block + shield to target.", color="blue", type="Consumer")],
 ]
 
-# -----------
 blue_no_enemy_deaths = [
   [Spell("Passive: At the start of your turn, if no enemies are dead, gain 6 block.", color="blue", type="Passive",
           triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["block p 6"]),
@@ -262,7 +259,7 @@ blue_no_enemy_deaths = [
   [Spell("Passive: At the start of your turn, if no enemies are dead, ward self 1.", color="blue", type="Passive",
           triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["ward p 1"]),
   Spell("Producer: +1 Blue, Deal 6 damage to random 1 turn from now.", color="blue", type="Producer",
-        raw_commands=["delay 1 damage _ -6"]),
+        raw_commands=["delay 1 damage r 6"]),
   Spell("Converter: 1 Blue -> 1 Gold: Gain x time, x empower, and x block, where x is # of enemies", color="blue", type="Converter", conversion_color="gold",
         generate_commands_pre=for_enemies(["time -*", "empower p *", "block p *"])),
   Spell("Consumer: 1 Blue: Deal 2x damage to all enemies, where x is turn number.", color="blue", type="Consumer",
@@ -286,10 +283,8 @@ blue_on_entry = [
   Spell("Consumer: 1 Blue: Banish 2 an enemy.", color="blue", type="Consumer", raw_commands=["banish _ 2"])]
 ]
 
-# blue_page_sets = [blue_block_hits, blue_turn_3, blue_3_enemies, blue_excess_block]
-# blue_pages = blue_block_hits + blue_turn_3 + blue_3_enemies + blue_excess_block
-blue_page_sets = [blue_no_enemy_deaths, blue_on_entry]
-blue_pages = blue_no_enemy_deaths + blue_on_entry
+blue_page_sets = [blue_block_hits, blue_turn_3, blue_3_enemies, blue_excess_block, blue_no_enemy_deaths, blue_on_entry]
+blue_pages = blue_block_hits + blue_turn_3 + blue_3_enemies + blue_excess_block + blue_no_enemy_deaths + blue_on_entry
 blue_spells = sum(blue_pages, [])
 
 # Gold Color Identity:
@@ -330,8 +325,7 @@ gold_1_spell = [
   [Spell("Passive: If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
          triggers_on=passive_1_spell_in_turn, raw_commands=["gold p 1"]), # TODO fix this
   Spell("Producer: +1 Gold, you may convert 1 energy to another color.", color="gold", type="Producer"),
-  # TODO: Make this work: Or just re-work it?
-  Spell("Converter: 1 Gold -> 1 Red: Gold: 4 empower. Red: 4 damage. Blue: 4 shield.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
+  Spell("Converter: 1 Gold -> 1 Red: Deal 4 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
   Spell("Consumer: 1 Gold: Gain 3 inventive and 1 energy of any color.", color="gold", type="Consumer", raw_commands=["inventive p 3"])],
   #
   [Spell("Passive: If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive",
@@ -392,14 +386,12 @@ gold_use_last_charge = [
         generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),
   Spell("Converter: 1 Gold -> 1 Red: Gain 1 prolific, 2 dig deep, 3 block.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["prolific p 1", "dig p 2", "block p 3"]),
-  Spell("Consumer: Gain block and searing presence equal to missing charges.", color="gold", type="Consumer",
+  Spell("Consumer: 1 Gold: Gain block and searing presence equal to missing charges.", color="gold", type="Consumer",
         generate_commands_pre=for_missing_charges(["block p *", "searing p *"]))]
 ]
 
-# gold_page_sets = [gold_3rd_spell, gold_turn_page, gold_1_spell, gold_face_noone]
-# gold_pages = gold_3rd_spell + gold_turn_page + gold_1_spell + gold_face_noone
-gold_page_sets = [gold_first_face, gold_use_last_charge]
-gold_pages = gold_first_face + gold_use_last_charge
+gold_page_sets = [gold_3rd_spell, gold_turn_page, gold_1_spell, gold_face_noone, gold_first_face, gold_use_last_charge]
+gold_pages = gold_3rd_spell + gold_turn_page + gold_1_spell + gold_face_noone + gold_first_face + gold_use_last_charge
 gold_spells = sum(gold_pages, [])
 
 spells = red_spells + blue_spells + gold_spells

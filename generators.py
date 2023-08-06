@@ -27,9 +27,9 @@ def generate_faction_sets(n_sets=1, set_size=3):
   random.shuffle(factions)
   return [factions[i*set_size:(i+1)*set_size] for i in range(n_sets)]
 
-def generate_library_spells(size, spell_pool=spells):
+def generate_library_spells(size, spell_pool=spells, copies=3):
   random.shuffle(spell_pool)
-  return [LibrarySpell(sp) for sp in spell_pool[:size]]
+  return [LibrarySpell(sp, copies=copies) for sp in spell_pool[:size]]
 
 def generate_spellbook_spells(size, spell_pool=spells):
   random.shuffle(spell_pool)

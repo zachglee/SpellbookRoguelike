@@ -4,7 +4,6 @@ from typing import List
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
-from drafting import draft_player_library
 from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter, EnemyWave
@@ -78,7 +77,7 @@ class Node:
     return render_str
 
 class Region:
-  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=8):
+  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=12):
     # setup
     self.position = position
     self.spell_pool = spell_pool
@@ -100,12 +99,12 @@ class Region:
       row_of_nodes = []
       for j in range(width):
         library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
-        unique_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 1]
-        guardian_enemy_wave = EnemyWave(unique_enemy_sets + [random.choice(self.enemy_set_pool)])
+        unique_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2]
+        guardian_enemy_wave = EnemyWave(unique_enemy_sets)
         node = Node(Safehouse(library), [guardian_enemy_wave], (i, j))
         row_of_nodes.append(node)
         spell_pool_cursor += 2
-        enemy_set_pool_cursor += 1
+        enemy_set_pool_cursor += 2
       self.nodes.append(row_of_nodes)
     # generate starting layer
     starting_layer = [Node(Safehouse([]), [], (0, 0), seen=True)]
@@ -142,6 +141,7 @@ class Region:
     eligible_nodes = [node for node in self.nodes[-2] if not node.blockaded and node.seen]
     node_to_blockade = sorted(eligible_nodes, reverse=True, key=lambda n: n.pass_passages)[0]
     node_to_blockade.blockaded = True
+    node_to_blockade.passages.append("fail")
     new_enemy_set = random.choice(random.choice(self.faction_set).enemy_sets)
     new_enemy_wave = EnemyWave([new_enemy_set], 2)
     node_to_blockade.guardian_enemy_waves.append(new_enemy_wave)
@@ -189,22 +189,24 @@ class Region:
     current_layer_idx = self.current_node.position[0]
     current_node_idx = self.current_node.position[1]
     next_layer = self.nodes[current_layer_idx + 1]
-    if current_layer_idx == len(self.nodes) - 2:
-      # heading into boss layer
-      which_boss = int(current_node_idx / 2)
-      routes.append(self.get_route_for_node(current_layer_idx + 1, which_boss))
-    elif current_layer_idx == 0:
-      # heading into first layer
-      idx_choices = list(range(len(next_layer)))
-      random.shuffle(idx_choices)
-      routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[0]))
-      routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[1]))
-    else:
-      routes.append(self.get_route_for_node(current_layer_idx + 1, current_node_idx))
-      side_indices = [current_node_idx - 1, current_node_idx + 1]
-      side_routes = [self.get_route_for_node(current_layer_idx + 1, i)
-                     for i in side_indices if i >= 0 and i < len(next_layer)]
-      routes.append(random.choice(side_routes))
+    # just literally let them choose any route from the next layer
+    routes = [self.get_route_for_node(node.position[0], node.position[1]) for node in next_layer]
+    # if current_layer_idx == len(self.nodes) - 2:
+    #   # heading into boss layer
+    #   which_boss = int(current_node_idx / 2)
+    #   routes.append(self.get_route_for_node(current_layer_idx + 1, which_boss))
+    # elif current_layer_idx == 0:
+    #   # heading into first layer
+    #   idx_choices = list(range(len(next_layer)))
+    #   random.shuffle(idx_choices)
+    #   routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[0]))
+    #   routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[1]))
+    # else:
+    #   routes.append(self.get_route_for_node(current_layer_idx + 1, current_node_idx))
+    #   side_indices = [current_node_idx - 1, current_node_idx + 1]
+    #   side_routes = [self.get_route_for_node(current_layer_idx + 1, i)
+    #                  for i in side_indices if i >= 0 and i < len(next_layer)]
+    #   routes.append(random.choice(side_routes))
     
     # prompt the player to choose a route
     print(player.render_library() + "\n")
@@ -278,7 +280,7 @@ class Map:
     # enemy_set_pool = generate_enemy_set_pool(n=22)
     spell_pools = generate_spell_pools(n_pools=n_regions)
     faction_sets = generate_faction_sets(n_sets=n_regions, set_size=3)
-    self.regions = [Region(i, 4, 2, spell_pool, faction_set) for i, spell_pool, faction_set
+    self.regions = [Region(i, 3, 2, spell_pool, faction_set) for i, spell_pool, faction_set
                     in zip(range(n_regions), spell_pools, faction_sets)]
     self.current_region_idx = 0
     self.active_ritual = None
@@ -337,8 +339,7 @@ class Map:
                         signature_color=chosen_color)
         # TODO: possibly remove this later
         print(player.render_rituals())
-        draft_player_library(player, self.current_region.spell_pool)
-        player.init(spell_pool=self.current_region.spell_pool)
+        player.init(spell_pool=self.current_region.spell_pool, new_character=True)
     self.current_region.player = player
     return player
 

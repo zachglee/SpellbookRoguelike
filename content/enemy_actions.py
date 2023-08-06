@@ -74,8 +74,21 @@ class AttackSide(Action):
               for target in targets]
     return events
   
+class AttackAll(Action):
+  def __init__(self, damage, lifesteal=False):
+    self.damage = damage
+    self.lifesteal = lifesteal
+
+  def act(self, actor, enc) -> List[Event]:
+    targets = enc.enemies
+    targets = [t for t in targets]
+    events = [Event(["assign_damage"], actor, target,
+              lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))
+              for target in targets]
+    return events
+  
   def __repr__(self):
-    return f"{'Lifesteal ' if self.lifesteal else ''}Attack {self.damage} to side"
+    return f"{'Lifesteal ' if self.lifesteal else ''}Attack {self.damage} to all"
 
 class HealAction(Action):
   def __init__(self, magnitude, target):
@@ -123,6 +136,9 @@ class CallAction(Action):
     self.call_amount = call_amount
 
   def act(self, actor, enc):
+    if self.call_name is None:
+      return [Event(["call"], actor, enc, lambda a, enc: enc.call(self.call_amount))]
+
     name_match = [es for es in enc.enemy_spawns
                           if es.enemy.name == self.call_name]
     if name_match:
@@ -136,7 +152,7 @@ class CallAction(Action):
     return f"Call {self.call_name} {self.call_amount}"
 
 class AddConditionAction(Action):
-  def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all", "immediate"]):
+  def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all", "immediate", "side"]):
     self.condition = condition
     self.magnitude = magnitude
     self.target = target
@@ -242,7 +258,22 @@ class EnergyThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If player has {self.threshold} or more energy: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+    return f"If player has {self.threshold} or more ({', '.join(self.colors)}) energy: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+
+class SpellcastThresholdAction(Action):
+  def __init__(self, meet_threshold_action, below_threshold_action, threshold):
+    self.meet_threshold_action = meet_threshold_action
+    self.below_threshold_action = below_threshold_action
+    self.threshold = threshold
+  
+  def act(self, actor, enc) -> List[Event]:
+    if len(enc.spells_cast_this_turn) >= self.threshold:
+      return self.meet_threshold_action.act(actor, enc)
+    else:
+      return self.below_threshold_action.act(actor, enc)
+    
+  def __repr__(self):
+    return f"If player has cast {self.threshold} or more spells this turn: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):
@@ -381,3 +412,11 @@ class TheVultureEntryAction(Action):
     events += AttackAction(len(other_enemies) * 2).act(actor, enc)
     events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
     return events
+  
+# Utils
+
+def involves_add_undying(action):
+  if isinstance(action, AddConditionAction) and action.condition == "undying":
+    return True
+  elif isinstance(action, MultiAction):
+    return any(involves_add_undying(a) for a in action.action_list)

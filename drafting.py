@@ -13,14 +13,16 @@ def render_spell_draft(player, archive=False):
     if player.library:
       print(player.render_library())
 
-def draft_player_library(player, spell_pool):
-  # Get 2 more random spells
-  other_spells = generate_library_spells(1, spell_pool=spell_pool)
-  player.library += other_spells
+def draft_player_library(player, spell_pool, randoms=1, picks=2, choices_per_pick=2):
+  # Get random spells from pool
+  random_spells = generate_library_spells(randoms, spell_pool=spell_pool, copies=2)
+  player.library += random_spells
   print(player.render_library())
-  for i in range(2):
+  # Get picks from pool
+  all_choices = generate_library_spells(picks * choices_per_pick, spell_pool=spell_pool, copies=1)
+  for i in range(picks):
     # Choose 1 of 2 spells
-    choices = generate_library_spells(2, spell_pool=spell_pool)
+    choices = all_choices[i * choices_per_pick : (i + 1) * choices_per_pick]
     print("---\n" + numbered_list(choices))
     choice = choose_obj(choices, "Which spell have you been studying > ")
     if choice:

@@ -19,12 +19,14 @@ class CombatEntity:
     self.location = {"side": None, "position": None}
     self.events = []
     self.dead = False
+    self.resurrected = False
 
     # combat bookkeeping
     self.damage_taken_this_turn = 0
     self.damage_survived_this_turn = 0
     self.face_count = 0 # relevant for player only
     self.spawned_turn = None # relevant for enemies only
+
 
   def is_player(self):
     return self.__class__.__name__ == "Player"
@@ -137,7 +139,7 @@ class CombatEntity:
       final_damage = 0
 
     # if final_damage > 0:
-    self.assign_damage(target.conditions["retaliate"])
+    self.assign_damage(target.conditions["retaliate"], increment_damage_survived=False)
     damage_dealt = target.assign_damage(final_damage)
     if lifesteal:
       self.heal(damage_dealt)
@@ -161,7 +163,7 @@ class CombatEntity:
 
     return damage_dealt
 
-  def assign_damage(self, damage) -> int:
+  def assign_damage(self, damage, increment_damage_survived=True) -> int:
     damage_to_encase = min(damage, self.conditions["encase"])
     self.conditions["encase"] -= damage_to_encase
     damage_after_encase = damage - damage_to_encase
@@ -183,14 +185,15 @@ class CombatEntity:
       remaining_potential_damage = enduring - self.damage_taken_this_turn
       taken_damage = min(taken_damage, remaining_potential_damage)
 
-    self.suffer(taken_damage)
+    self.suffer(taken_damage, increment_damage_survived=increment_damage_survived)
 
     return taken_damage
 
-  def suffer(self, damage):
+  def suffer(self, damage, increment_damage_survived=True):
     self.hp -= damage
     self.damage_taken_this_turn += damage
-    self.damage_survived_this_turn += damage
+    if increment_damage_survived:
+      self.damage_survived_this_turn += damage
     if damage > 0:
       self.events.append(Event(["lose_hp"],
                                metadata={
@@ -214,7 +217,7 @@ class CombatEntity:
     self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
 
     self.suffer(self.conditions["poison"])
-    if doom := self.conditions["doom"] >= self.hp:
+    if (doom := self.conditions["doom"]) >= self.hp:
       self.suffer(doom)
     if self.conditions["regen"] > 0:
       self.heal(self.conditions["regen"])

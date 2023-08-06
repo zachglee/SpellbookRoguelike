@@ -1,3 +1,4 @@
+from drafting import draft_player_library
 from termcolor import colored
 import random
 from copy import deepcopy
@@ -9,7 +10,7 @@ from utils import choose_binary, colorize, numbered_list, choose_obj, energy_col
 from sound_utils import play_sound
 from content.rituals import rituals
 from content.items import starting_weapons
-from content.enemy_factions import all_special_items
+from content.enemy_factions import all_special_items, all_basic_items
 from model.event import Event
 
 class Player(CombatEntity):
@@ -31,18 +32,20 @@ class Player(CombatEntity):
     self.library = library
     self.starting_inventory = starting_inventory or []
     self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
+    self.starting_item_pool = starting_weapons
     if starting_weapon:
       self.starting_inventory.append(starting_weapon)
     self.request = None
 
     # 
     self.capacity = 5
-    self.library_capacity = 10
+    self.library_capacity = 8
     self.level = 0
     self.experience = 0
     self.aspiration = aspiration
     self.wounds = 0
     self.seen_items = []
+    self.known_spell_pool = []
 
   def total_energy(self, colors=energy_colors):
     player_energy = sum(self.conditions[color] for color in colors)
@@ -80,6 +83,16 @@ class Player(CombatEntity):
     chosen_ritual = choose_obj(ritual_choices, colored("Choose a ritual to learn > ", "cyan"))
     self.rituals.append(deepcopy(chosen_ritual))
 
+  def gain_starting_item(self):
+    seen_basic_items = [item for item in self.seen_items if not item.rare]
+    random.shuffle(seen_basic_items)
+    starting_item_choices = seen_basic_items[0:3]
+    if len(starting_item_choices) == 0:
+      starting_item_choices = [random.choice(all_basic_items)]
+    print(numbered_list(starting_item_choices))
+    chosen_item = choose_obj(starting_item_choices, colored("Choose another starting item > ", "cyan"))
+    self.starting_item_pool.append(deepcopy(chosen_item))
+
   def gain_signature_item(self):
     seen_rare_items = [item for item in self.seen_items if item.rare]
     random.shuffle(seen_rare_items)
@@ -98,15 +111,15 @@ class Player(CombatEntity):
       self.hp += 1
       print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"))
       if self.level == 1:
+        self.memorize_spell()
+      elif self.level == 2:
         self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
         self.inventory.append(EnergyPotion(self.signature_color, 1))
         print("You have gained another innate energy of your signature color!")
-      elif self.level == 2:
-        self.memorize_spell()
       elif self.level == 3:
-        self.learn_ritual()
-      elif self.level == 4:
         self.memorize_spell()
+      elif self.level == 4:
+        self.learn_ritual()
       elif self.level == 5:
         energy_options = ["red", "blue", "gold"]
         print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
@@ -116,22 +129,31 @@ class Player(CombatEntity):
       elif self.level == 6:
         self.memorize_spell()
       elif self.level == 7:
-        self.learn_ritual()
+        self.gain_starting_item() # FIXME implement
       elif self.level == 8:
         self.memorize_spell()
       elif self.level == 9:
+        self.learn_ritual()
+      elif self.level == 10:
         self.gain_signature_item()
 
 
-  def init(self, spell_pool):
-    print(numbered_list(starting_weapons))
-    chosen_weapon = choose_obj(starting_weapons, "which weapon will you take > ")
+  def init(self, spell_pool, new_character=False):
+    print(numbered_list(self.starting_item_pool))
+    chosen_weapon = choose_obj(self.starting_item_pool, "which weapon will you take > ")
     play_sound("inventory.mp3")
 
     starting_spellbook = Spellbook(pages=[])
     
-    # recharge signature spells to max and get 1 more charge
-    # for a random non-signature spell
+    # draft starting library
+    if new_character:
+      draft_player_library(self, spell_pool)
+      # FIXME: get rid of this whole idea of 'known spell pool'
+      # self.known_spell_pool = [spell.spell for spell in self.library if not spell.signature]
+    # else:
+    #   draft_player_library(self, self.known_spell_pool)
+
+    # recharge signature spells to max
     for library_spell in self.library:
       if library_spell.signature:
         library_spell.copies_remaining = max(library_spell.max_copies_remaining, library_spell.copies_remaining)

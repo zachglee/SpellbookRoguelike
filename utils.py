@@ -24,7 +24,7 @@ def colorize(s):
     s = s.replace(target_str, colored(target_str, color))
   return s
 
-def numbered_list(l):
+def numbered_list(l) -> str:
   return "\n".join(f"{i + 1} - {item.render()}" for i, item in enumerate(l))
 
 # choosing
@@ -120,11 +120,11 @@ def get_combat_entities(enc, target_string):
     return [enc.faced_enemy_queue[-1]]
   elif target_string[0] == "_":
     restriction = target_string[1:]
-    is_valid = TARGET_RESTRICTION_PREDICATES[restriction]
+    is_valid = TARGET_RESTRICTION_PREDICATES.get(restriction)
 
     input_target_string = input(colored("Choose a target > ", "green"))
     target = get_combat_entities(enc, input_target_string)
-    while not is_valid(target, enc):
+    while is_valid is not None and not is_valid(target, enc):
       print(colored("Invalid target!", "red"))
       input_target_string = input(colored("Choose a target > ", "green"))
       target = get_combat_entities(enc, input_target_string)

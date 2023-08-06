@@ -59,6 +59,10 @@ class GameState:
 
   # Ending
   def player_death(self):
+    if self.player.conditions["undying"] > 0:
+      self.player.hp = 3
+      self.player.conditions["undying"] -= 1
+      return
     play_sound("player-death.mp3")
     print(self.player.render())
     input("Gained 30xp...")
@@ -67,6 +71,15 @@ class GameState:
     self.discovery_phase()
     self.player.wounds += 1
     self.player.check_level_up()
+    # move all non-signature spells to known spells
+    # self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
+    # already_known_spell_descriptions = [spell.description for spell in self.player.known_spell_pool]
+    # self.player.known_spell_pool += [spell.spell for spell in self.player.library
+    #                                  if not spell.signature and spell.spell.description not in already_known_spell_descriptions]
+    retained_spell = choose_obj(self.player.library, "Choose a spell to retain: ")
+    retained_spell.copies_remaining = 3
+    self.player.library = [spell for spell in self.player.library if spell.signature
+                           or spell is retained_spell]
     # reset character back to starting layer
     self.map.regions[0].nodes[0][0].safehouse.resting_characters.append(self.player)
     self.end_run()
@@ -98,34 +111,41 @@ class GameState:
 
   def navigation_phase(self):
     play_sound("onwards.mp3")
-    bag_of_passages = deepcopy(self.map.current_region.destination_node.passages)
-    random.shuffle(bag_of_passages)
-    passages_drawn = []
-    passes = 0
-    passes_required = 2
-    for i in range(5):
-      print(self.player.render())
-      if len(bag_of_passages) == 0:
-        break
-      drawn_passage = bag_of_passages.pop(random.randint(0, len(bag_of_passages)-1))
-      passages_drawn.append(drawn_passage)
-      input("You find a passage. It leads to...")
-      if drawn_passage == "pass":
-        passes += 1
-        print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
-        if passes >= passes_required:
-          input(colored("You come out the other side!", "cyan"))
-          return True
-      elif drawn_passage == "fail":
-        fail_damage = (1 + self.map.current_region.corruption)
-        print(colored(f"A trap! You take {fail_damage} damage. ({passes}/{passes_required} progress)", "red"))
-        print(colored(f"You gained 2xp.", "green"))
-        self.player.hp -= fail_damage
-        self.player.experience += 2
-      input(f"You press onwards... ({4 - i} turns remaining)")
-    input(colored("You have failed to find the way through.", "red"))
-    self.save()
-    return False
+    destination_node = self.map.current_region.destination_node
+    if "pass" in destination_node.passages:
+      destination_node.passages.remove("pass")
+      input(colored(f"Navigated successfully! Used up one passage, now {destination_node.pass_passages} remain..."))
+      return True
+    else:
+      return False
+    # bag_of_passages = deepcopy(self.map.current_region.destination_node.passages)
+    # random.shuffle(bag_of_passages)
+    # passages_drawn = []
+    # passes = 0
+    # passes_required = 2
+    # for i in range(5):
+    #   print(self.player.render())
+    #   if len(bag_of_passages) == 0:
+    #     break
+    #   drawn_passage = bag_of_passages.pop(random.randint(0, len(bag_of_passages)-1))
+    #   passages_drawn.append(drawn_passage)
+    #   input("You find a passage. It leads to...")
+    #   if drawn_passage == "pass":
+    #     passes += 1
+    #     print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
+    #     if passes >= passes_required:
+    #       input(colored("You come out the other side!", "cyan"))
+    #       return True
+    #   elif drawn_passage == "fail":
+    #     fail_damage = (1 + self.map.current_region.corruption)
+    #     print(colored(f"A trap! You take {fail_damage} damage. ({passes}/{passes_required} progress)", "red"))
+    #     print(colored(f"You gained 2xp.", "green"))
+    #     self.player.hp -= fail_damage
+    #     self.player.experience += 2
+    #   input(f"You press onwards... ({4 - i} turns remaining)")
+    # input(colored("You have failed to find the way through.", "red"))
+    # self.save()
+    # return False
 
   # Encounters
 
