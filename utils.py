@@ -1,5 +1,6 @@
 import random
 from termcolor import colored
+import re
 
 energy_colors = ["red", "blue", "gold", "green", "purple"]
 
@@ -19,6 +20,10 @@ energy_color_map = {
 
 # rendering
 
+def without_ansi_escapes(s):
+  ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+  return ansi_escape.sub('', s)
+
 def colorize(s):
   for target_str, color in energy_color_map.items():
     s = s.replace(target_str, colored(target_str, color))
@@ -26,6 +31,18 @@ def colorize(s):
 
 def numbered_list(l) -> str:
   return "\n".join(f"{i + 1} - {item.render()}" for i, item in enumerate(l))
+
+def aligned_line(line_items, column_width=40):
+  padded_line_items = []
+  for line in line_items:
+    true_length = len(without_ansi_escapes(line))
+    padding_amount = column_width - true_length
+    if padding_amount < 0:
+      padded_line = line[:padding_amount - 4] + "... "
+    else:
+      padded_line = line + (" " * (column_width - true_length))
+    padded_line_items.append(padded_line)
+  return "".join(padded_line_items)
 
 # choosing
 
@@ -123,12 +140,12 @@ def get_combat_entities(enc, target_string):
     is_valid = TARGET_RESTRICTION_PREDICATES.get(restriction)
 
     input_target_string = input(colored("Choose a target > ", "green"))
-    target = get_combat_entities(enc, input_target_string)
-    while is_valid is not None and not is_valid(target, enc):
+    targets = get_combat_entities(enc, input_target_string)
+    while is_valid is not None and not is_valid(targets[0], enc):
       print(colored("Invalid target!", "red"))
       input_target_string = input(colored("Choose a target > ", "green"))
       target = get_combat_entities(enc, input_target_string)
-    return target
+    return targets
       
   
 def command_reference():

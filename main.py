@@ -9,7 +9,7 @@ from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpe
 from model.item import EnergyPotion
 from model.map import Map
 from termcolor import colored
-from utils import colorize, choose_obj, choose_binary, command_reference, get_combat_entities, help_reference
+from utils import colorize, choose_obj, choose_binary, command_reference, get_combat_entities, help_reference, numbered_list
 from drafting import destination_draft, safehouse_library_draft
 from sound_utils import play_sound
 
@@ -76,8 +76,10 @@ class GameState:
     # already_known_spell_descriptions = [spell.description for spell in self.player.known_spell_pool]
     # self.player.known_spell_pool += [spell.spell for spell in self.player.library
     #                                  if not spell.signature and spell.spell.description not in already_known_spell_descriptions]
+    retain_choices = [spell for spell in self.player.library if not spell.signature]
+    print(numbered_list([spell for spell in retain_choices]))
     retained_spell = choose_obj(self.player.library, "Choose a spell to retain: ")
-    retained_spell.copies_remaining = 3
+    retained_spell.copies_remaining = 2
     self.player.library = [spell for spell in self.player.library if spell.signature
                            or spell is retained_spell]
     # reset character back to starting layer
@@ -114,38 +116,13 @@ class GameState:
     destination_node = self.map.current_region.destination_node
     if "pass" in destination_node.passages:
       destination_node.passages.remove("pass")
-      input(colored(f"Navigated successfully! Used up one passage, now {destination_node.pass_passages} remain..."))
+      print(colored(f"Navigated successfully! Used up one passage, now {destination_node.pass_passages} remain...", "green"))
+      pass_damage = self.map.current_region.corruption
+      self.player.hp -= pass_damage
+      input(colored(f"The corruption of this place leaves its mark. You take {pass_damage} damage.", "red"))
       return True
     else:
       return False
-    # bag_of_passages = deepcopy(self.map.current_region.destination_node.passages)
-    # random.shuffle(bag_of_passages)
-    # passages_drawn = []
-    # passes = 0
-    # passes_required = 2
-    # for i in range(5):
-    #   print(self.player.render())
-    #   if len(bag_of_passages) == 0:
-    #     break
-    #   drawn_passage = bag_of_passages.pop(random.randint(0, len(bag_of_passages)-1))
-    #   passages_drawn.append(drawn_passage)
-    #   input("You find a passage. It leads to...")
-    #   if drawn_passage == "pass":
-    #     passes += 1
-    #     print(colored(f"Deeper into the maze! ({passes}/{passes_required} progress).", "green"))
-    #     if passes >= passes_required:
-    #       input(colored("You come out the other side!", "cyan"))
-    #       return True
-    #   elif drawn_passage == "fail":
-    #     fail_damage = (1 + self.map.current_region.corruption)
-    #     print(colored(f"A trap! You take {fail_damage} damage. ({passes}/{passes_required} progress)", "red"))
-    #     print(colored(f"You gained 2xp.", "green"))
-    #     self.player.hp -= fail_damage
-    #     self.player.experience += 2
-    #   input(f"You press onwards... ({4 - i} turns remaining)")
-    # input(colored("You have failed to find the way through.", "red"))
-    # self.save()
-    # return False
 
   # Encounters
 
@@ -238,7 +215,14 @@ class GameState:
     self.map.current_region.current_node = self.map.current_region.destination_node
     if encounter != "navigate":
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
-                              copies=3, spell_pool=self.map.current_region.spell_pool)
+                              copies=2, spell_pool=self.map.current_region.spell_pool)
+      # progress rituals due to ambient energy
+      for ritual in self.player.rituals:
+        if ritual.energy_color == self.map.current_region.current_node.ambient_energy:
+          ritual.progress += 1
+        print(f"{ritual.name} progressed!")
+        input(ritual.render())
+        break
     else:
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=1, spell_pool=self.map.current_region.spell_pool)

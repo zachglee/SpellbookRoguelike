@@ -170,7 +170,7 @@ enemies = {
   "Risen Warrior": Enemy(16, "Risen Warrior", AttackAction(8), entry=AddConditionAction("encase", 16, "self")),
   "Intrepid Bannerman": Enemy(12, "Intrepid Bannerman", AddConditionAction("empower", 3, "side"),
     entry=AddConditionAction("undying", 1, "self")),
-  "Enterprising Eye": Enemy(4, "Enterprising Eye", CallAction(None, 1)),
+  "Inquisitive Eye": Enemy(4, "Inquisitive Eye", CallAction(None, 1)),
   "Collector's Cage": Enemy(4, "Collector's Cage", AddConditionAction("encase", 4, "player")),
   "Grasping Hand": Enemy(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
   "Collector of Bodies": Enemy(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
@@ -243,7 +243,7 @@ the_collectors = [
     EnemySpawn(4, "f", enemies["Collector of Bodies"]),
   ], faction="The Collectors"),
   EnemySet("Collector of Magic", [
-    EnemySpawn(1, "b", enemies["Enterprising Eye"]),
+    EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
     EnemySpawn(4, "f", enemies["Collector of Magic"]),
   ], faction="The Collectors"),
   EnemySet("Collector of Still-lifes", [
@@ -251,8 +251,8 @@ the_collectors = [
     EnemySpawn(4, "f", enemies["Collector of Still-lifes"]),
   ], faction="The Collectors"),
   EnemySet("Acquisitions Party", [
-    EnemySpawn(1, "b", enemies["Enterprising Eye"]),
-    EnemySpawn(1, "f", enemies["Enterprising Eye"]),
+    EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
+    EnemySpawn(1, "f", enemies["Inquisitive Eye"]),
     EnemySpawn(2, "b", enemies["Collector's Cage"]),
     EnemySpawn(2, "f", enemies["Collector's Cage"]),
     EnemySpawn(3, "b", enemies["Grasping Hand"]),

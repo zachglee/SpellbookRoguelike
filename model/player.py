@@ -113,27 +113,29 @@ class Player(CombatEntity):
       if self.level == 1:
         self.memorize_spell()
       elif self.level == 2:
-        self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
-        self.inventory.append(EnergyPotion(self.signature_color, 1))
-        print("You have gained another innate energy of your signature color!")
+        self.learn_ritual()
       elif self.level == 3:
         self.memorize_spell()
       elif self.level == 4:
-        self.learn_ritual()
-      elif self.level == 5:
+        self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
+        self.inventory.append(EnergyPotion(self.signature_color, 1))
+        print("You have gained another innate energy of your signature color!")
+
         energy_options = ["red", "blue", "gold"]
         print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
-        chosen_energy = choose_obj(energy_options, colored("Choose an energy type to tap into > ", "cyan"))
+        chosen_energy = choose_obj(energy_options, colored("Choose a new energy type to tap into > ", "cyan"))
         self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
         self.inventory.append(EnergyPotion(chosen_energy, 1))
+      elif self.level == 5:
+        self.memorize_spell()
       elif self.level == 6:
-        self.memorize_spell()
+        self.gain_starting_item()
       elif self.level == 7:
-        self.gain_starting_item() # FIXME implement
-      elif self.level == 8:
         self.memorize_spell()
-      elif self.level == 9:
+      elif self.level == 8:
         self.learn_ritual()
+      elif self.level == 9:
+        self.memorize_spell()
       elif self.level == 10:
         self.gain_signature_item()
 

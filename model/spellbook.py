@@ -1,18 +1,17 @@
 import os
 from termcolor import colored
-from utils import numbered_list, get_combat_entities
+from utils import numbered_list, get_combat_entities, energy_color_map
 from sound_utils import play_sound
 
 class Spell:
-  def __init__(self, description, color, type, conversion_color=None,
-               cost=None, raw_commands=None, targets=None,
+  def __init__(self, rules_text, color, type, conversion_color=None,
+               raw_commands=None, targets=None,
                generate_commands_pre=lambda e, t: [], generate_commands_post=lambda e, t: [],
                triggers_on=lambda encounter, event: False):
-    self.description = description
+    self.rules_text = rules_text
     self.color = color
     self.type = type
     self.conversion_color = conversion_color
-    self.cost = cost
     self.raw_commands = raw_commands or []
     self.sound_file = None
     self.targets = targets or []
@@ -68,6 +67,24 @@ class Spell:
 
     if sound_file := self.sound_file:
       play_sound(sound_file, channel=3)
+
+  @property
+  def description(self):
+    color_pip = colored("*", energy_color_map[self.color.lower()])
+    if self.type == "Consumer":
+      return f"({color_pip}): {self.rules_text}"
+    elif self.type == "Producer":
+      producer_color_marker = colored("^", energy_color_map[self.color.lower()])
+      return f"{producer_color_marker} {self.rules_text}"
+    elif self.type == "Converter":
+      convert_to_pip = colored('*', energy_color_map[self.conversion_color.lower()])
+      return f"{color_pip}➜{convert_to_pip}: {self.rules_text}"
+    elif self.type == "Passive":
+      passive_marker = colored("#", energy_color_map[self.color.lower()])
+      return f"{passive_marker} {self.rules_text}"
+
+  def preview(self, length=24):
+    return self.description[:length] + ("..." if len(self.description) > length else "")
 
   def __repr__(self):
     return self.description

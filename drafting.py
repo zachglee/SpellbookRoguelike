@@ -56,12 +56,14 @@ def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
   if len(player.library) >= player.library_capacity:
     input(colored("You have no space left in your library...", "red"))
     return
-  choices = [random.choice(safehouse.library),
-             random.choice(generate_library_spells(2, spell_pool=spell_pool))]
+  # TODO remove if unproblematic
+  # choices = [random.choice(safehouse.library),
+  #            random.choice(generate_library_spells(2, spell_pool=spell_pool))]
+  choices = safehouse.library
   print("---\n" + numbered_list(choices))
   copied_spell = choose_obj(choices, colored("copy a spell to your library > ", "blue"))
   if copied_spell:
-    library_spell = LibrarySpell(copied_spell.spell, copies=3)
+    library_spell = LibrarySpell(copied_spell.spell, copies=copies)
     library_spell.copies_remaining = copies
     player.library.append(library_spell)
 

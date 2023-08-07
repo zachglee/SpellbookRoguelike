@@ -8,7 +8,7 @@ from model.safehouse import Safehouse
 from model.spellbook import LibrarySpell
 from model.encounter import Encounter, EnemyWave
 from model.player import Player
-from utils import energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
+from utils import aligned_line, energy_color_map, numbered_list, choose_obj, choose_idx, choose_binary, colorize, choose_str
 from generators import generate_spell_pools, generate_faction_sets, generate_enemy_set_pool, generate_library_spells, generate_rituals
 from content.enemy_factions import factions
 
@@ -91,6 +91,8 @@ class Region:
     enemy_set_pool_cursor = 0
     self.corruption = 0
 
+    self.enemy_view = True
+
     # generate the nodes
     # TODO: Make helpers to generate boss / nonboss nodes
     # TODO: Make a persistent spell pool and enemy set pool objects
@@ -138,21 +140,24 @@ class Region:
 
   def corrupt(self):
     self.corruption += 1
-    eligible_nodes = [node for node in self.nodes[-2] if not node.blockaded and node.seen]
-    node_to_blockade = sorted(eligible_nodes, reverse=True, key=lambda n: n.pass_passages)[0]
-    node_to_blockade.blockaded = True
-    node_to_blockade.passages.append("fail")
-    new_enemy_set = random.choice(random.choice(self.faction_set).enemy_sets)
-    new_enemy_wave = EnemyWave([new_enemy_set], 2)
-    node_to_blockade.guardian_enemy_waves.append(new_enemy_wave)
+    # TODO: Maybe add back in later
+    # eligible_nodes = [node for node in self.nodes[-2] if not node.blockaded and node.seen]
+    # node_to_blockade = sorted(eligible_nodes, reverse=True, key=lambda n: n.pass_passages)[0]
+    # node_to_blockade.blockaded = True
+    # node_to_blockade.passages.append("fail")
+    # new_enemy_set = random.choice(random.choice(self.faction_set).enemy_sets)
+    # new_enemy_wave = EnemyWave([new_enemy_set], 2)
+    # node_to_blockade.guardian_enemy_waves.append(new_enemy_wave)
 
   def choose_node(self):
-    print(self.render())
     while True:
+      print(self.render())
       try:
         raw_input = input(colored("choose node > ", "cyan"))
-        if raw_input == "done":
+        if raw_input in ["back", "done"]:
           return None
+        elif raw_input in ["view", "v"]:
+          self.enemy_view = not self.enemy_view
         elif raw_input == "map":
           print(self.render())
           continue
@@ -239,22 +244,23 @@ class Region:
     layer = self.nodes[layer_idx]
     characters = sum([node.safehouse.resting_characters for node in layer], [])
     node_overviews = [node.render_preview() for node in layer]
-    enemy_preview_lines = []
-    for i in range(max(len(n.guardian_enemy_sets) for n in layer)):
-      enemy_preview_line = []
-      for node in layer:
-        if i < len(node.guardian_enemy_sets):
-          enemy_preview_line.append(node.guardian_enemy_sets[i].name if node.seen else "???")
-        else:
-          enemy_preview_line.append("   ")
-      # enemy_preview_line = [node.guardian_enemy_sets[i].name if node.seen else "???" for node in layer]
-      enemy_preview_lines.append(enemy_preview_line)
-    # have to use a bigger format spacing to account for 'invisible' color code characters
-    overview_render_template = " ".join("{" + str(i) + ":<31} " for i in range(len(layer)))
-    rendered_overview_line = overview_render_template.format(*node_overviews)
+    content_preview_lines = []
 
-    preview_render_template = " ".join("- {" + str(i) + ":<20} " for i in range(len(layer)))
-    rendered_preview_lines = [preview_render_template.format(*line) for line in enemy_preview_lines]
+    if self.enemy_view:
+      max_content_length = max(len(n.guardian_enemy_sets) for n in layer)
+      get_node_content = lambda node, i: node.guardian_enemy_sets[i].name if i < len(node.guardian_enemy_sets) else "   "
+    else:
+      max_content_length = max(len(n.safehouse.library) for n in layer)
+      get_node_content = lambda node, i: node.safehouse.library[i].spell.description if i < len(node.safehouse.library) else "   "
+
+    for i in range(max_content_length):
+      content_preview_line = []
+      for node in layer:
+        content_preview_line.append(get_node_content(node, i))
+      content_preview_lines.append(content_preview_line)
+
+    rendered_overview_line = aligned_line(node_overviews)
+    rendered_preview_lines = [aligned_line([f"  {s}" for s in line]) for line in content_preview_lines]
     character_section = "\n".join([f"{character.name}: \"{character.request}\"" for character in characters])
     return "\n".join([rendered_overview_line] + rendered_preview_lines) + "\n" + character_section
     
@@ -330,7 +336,7 @@ class Map:
         chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
         chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
         name = input("What shall they be called? > ")
-        library = ([LibrarySpell(chosen_spell.spell, copies=4, signature=True)])
+        library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
         player = Player(hp=30, name=name,
                         spellbook=None,
                         inventory=[],
@@ -357,6 +363,7 @@ class Map:
       if region is None:
         return None
       region.inspect()
+    
   
   def render_active_ritual(self):
     if self.active_ritual is None:
