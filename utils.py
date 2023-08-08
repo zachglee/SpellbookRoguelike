@@ -3,6 +3,7 @@ from termcolor import colored
 import re
 
 energy_colors = ["red", "blue", "gold", "green", "purple"]
+energy_pip_symbol = "●"
 
 # For rendering
 energy_color_map = {

@@ -22,6 +22,7 @@ class Node:
     self.seen = seen
     self.difficulty = difficulty
     self.boss = boss
+    self.heat = 0
     self.blockaded = False
 
   @property
@@ -77,7 +78,7 @@ class Node:
     return render_str
 
 class Region:
-  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=12):
+  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=12, extra_boss_enemy_sets=1):
     # setup
     self.position = position
     self.spell_pool = spell_pool
@@ -119,9 +120,9 @@ class Region:
     for j in range(2):
       library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
       guardian_enemy_wave1 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2], 0)
-      guardian_enemy_wave2 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor + 2:enemy_set_pool_cursor + 3], 2)
+      guardian_enemy_wave2 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor + 2:enemy_set_pool_cursor + 2 + extra_boss_enemy_sets], 2)
       boss_layer.append(Node(Safehouse(library), [guardian_enemy_wave1, guardian_enemy_wave2], (height + 1, j), boss=True))
-      enemy_set_pool_cursor += 3
+      enemy_set_pool_cursor += 2 + extra_boss_enemy_sets
       spell_pool_cursor += 2
     self.nodes.append(boss_layer)
     
@@ -192,26 +193,10 @@ class Region:
     # generate available routes
     routes = []
     current_layer_idx = self.current_node.position[0]
-    current_node_idx = self.current_node.position[1]
+    # current_node_idx = self.current_node.position[1]
     next_layer = self.nodes[current_layer_idx + 1]
     # just literally let them choose any route from the next layer
     routes = [self.get_route_for_node(node.position[0], node.position[1]) for node in next_layer]
-    # if current_layer_idx == len(self.nodes) - 2:
-    #   # heading into boss layer
-    #   which_boss = int(current_node_idx / 2)
-    #   routes.append(self.get_route_for_node(current_layer_idx + 1, which_boss))
-    # elif current_layer_idx == 0:
-    #   # heading into first layer
-    #   idx_choices = list(range(len(next_layer)))
-    #   random.shuffle(idx_choices)
-    #   routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[0]))
-    #   routes.append(self.get_route_for_node(current_layer_idx + 1, idx_choices[1]))
-    # else:
-    #   routes.append(self.get_route_for_node(current_layer_idx + 1, current_node_idx))
-    #   side_indices = [current_node_idx - 1, current_node_idx + 1]
-    #   side_routes = [self.get_route_for_node(current_layer_idx + 1, i)
-    #                  for i in side_indices if i >= 0 and i < len(next_layer)]
-    #   routes.append(random.choice(side_routes))
     
     # prompt the player to choose a route
     print(player.render_library() + "\n")
@@ -248,10 +233,10 @@ class Region:
 
     if self.enemy_view:
       max_content_length = max(len(n.guardian_enemy_sets) for n in layer)
-      get_node_content = lambda node, i: node.guardian_enemy_sets[i].name if i < len(node.guardian_enemy_sets) else "   "
+      get_node_content = lambda node, i: (node.guardian_enemy_sets[i].name if node.seen else "???") if i < len(node.guardian_enemy_sets) else "   "
     else:
       max_content_length = max(len(n.safehouse.library) for n in layer)
-      get_node_content = lambda node, i: node.safehouse.library[i].spell.description if i < len(node.safehouse.library) else "   "
+      get_node_content = lambda node, i: (node.safehouse.library[i].spell.description if node.seen else "???") if i < len(node.safehouse.library) else "   "
 
     for i in range(max_content_length):
       content_preview_line = []
@@ -283,10 +268,9 @@ class Region:
 
 class Map:
   def __init__(self, n_regions=3):
-    # enemy_set_pool = generate_enemy_set_pool(n=22)
     spell_pools = generate_spell_pools(n_pools=n_regions)
     faction_sets = generate_faction_sets(n_sets=n_regions, set_size=3)
-    self.regions = [Region(i, 3, 2, spell_pool, faction_set) for i, spell_pool, faction_set
+    self.regions = [Region(i, 3, 2, spell_pool, faction_set, extra_boss_enemy_sets=i+1) for i, spell_pool, faction_set
                     in zip(range(n_regions), spell_pools, faction_sets)]
     self.current_region_idx = 0
     self.active_ritual = None
@@ -351,11 +335,12 @@ class Map:
 
   def end_run(self):
     self.runs += 1
-    if self.runs % 3 == 0:
-      corruption_progress = int(self.runs / 3)
-      print(colored(f"Corruption has progressed to level {corruption_progress}", "red"))
-      for region in self.regions[0:corruption_progress]:
-        region.corrupt()
+    # TODO: Maybe remove this if we move away from corruption
+    # if self.runs % 3 == 0:
+    #   corruption_progress = int(self.runs / 3)
+    #   print(colored(f"Corruption has progressed to level {corruption_progress}", "red"))
+    #   for region in self.regions[0:corruption_progress]:
+    #     region.corrupt()
 
   def inspect(self):
     while True:

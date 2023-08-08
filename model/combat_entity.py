@@ -3,7 +3,7 @@ import math
 from collections import defaultdict
 from termcolor import colored
 from model.event import Event
-from utils import energy_color_map
+from utils import energy_color_map, energy_pip_symbol
 from sound_utils import play_sound
 
 class CombatEntity:
@@ -68,7 +68,7 @@ class CombatEntity:
     for k, v in self.conditions.items():
       if v:
         if k in energy_color_map and v > 0:
-          condition_strs.append(colored("*" * v, energy_color_map[k]))
+          condition_strs.append(colored(energy_pip_symbol * v, energy_color_map[k]))
         else:
           condition_strs.append(f"{k} {v}")
 

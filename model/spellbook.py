@@ -1,6 +1,6 @@
 import os
 from termcolor import colored
-from utils import numbered_list, get_combat_entities, energy_color_map
+from utils import numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol
 from sound_utils import play_sound
 
 class Spell:
@@ -70,14 +70,14 @@ class Spell:
 
   @property
   def description(self):
-    color_pip = colored("*", energy_color_map[self.color.lower()])
+    color_pip = colored(energy_pip_symbol, energy_color_map[self.color.lower()])
     if self.type == "Consumer":
       return f"({color_pip}): {self.rules_text}"
     elif self.type == "Producer":
       producer_color_marker = colored("^", energy_color_map[self.color.lower()])
       return f"{producer_color_marker} {self.rules_text}"
     elif self.type == "Converter":
-      convert_to_pip = colored('*', energy_color_map[self.conversion_color.lower()])
+      convert_to_pip = colored(energy_pip_symbol, energy_color_map[self.conversion_color.lower()])
       return f"{color_pip}➜{convert_to_pip}: {self.rules_text}"
     elif self.type == "Passive":
       passive_marker = colored("#", energy_color_map[self.color.lower()])
@@ -139,7 +139,7 @@ class SpellbookSpell:
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
 
     if self.spell.type == "Passive":
-      charges_prefix = "*"
+      charges_prefix = ""
     else:
       charges_prefix = f"({self.charges}/{self.max_charges})"
     if self.exhausted: charges_prefix = colored(f"~{charges_prefix}", "red")

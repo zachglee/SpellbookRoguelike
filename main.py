@@ -15,9 +15,9 @@ from sound_utils import play_sound
 
 import random
 
-STARTING_EXPLORED = 1
-MAX_EXPLORE = 3
-PASSAGE_EXPERIENCE = 3
+STARTING_EXPLORED = 2
+MAX_EXPLORE = 4
+PASSAGE_EXPERIENCE = 4
 
 class GameOver(Exception):
   pass
@@ -117,9 +117,10 @@ class GameState:
     if "pass" in destination_node.passages:
       destination_node.passages.remove("pass")
       print(colored(f"Navigated successfully! Used up one passage, now {destination_node.pass_passages} remain...", "green"))
-      pass_damage = self.map.current_region.corruption
+      pass_damage = destination_node.heat
       self.player.hp -= pass_damage
-      input(colored(f"The corruption of this place leaves its mark. You take {pass_damage} damage.", "red"))
+      if pass_damage:
+        input(colored(f"The corruption of this place leaves its mark. You take {pass_damage} damage.", "red"))
       return True
     else:
       return False
@@ -133,7 +134,7 @@ class GameState:
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
     encounter.rituals += activable_rituals
     for ritual in activable_rituals:
-      ritual.progress = 0
+      ritual.progress -= ritual.required_progress
 
   def handle_command(self, cmd):
     encounter = self.encounter
@@ -211,6 +212,13 @@ class GameState:
       elif encounter == "navigate":
         success = self.navigation_phase()
         if success:
+          destination_node = self.map.current_region.destination_node
+          destination_node.heat += 1
+          destination_layer = self.map.current_region.nodes[destination_node.position[0]]
+          non_destination_nodes = [node for node in destination_layer if node != destination_node]
+          for node in non_destination_nodes:
+            node.heat = max(0, node.heat - 1)
+          print(colored(f"The heat of this node has increased to {destination_node.heat}.", "red"))
           break
     self.map.current_region.current_node = self.map.current_region.destination_node
     if encounter != "navigate":
@@ -286,7 +294,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()
