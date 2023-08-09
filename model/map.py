@@ -24,6 +24,7 @@ class Node:
     self.boss = boss
     self.heat = 0
     self.blockaded = False
+    self.flavor_text = "Cold stone halls. They echo with your footsteps."
 
   @property
   def guardian_enemy_sets(self):
@@ -53,6 +54,16 @@ class Node:
     return (f"{colored('*', energy_color_map[self.ambient_energy])}"
             + passages_str
             + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
+
+  def prompt_flavor(self):
+    new_flavor = input("You leave this place. What will those who come after you find here?\n > ")
+    if new_flavor:
+      self.flavor_text = new_flavor
+
+  def render_flavor(self):
+    if self.flavor_text:
+      rendered_str = f"~~~\n\n    Your journey continues, and you come upon...\n\n    {self.flavor_text}\n\n~~~"
+      return colored(rendered_str, "magenta")
 
   def render(self):
     total = len(self.passages)
@@ -210,6 +221,8 @@ class Region:
       player.experience += 10
       print(colored("You gain 10 experience for exploring a new node!", "green"))
     node.seen = True
+
+    print(f"\n{node.render_flavor()}\n")
 
     if node.blockaded:
       input(colored("This node is blockaded. You must fight.", "red"))

@@ -208,6 +208,7 @@ class GameState:
         destination_draft(self.player, self.map.current_region.destination_node)
         self.encounter_phase()
         self.discovery_phase()
+
         break
       elif encounter == "navigate":
         success = self.navigation_phase()
@@ -231,6 +232,7 @@ class GameState:
         print(f"{ritual.name} progressed!")
         input(ritual.render())
         break
+      self.map.current_region.current_node.prompt_flavor()
     else:
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=1, spell_pool=self.map.current_region.spell_pool)
@@ -294,7 +296,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

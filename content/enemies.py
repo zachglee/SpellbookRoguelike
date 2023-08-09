@@ -12,7 +12,7 @@ from content.enemy_actions import (
 
 enemies = {
   "Harpy Harrier": Enemy(10, "Harpy Harrier", BackstabAction(AttackAction(4), AttackAction(2))),
-  "Ravenous Hound": Enemy(10, "Ravenous Hound", PackTacticsAction(AttackAction(4), AttackAction(2))),
+  "Ravenous Hound": Enemy(10, "Ravenous Hound", PackTacticsAction(AttackAction(5), AttackAction(2))),
   "Zombie": Enemy(16, "Zombie", NearFarAction(AttackAction(6), MoveAction(-1))),
   "Bandit": Enemy(15, "Bandit", CowardlyAction(MoveAction(1), AttackAction(4))),
   "Bat": Enemy(3, "Bat", AttackAction(1)),
@@ -20,7 +20,7 @@ enemies = {
   "Hawk": Enemy(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
   "Hunter": Enemy(20, "Hunter", MultiAction([MoveAction(1), NearFarAction(AddConditionAction("armor", 1, "self"), AttackAction(10))])),
   "Charging Ogre": Enemy(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
-  "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 2, "self"), AttackAction(5)), entry=AddConditionAction("enduring", 7, "self")),
+  "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
   "The Vulture": Enemy(30, "The Vulture", AttackAction(2), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
@@ -33,13 +33,13 @@ enemies = {
   "Conniving Impfiend": Enemy(5, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy(20, "Insistent Duelist",
                               SideOverwhelmAction(
-                                MultiAction([AddConditionAction("sharp", 1, "self"), AddConditionAction("armor", 1, "self")]),
-                                MultiAction([SetConditionAction("armor", 0, "self"), AttackAction(4), AttackAction(4)]), 2
+                                MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("armor", 2, "self")]),
+                                MultiAction([SetConditionAction("armor", 0, "self"), AttackAction(3), AttackAction(3)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
   "Demon of the Inferno": Enemy(66, "Demon of the Inferno", AttackAction(13, lifesteal=True), entry=AddConditionAction("burn", 6, "player")),
-  "Injured Troll": Enemy(35, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(15), AddConditionAction("regen", 5, "self")]), exp=14),
+  "Injured Troll": Enemy(40, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
   "Crossbow Deadeye": Enemy(12, "Crossbow Deadeye", WindupAction(AttackAction(10), 1)),
   "Herald of Doom": Enemy(5, "Herald of Doom", SelfDamageAction(5)),
   "The Executioner": Enemy(40, "The Executioner", WindupAction(AttackAction(25), 1)),
@@ -83,7 +83,7 @@ enemies = {
     AddConditionAction("regen", 5, "all_enemies"),
     AddConditionAction("block", 5, "all_enemies"),
   ])),
-  "Lurking Scavenger": Enemy(8, "Lurking Scavenger", PackTacticsAction(AttackAction(5, lifesteal=True), AddConditionAction("regen", 2, "self"))),
+  "Lurking Scavenger": Enemy(12, "Lurking Scavenger", PackTacticsAction(AttackAction(5, lifesteal=True), AddConditionAction("regen", 2, "self"))),
   "Artificer Princess": Enemy(10, "Artificer Princess",
                               NearFarAction(AttackAction(1),
                                             MultiAction([
@@ -351,6 +351,8 @@ movs_horde = [
     EnemySpawn(3, "b", enemies["Skitterer"]),
     EnemySpawn(4, "b", enemies["Skitterer"]),
     EnemySpawn(5, "f", enemies["Skitterer"]),
+    EnemySpawn(5, "b", enemies["Skitterer"]),
+    EnemySpawn(6, "f", enemies["Skitterer"]),
     EnemySpawn(6, "b", enemies["Skitterer"]),
   ], faction="Mov's Horde"),
   EnemySet("Mov, the Necromancer", [
