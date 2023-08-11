@@ -35,6 +35,7 @@ class Player(CombatEntity):
     self.starting_item_pool = starting_weapons
     if starting_weapon:
       self.starting_inventory.append(starting_weapon)
+    self.material = 0
     self.request = None
 
     # 
@@ -45,7 +46,6 @@ class Player(CombatEntity):
     self.aspiration = aspiration
     self.wounds = 0
     self.seen_items = []
-    self.known_spell_pool = []
 
   def total_energy(self, colors=energy_colors):
     player_energy = sum(self.conditions[color] for color in colors)
@@ -150,10 +150,6 @@ class Player(CombatEntity):
     # draft starting library
     if new_character:
       draft_player_library(self, spell_pool)
-      # FIXME: get rid of this whole idea of 'known spell pool'
-      # self.known_spell_pool = [spell.spell for spell in self.library if not spell.signature]
-    # else:
-    #   draft_player_library(self, self.known_spell_pool)
 
     # recharge signature spells to max
     for library_spell in self.library:

@@ -71,11 +71,7 @@ class GameState:
     self.discovery_phase()
     self.player.wounds += 1
     self.player.check_level_up()
-    # move all non-signature spells to known spells
-    # self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
-    # already_known_spell_descriptions = [spell.description for spell in self.player.known_spell_pool]
-    # self.player.known_spell_pool += [spell.spell for spell in self.player.library
-    #                                  if not spell.signature and spell.spell.description not in already_known_spell_descriptions]
+    # retain one spell
     retain_choices = [spell for spell in self.player.library if not spell.signature]
     print(numbered_list([spell for spell in retain_choices]))
     retained_spell = choose_obj(self.player.library, "Choose a spell to retain: ")
@@ -97,8 +93,8 @@ class GameState:
         self.player.explored -= MAX_EXPLORE
         self.player.experience += PASSAGE_EXPERIENCE
         if self.map.current_region.destination_node.boss:
-          print(colored(f"You found a rest site and gained {PASSAGE_EXPERIENCE}xp and 1hp!", "green"))
-          self.player.heal(1)
+          print(colored(f"You gathered some material from the aftermath of the battle... Gained {PASSAGE_EXPERIENCE}xp.", "green"))
+          self.player.material += 1
         else:
           self.map.current_region.destination_node.passages.append("pass")
           print(colored(f"You found a passage and gained {PASSAGE_EXPERIENCE}xp!", "green"))
@@ -132,9 +128,12 @@ class GameState:
     self.encounter.player = self.player
     self.player.conditions[self.encounter.ambient_energy] += 1
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
-    encounter.rituals += activable_rituals
-    for ritual in activable_rituals:
-      ritual.progress -= ritual.required_progress
+    if activable_rituals:
+      print(numbered_list(activable_rituals))
+      chosen_ritual = choose_obj(activable_rituals, "Choose a ritual to activate: ")
+      if chosen_ritual:
+        encounter.rituals = [chosen_ritual]
+        chosen_ritual.progress -= chosen_ritual.required_progress
 
   def handle_command(self, cmd):
     encounter = self.encounter
@@ -202,6 +201,11 @@ class GameState:
 
   def play_route(self):
     while True:
+      if self.map.current_region.current_node.position[0] == len(self.map.current_region.nodes) - 1:
+        # if we're at the end of the region, progress to the next region
+        self.map.current_region_idx += 1
+        self.map.current_region.current_node = self.map.current_region.nodes[0][0]
+        self.destination_node = None
       encounter = self.map.current_region.choose_route(self.player)
       if isinstance(encounter, Encounter):  
         self.init_encounter(encounter)
@@ -239,13 +243,13 @@ class GameState:
     # Help out characters resting at this safehouse
     safehouse = self.map.current_region.current_node.safehouse
     for character in safehouse.resting_characters:
-      character.heal(8)
-      print(self.player.render_inventory())
+      character.heal(6)
       print(self.player.render_library())
       print(f"{character.name} has requested: \"{character.request}\"")
       spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
       if spell_to_give:
         character.library.append(LibrarySpell(spell_to_give.spell, copies=1))
+      print(self.player.render_inventory())
       item_to_give = choose_obj(self.player.inventory, f"Give an item to {character.name}? > ")
       if item_to_give:
         character.inventory.append(item_to_give)
@@ -271,7 +275,7 @@ class GameState:
                     f"You take {corruption_damage} damage.", "red"))
 
     safehouse = self.map.current_region.current_node.safehouse
-    self.player.heal(2)
+    self.player.heal(3)
     self.player.check_level_up()
 
     self.player.request = input("Broadcast a message to fellow Delvers? >")
@@ -283,20 +287,19 @@ class GameState:
     self.save()
 
   def play(self):
-    for i in range(len(self.map.regions)):
-      while self.map.current_region.current_node.position[0] < len(self.map.current_region.nodes) - 1:
-        onwards = self.play_route()
-        if not onwards:
-          self.rest_phase()
-          self.end_run()
-          return
-      self.map.current_region_idx += 1
+    # for _ in range(len(self.map.regions)):
+    while self.map.current_region_idx < len(self.map.regions) - 1:
+      onwards = self.play_route()
+      if not onwards:
+        self.rest_phase()
+        self.end_run()
+        return
 
     print("--- END ---")
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

@@ -48,7 +48,7 @@ class Node:
   def render_preview(self):
     if not self.seen:
       return colored("???", "cyan")
-    passages_str = f"{self.pass_passages}/{len(self.passages)} "
+    passages_str = f"({self.pass_passages}) " + colored("!" * self.heat, "red") + " "
     if self.blockaded:
       passages_str = passages_str + " BLOCK  "
     return (f"{colored('*', energy_color_map[self.ambient_energy])}"
@@ -56,7 +56,8 @@ class Node:
             + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
 
   def prompt_flavor(self):
-    new_flavor = input("You leave this place. What will those who come after you find here?\n > ")
+    print(f"Existing flavor is: {self.flavor_text}")
+    new_flavor = input(colored(f"You leave this place. What does you leave behind?\n > ", "magenta"))
     if new_flavor:
       self.flavor_text = new_flavor
 
@@ -68,7 +69,10 @@ class Node:
   def render(self):
     total = len(self.passages)
     blockaded_str = colored(" [BLOCKADED]", "red") if self.blockaded else ""
-    render_str = f"-------- Node{blockaded_str} {self.position} : ({self.pass_passages}/{total} passages) --------\n"
+    passages_str = colored(f"{self.pass_passages} passages", "green") if self.pass_passages else ""
+    heat_str = colored(f"{self.heat} heat", "red") if self.heat else ""
+    state_str = "(" + ", ".join(s for s in [passages_str, heat_str] if s) + ")"
+    render_str = f"-------- Node{blockaded_str} {self.position} : {state_str} --------\n"
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
     # render known enemy waves
     if self.seen:
@@ -344,6 +348,8 @@ class Map:
         print(player.render_rituals())
         player.init(spell_pool=self.current_region.spell_pool, new_character=True)
     self.current_region.player = player
+    print(f"----------------- {self.current_region}")
+    print(f"----------------- {self.current_region_idx}")
     return player
 
   def end_run(self):

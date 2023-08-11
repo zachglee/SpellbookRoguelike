@@ -73,6 +73,9 @@ class AttackSide(Action):
               lambda a, t: a.attack(t, self.damage, lifesteal=self.lifesteal))
               for target in targets]
     return events
+
+  def __repr__(self):
+    return f"{'Lifesteal ' if self.lifesteal else ''}Attack {self.damage} to side"
   
 class AttackAll(Action):
   def __init__(self, damage, lifesteal=False):

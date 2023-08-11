@@ -125,7 +125,7 @@ red_big_attack = [
   Spell("If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], else_commands=["regen p 1"], above=True)),
   Spell("Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
-  Spell("Deal 7 damage. Heal for unblocked.", color="red", type="Consumer", raw_commands=["lifesteal _ 7"])],
+  Spell("Deal 6 damage. Heal for unblocked.", color="red", type="Consumer", raw_commands=["lifesteal _ 6"])],
 ]
 
 red_hit_big_enemy = [
@@ -326,7 +326,8 @@ gold_1_spell = [
   [Spell("If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
          triggers_on=passive_1_spell_in_turn, raw_commands=["gold p 1"]), # TODO fix this
   Spell("you may convert 1 energy to another color.", color="gold", type="Producer"),
-  Spell("Deal 4 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red"), # NOTE: Green
+  Spell("Deal 4 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["damage _ 4", "damage _ 4", "slow p 2"]), # NOTE: Green
   Spell("Gain 3 inventive and 1 energy of any color.", color="gold", type="Consumer", raw_commands=["inventive p 3"])],
   #
   [Spell("If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive",
@@ -387,7 +388,7 @@ gold_use_last_charge = [
         generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),
   Spell("Gain 1 prolific, 2 dig deep, 3 block.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["prolific p 1", "dig p 2", "block p 3"]),
-  Spell("Gain block and searing presence equal to missing charges.", color="gold", type="Consumer",
+  Spell("Gain block and searing presence equal to missing charges on this page.", color="gold", type="Consumer",
         generate_commands_pre=for_missing_charges(["block p *", "searing p *"]))]
 ]
 

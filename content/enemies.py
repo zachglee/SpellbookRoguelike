@@ -25,12 +25,12 @@ enemies = {
   #
   "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
   "Decaying Corpse": Enemy(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
-  "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(4))),
+  "Faerie Assassin": Enemy(8, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(3))),
   "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
   "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
   "Stoneguard": Enemy(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
-  "Conniving Impfiend": Enemy(5, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
+  "Conniving Impfiend": Enemy(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy(20, "Insistent Duelist",
                               SideOverwhelmAction(
                                 MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("armor", 2, "self")]),
@@ -46,7 +46,7 @@ enemies = {
   "Cloud of Daggers": Enemy(6, "Cloud of Daggers",
                             MultiAction([AttackAction(2), AttackAction(2), AttackAction(2),
                                         AttackSide(2), AttackSide(2), AttackSide(2)]),
-                            entry=AddConditionAction("durable", 3, "self"), exp=6),
+                            entry=AddConditionAction("durable", 2, "self"), exp=6),
   "Slumbering Giant": Enemy(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
   "Witch of Withering": Enemy(12, "Witch of Withering", AddConditionAction("poison", 1, "all"), entry=AddConditionAction("poison", 2, "all")),
@@ -70,7 +70,7 @@ enemies = {
                               AttackAction(6),
                               AddConditionAction("gold", 1, "player"),
                               AddConditionAction("empower", 6, "player")])),
-  "Vengeful Mine": Enemy(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(4), AttackAction(4)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 4, "self")),
+  "Vengeful Mine": Enemy(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(6), AttackAction(5)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 4, "self")),
   "Bomber Zealot": Enemy(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
   "Grizzled Shieldmage": Enemy(10, "Grizzled Shieldmage",
                                NearFarAction(AttackAction(3),
@@ -115,8 +115,8 @@ enemies = {
                                                      AttackAction(4),
                                                      AddConditionAction("sharp", 1, "self")]
                                                  ), 18)),
-  "Witch-Burner Devil": Enemy(18, "Witch-Burner Devil",
-                              EnergyThresholdAction(AddConditionAction("burn", 3, "player"), AttackAction(1), 1)),
+  "Witch-Burner Devil": Enemy(20, "Witch-Burner Devil",
+                              EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(1), 1)),
   "Tithetaker": Enemy(25, "Tithetaker",
                       EnergyThresholdAction(
                           AddConditionAction("regen", 1, "player"),
@@ -157,7 +157,7 @@ enemies = {
         AddConditionAction("undying", 1, "immediate"),
       ]),
       entry=AddConditionAction("undying", 1, "all_enemies")),
-  "Assault Golem": Enemy(10, "Assault Golem", CautiousAction(AttackAction(10), AddConditionAction("shield", 3, "self"))),
+  "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), AddConditionAction("shield", 2, "self"))),
   "Aegis Orb": Enemy(20, "Aegis Orb", AddConditionAction("armor", 1, "all_enemies")),
   "Defective Shieldbot": Enemy(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
@@ -466,6 +466,7 @@ dominion_of_drael = [
     EnemySpawn(2, "f", enemies["Zealous Battlemage"]),
   ], faction="Dominion of Drael"),
   EnemySet("Draelish Patrol", [
+    EnemySpawn(2, "f", enemies["Conscript"]),
     EnemySpawn(3, "f", enemies["Conscript"]),
     EnemySpawn(4, "f", enemies["Conscript"]),
     EnemySpawn(5, "f", enemies["Draelish Captain"])
@@ -532,6 +533,7 @@ ancient_horrors = [
   EnemySet("Corrupting Spire", [
     EnemySpawn(2, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(3, "b", enemies["Incubated Fleshling"]),
+    EnemySpawn(4, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(5, "b", enemies["Corrupting Spire"]),
   ], faction="Ancient Horrors"),
   EnemySet("Mindless Maw", [
