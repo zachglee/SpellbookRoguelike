@@ -1,4 +1,6 @@
 from typing import Literal
+from content.trigger_functions import trigger_player_defense_break
+from model.triggers import EventTrigger
 from termcolor import colored
 import time
 import random
@@ -63,7 +65,7 @@ class EnemyWave:
     return enemy_spawns
 
 class Encounter:
-  def __init__(self, waves, player, ambient_energy=None, basic_items=[], special_items=[], boss=False):
+  def __init__(self, waves, player, ambient_energy=None, basic_items=[], special_items=[], unique_items=[], boss=False):
     self.waves = waves
     self.rituals = []
     self.ambient_energy = ambient_energy or random.choice(energy_colors)
@@ -71,6 +73,7 @@ class Encounter:
     self.enemy_spawns = []
     self.basic_items = basic_items
     self.special_items = special_items
+    self.unique_items = unique_items
     for wave in self.waves:
       self.enemy_spawns += wave.instantiated_enemy_spawns
     self.player = player
@@ -79,10 +82,14 @@ class Encounter:
     self.front = []
     self.dead_enemies = []
     self.events = []
-    self.max_turns = 9
+    if self.boss:
+      self.max_turns = 10
+    else:
+      self.max_turns = 9
     self.min_turns = 6
     self.scheduled_commands = []
     self.spells_cast_this_turn = []
+    self.dropped_items = []
 
   # -------- @properties --------
 
@@ -129,7 +136,7 @@ class Encounter:
   def overcome(self):
     all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns)
     no_undying = not any(enemy.conditions["undying"] > 0 for enemy in self.dead_enemies)
-    return (self.turn > self.escape_turn or all_defeated) and self.player.hp > 0 and no_undying
+    return (self.turn > self.escape_turn or (all_defeated and no_undying)) and self.player.hp > 0
 
   @property
   def last_spell_cast(self):
@@ -195,6 +202,11 @@ class Encounter:
       if trigger_output := passive_spell.triggers_on(self, event):
         print(f"-------------- TRIGGERED! {passive_spell.description} --------------")
         passive_spell.cast(self, trigger_output=trigger_output)
+
+    # run player triggers
+    for event_trigger in self.player.event_triggers:
+      if trigger_output := event_trigger.triggers_on(self, event):
+        event_trigger.execute(self, event, trigger_output=trigger_output)
       
   def gather_events_from_combat_entities(self):
     # gather any new events that were triggered
@@ -260,10 +272,15 @@ class Encounter:
     elif r < 0.08:
       found_item = deepcopy(random.choice(self.basic_items))
       input(colored("Something useful glints in the torchlight...", "green"))
-    elif r < 0.12:
+    elif r < 0.13:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(minor_energy_potions))
       input(colored("Something useful glints in the torchlight...", "green"))
+    elif r < 0.16 and len(self.unique_items) > 0:
+      play_sound("explore-find.mp3")
+      found_item = random.choice(self.unique_items)
+      self.unique_items.remove(found_item)
+      input(colored("This belonged to a past delver...", "green"))
     else:
       found_item = None
       print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
@@ -292,6 +309,7 @@ class Encounter:
         if self.player.time >= item.time_cost:
           self.player.spend_time(cost=item.time_cost)
           item.use(self)
+          self.dropped_items += [item for item in self.player.inventory if item.charges == 0 and item.personal]
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
         else:
@@ -365,6 +383,12 @@ class Encounter:
         magnitude = int(cmd_tokens[1])
         delayed_command = " ".join(cmd_tokens[2:])
         self.scheduled_commands.append((delayed_command, self.turn + magnitude))
+      elif cmd_tokens[0] == "break":
+        break_command = " ".join(cmd_tokens[1:])
+        event_trigger = EventTrigger(triggers_on=trigger_player_defense_break,
+                                     executor=[break_command],
+                                     turns_remaining=1, tags=["defense_break"])
+        self.player.event_triggers.append(event_trigger)
       elif cmd_tokens[0] == "repeat":
         magnitude = int(cmd_tokens[1])
         repeated_command = " ".join(cmd_tokens[2:])
@@ -435,6 +459,7 @@ class Encounter:
         enemy.dead = False
         enemy.resurrected = True
         to_spawn.append(EnemySpawn(self.turn, "b", enemy))
+    self.dead_enemies = [e for e in self.dead_enemies if e.dead]
     back_spawns = [(es.enemy, self.back) for es in to_spawn if es.side == "b"]
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
     for enemy, destination in (front_spawns + back_spawns):
@@ -518,10 +543,6 @@ class Encounter:
       print(f"{ritual.name} progressed!")
       input(ritual.render())
 
-    # add player loot
-    for color, v in self.player.conditions.items():
-      if color in energy_colors:
-        self.player.resources[color] += v
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += es.experience

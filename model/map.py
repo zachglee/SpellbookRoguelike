@@ -1,6 +1,6 @@
 import random
 from copy import deepcopy
-from typing import List
+from typing import List, Literal, Tuple
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
@@ -13,7 +13,8 @@ from generators import generate_spell_pools, generate_faction_sets, generate_ene
 from content.enemy_factions import factions
 
 class Node:
-  def __init__(self, safehouse, guardian_enemy_waves: List[EnemyWave], position, seen=False, difficulty=1, boss=False):
+  def __init__(self, safehouse, guardian_enemy_waves: List[EnemyWave], position, seen=False,
+               difficulty=1, boss=False, page_capacity=3, num_pages=2):
     self.safehouse = safehouse
     self.guardian_enemy_waves = guardian_enemy_waves
     self.ambient_energy = random.choice(["red", "blue", "gold"])
@@ -22,9 +23,23 @@ class Node:
     self.seen = seen
     self.difficulty = difficulty
     self.boss = boss
+    self.page_capacity = page_capacity
+    self.num_pages = num_pages
     self.heat = 0
     self.blockaded = False
-    self.flavor_text = "Cold stone halls. They echo with your footsteps."
+
+    # Flavor
+    self.fight_flavor = ""
+    self.navigate_flavor = ""
+    self.name = None
+
+  @property
+  def column(self):
+    return self.position[1]
+  
+  @property
+  def layer(self):
+    return self.position[0]
 
   @property
   def guardian_enemy_sets(self):
@@ -48,31 +63,42 @@ class Node:
   def render_preview(self):
     if not self.seen:
       return colored("???", "cyan")
-    passages_str = f"({self.pass_passages}) " + colored("!" * self.heat, "red") + " "
+    passages_str = f"({self.pass_passages})" + colored("!" * self.heat, "red")
     if self.blockaded:
       passages_str = passages_str + " BLOCK  "
+    name_str = colored(f" {self.name} ", "magenta") if self.name else ""
     return (f"{colored('*', energy_color_map[self.ambient_energy])}"
-            + passages_str
+            + passages_str + name_str
             + ", ".join(character.name[:4] for character in self.safehouse.resting_characters))
 
-  def prompt_flavor(self):
-    print(f"Existing flavor is: {self.flavor_text}")
-    new_flavor = input(colored(f"You leave this place. What does you leave behind?\n > ", "magenta"))
-    if new_flavor:
-      self.flavor_text = new_flavor
+  def prompt_flavor(self, player, traverse_type: Literal["fight", "navigate"]):
+    if not self.name:
+      new_name = input(colored(f"You leave this place. What shall you name it?\n > ", "magenta"))
+      self.name = new_name
+    elif not self.fight_flavor and traverse_type == "fight":
+      new_flavor = input(colored(f"You leave this place. What does {player.name} write of this place that night?\n > ", "magenta"))
+      self.fight_flavor = new_flavor + f"\n     - {player.name}"
+    elif not self.navigate_flavor and traverse_type == "navigate":
+      new_flavor = input(colored(f"You arrive at the safehouse. What does {player.name} write of this place that night?\n > ", "magenta"))
+      self.navigate_flavor = new_flavor + f"\n     - {player.name}"
 
-  def render_flavor(self):
-    if self.flavor_text:
-      rendered_str = f"~~~\n\n    Your journey continues, and you come upon...\n\n    {self.flavor_text}\n\n~~~"
+  def render_flavor(self, traverse_type: Literal["fight", "navigate"]):
+    flavor_text_dict = {
+      "fight": self.fight_flavor,
+      "navigate": self.navigate_flavor
+    }
+    flavor_text = flavor_text_dict.get(traverse_type, "No words from delvers past are recorded here.")
+    if flavor_text:
+      rendered_str = f"~~~\n\n    Your journey continues...\n\n    {flavor_text}\n\n~~~"
       return colored(rendered_str, "magenta")
 
   def render(self):
-    total = len(self.passages)
+    name_str = colored(self.name, "magenta") if self.name else "Node"
     blockaded_str = colored(" [BLOCKADED]", "red") if self.blockaded else ""
     passages_str = colored(f"{self.pass_passages} passages", "green") if self.pass_passages else ""
     heat_str = colored(f"{self.heat} heat", "red") if self.heat else ""
     state_str = "(" + ", ".join(s for s in [passages_str, heat_str] if s) + ")"
-    render_str = f"-------- Node{blockaded_str} {self.position} : {state_str} --------\n"
+    render_str = f"-------- {name_str} {blockaded_str} {self.position} : {state_str} --------\n"
     guardian_enemy_set_names = ", ".join([es.name for es in self.guardian_enemy_sets])
     # render known enemy waves
     if self.seen:
@@ -93,11 +119,13 @@ class Node:
     return render_str
 
 class Region:
-  def __init__(self, position, width, height, spell_pool, faction_set, enemy_set_pool_size=12, extra_boss_enemy_sets=1):
+  def __init__(self, position, width, height, spell_pool, faction_set,
+               enemy_set_pool_size=12, extra_boss_enemy_sets=1, explore_difficulty=4):
     # setup
     self.position = position
     self.spell_pool = spell_pool
     self.faction_set = faction_set
+    self.explore_difficulty = explore_difficulty
     
     enemy_set_universe = sum([faction.enemy_sets for faction in faction_set], [])
     self.enemy_set_pool = enemy_set_universe[0:enemy_set_pool_size]
@@ -106,6 +134,7 @@ class Region:
     spell_pool_cursor = 0
     enemy_set_pool_cursor = 0
     self.corruption = 0
+    self.dropped_items = []
 
     self.enemy_view = True
 
@@ -117,21 +146,23 @@ class Region:
       row_of_nodes = []
       for j in range(width):
         library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
-        unique_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2]
+        unique_enemy_sets = self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 1] + [random.choice(self.enemy_set_pool)]
         guardian_enemy_wave = EnemyWave(unique_enemy_sets)
         node = Node(Safehouse(library), [guardian_enemy_wave], (i, j))
         row_of_nodes.append(node)
         spell_pool_cursor += 2
-        enemy_set_pool_cursor += 2
+        enemy_set_pool_cursor += 1
       self.nodes.append(row_of_nodes)
     # generate starting layer
-    starting_layer = [Node(Safehouse([]), [], (0, 0), seen=True)]
+    starting_layer = [Node(Safehouse([]), [], (0, i), seen=True) for i in range(width)]
     self.nodes = [starting_layer] + self.nodes
 
     # generate boss layer
     boss_layer = []
     random.shuffle(self.enemy_set_pool)
+    random.shuffle(self.spell_pool)
     enemy_set_pool_cursor = 0
+    spell_pool_cursor = 0
     for j in range(2):
       library = [LibrarySpell(sp) for sp in self.spell_pool[spell_pool_cursor:spell_pool_cursor + 2]]
       guardian_enemy_wave1 = EnemyWave(self.enemy_set_pool[enemy_set_pool_cursor:enemy_set_pool_cursor + 2], 0)
@@ -142,9 +173,17 @@ class Region:
     self.nodes.append(boss_layer)
     
     # 
-    self.current_node = self.nodes[0][0]
+    self.current_node = None
     self.destination_node = None
     self.player = None
+
+  @property
+  def starting_layer(self):
+    return self.nodes[0]
+
+  @property
+  def boss_layer(self):
+    return self.nodes[-1]
 
   @property
   def basic_items(self):
@@ -179,7 +218,7 @@ class Region:
           continue
         input_tokens = raw_input.split(",")
         layer_idx = int(input_tokens[0]) # there is a zeroth layer we don't render so no need to -1 here
-        column_idx = int(input_tokens[1]) - 1
+        column_idx = int(input_tokens[1])
         node = self.nodes[layer_idx][column_idx]
         return node
       except (TypeError, ValueError, IndexError) as e:
@@ -193,8 +232,44 @@ class Region:
                           ambient_energy=destination_node.ambient_energy,
                           basic_items=self.basic_items,
                           special_items=self.special_items,
+                          unique_items=self.dropped_items,
                           boss=destination_node.boss)
     return destination_node, encounter
+
+  def get_route_options(self, player) -> List[Tuple]:
+    # generate available routes
+    routes = []
+    current_layer_idx = self.current_node.layer
+    # current_column = player.current_column
+    next_layer = self.nodes[current_layer_idx + 1]
+
+    if current_layer_idx == len(self.nodes) - 2:
+      #  Heading into boss layer case
+      return [self.get_route_for_node(node.layer, node.column) for node in next_layer]
+    else:
+      #  Heading into normal layer case
+      proximal_nodes = [next_layer[player.current_column + drift] for drift in [-1, 0, 1]
+                        if player.current_column + drift >= 0 and player.current_column + drift < len(next_layer)]
+      random.shuffle(proximal_nodes)
+      routes = [self.get_route_for_node(node.layer, node.column) for node in  proximal_nodes[:2]]
+    
+    done_exploring = False
+    while True:
+      # render the routes
+      print(player.render_library() + "\n")
+      for node, encounter in routes:
+        print(node.render())
+        print()
+      still_exploring = choose_binary(colored("Explore more? (Costs 1hp)", "red"))
+      if still_exploring:
+        route_nodes = [route[0] for route in  routes]
+        discoverable_nodes = [node for node in next_layer if node not in route_nodes]
+        route_node = random.choice(discoverable_nodes)
+        routes.append(self.get_route_for_node(route_node.layer, route_node.column))
+        player.hp -= 1
+      else:
+        break
+    return routes
 
 
   def choose_route(self, player):
@@ -205,34 +280,27 @@ class Region:
     # show the region map
     print(self.render())
 
-    # generate available routes
-    routes = []
-    current_layer_idx = self.current_node.position[0]
-    # current_node_idx = self.current_node.position[1]
-    next_layer = self.nodes[current_layer_idx + 1]
-    # just literally let them choose any route from the next layer
-    routes = [self.get_route_for_node(node.position[0], node.position[1]) for node in next_layer]
-    
-    # prompt the player to choose a route
+    routes = self.get_route_options(player)
+
+    # render the routes
     print(player.render_library() + "\n")
-    for i, (node, encounter) in enumerate(routes):
+    for node, encounter in routes:
       print(node.render())
       print()
-    
     node, encounter = choose_obj(routes, colored("choose a route > ", "red"))
+    
     self.destination_node = node
     if not node.seen:
       player.experience += 10
       print(colored("You gain 10 experience for exploring a new node!", "green"))
     node.seen = True
 
-    print(f"\n{node.render_flavor()}\n")
-
     if node.blockaded:
       input(colored("This node is blockaded. You must fight.", "red"))
       fight = True
     else:
       fight = choose_binary("Fight or navigate?", ["fight", "navigate"])
+    print(f"\n{node.render_flavor('fight' if fight else 'navigate')}\n")
 
     if fight:
       return encounter
@@ -287,16 +355,29 @@ class Map:
   def __init__(self, n_regions=3):
     spell_pools = generate_spell_pools(n_pools=n_regions)
     faction_sets = generate_faction_sets(n_sets=n_regions, set_size=3)
-    self.regions = [Region(i, 3, 2, spell_pool, faction_set, extra_boss_enemy_sets=i+1) for i, spell_pool, faction_set
-                    in zip(range(n_regions), spell_pools, faction_sets)]
+    self.regions = [Region(i, 6, 2, spell_pool, faction_set, extra_boss_enemy_sets=i+1, explore_difficulty=4+i)
+                    for i, spell_pool, faction_set in zip(range(n_regions), spell_pools, faction_sets)]
+    for node in self.regions[1].boss_layer:
+      node.page_capacity = 4
+    for node in self.regions[2].boss_layer:
+      node.page_capacity = 4
+      node.num_pages = 3
+
     self.current_region_idx = 0
     self.active_ritual = None
     self.runs = 0
+    self.log_entries: List[Tuple[str, str]] = []
   
   @property
   def current_region(self):
     return self.regions[self.current_region_idx]
   
+  def get_random_location_tuple(self):
+    region_idx = random.randint(0, len(self.regions) - 1)
+    layer_idx = random.randint(1, len(self.regions[region_idx].nodes) - 1)
+    node = random.choice(self.regions[region_idx].nodes[layer_idx])
+    return (region_idx, layer_idx, node.column)
+
   def choose_region(self) -> Region:
     while True:
       try:
@@ -308,18 +389,15 @@ class Map:
         print(e)
 
   def init(self, character=None) -> Player:
-    print(f"Active Ritual: {self.render_active_ritual()}")
     print(f"~~~~ Run {self.runs + 1} ~~~~")
-    region = self.choose_region()
-    starting_node = region.choose_node()
-    print(starting_node.render())
-    if character:
+    region, starting_node = self.inspect()
+    if character and starting_node:
       player = character
       self.current_region_idx = region.position
       self.current_region.current_node = starting_node
       if region.position == 0 and starting_node.position == (0, 0):
         player.init(spell_pool=self.current_region.spell_pool)
-    else:
+    elif starting_node:
       character_idx = choose_idx(starting_node.safehouse.resting_characters, colored("Choose a character > ", "green"))
       if character_idx is not None:
         player = starting_node.safehouse.resting_characters.pop(character_idx)
@@ -328,28 +406,27 @@ class Map:
         self.current_region.current_node = starting_node
         if region.position == 0 and starting_node.position == (0, 0):
           player.init(spell_pool=self.current_region.spell_pool)
-      else:
-        self.current_region_idx = 0
-        self.current_region.current_node = self.current_region.nodes[0][0]
-        print("Starting a new character...")
-        signature_spell_options = generate_library_spells(1, spell_pool=region.spell_pool)
-        print(numbered_list(signature_spell_options))
-        chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
-        chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
-        name = input("What shall they be called? > ")
-        library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
-        player = Player(hp=30, name=name,
-                        spellbook=None,
-                        inventory=[],
-                        library=library,
-                        signature_spell=chosen_spell,
-                        signature_color=chosen_color)
-        # TODO: possibly remove this later
-        print(player.render_rituals())
-        player.init(spell_pool=self.current_region.spell_pool, new_character=True)
+    else:
+      print("Starting a new character...")
+      signature_spell_options = generate_library_spells(2, spell_pool=region.spell_pool)
+      print(numbered_list(signature_spell_options))
+      chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
+      chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
+      name = input("What shall they be called? > ")
+      library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
+      player = Player(hp=30, name=name,
+                      spellbook=None,
+                      inventory=[],
+                      library=library,
+                      signature_spell=chosen_spell,
+                      signature_color=chosen_color,
+                      personal_destination=self.get_random_location_tuple(),
+                      home_column=random.choice(range(len(self.regions[0].starting_layer))))
+      print(player.render_rituals())
+      player.init(spell_pool=self.current_region.spell_pool, new_character=True)
+      self.current_region_idx = 0
+      self.current_region.current_node = self.current_region.nodes[0][player.home_column]
     self.current_region.player = player
-    print(f"----------------- {self.current_region}")
-    print(f"----------------- {self.current_region_idx}")
     return player
 
   def end_run(self):
@@ -362,15 +439,37 @@ class Map:
     #     region.corrupt()
 
   def inspect(self):
-    while True:
-      region = self.choose_region()
-      if region is None:
-        return None
-      region.inspect()
+    print(self.current_region.render())
+    last_inspected = self.current_region
+    while (cmd := input("inspect the map > ")) != "done":
+      cmd_tokens = cmd.split(" ")
+      try:
+        if cmd_tokens[0] == "region":
+          idx = int(cmd_tokens[1]) - 1
+          print(self.regions[idx].render())
+          last_inspected = self.regions[idx]
+        elif cmd_tokens[0] == "node":
+          region = last_inspected
+          layer_idx = int(cmd_tokens[1])
+          column_idx = int(cmd_tokens[2])
+          print(region.nodes[layer_idx][column_idx].render())
+        elif cmd_tokens[0] == "start":
+          region = last_inspected
+          layer_idx = int(cmd_tokens[1])
+          column_idx = int(cmd_tokens[2])
+          node = region.nodes[layer_idx][column_idx]
+          return region, node
+        elif cmd == "log":
+          print(self.render_log())
+        elif cmd in ["view", "v"] and isinstance(last_inspected, Region):
+          last_inspected.enemy_view = not last_inspected.enemy_view
+          print(last_inspected.render())
+        elif cmd == "new character":
+          return self.regions[0], None
+      except (KeyError, IndexError, ValueError, TypeError) as e:
+        print(e)
     
-  
-  def render_active_ritual(self):
-    if self.active_ritual is None:
-      return "No active ritual."
-    else:
-      return self.active_ritual.render()
+  def render_log(self) -> str:
+    render_str = "-------- World Log --------"
+    render_str += "\n\n".join([f"{i+1} - {entry[0]}: {entry[1]}" for i, entry in enumerate(self.log_entries)])
+    return colored(render_str, "magenta")

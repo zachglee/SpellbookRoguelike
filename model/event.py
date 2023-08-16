@@ -17,6 +17,7 @@ class Event:
       "enemy_death",
       "enemy_spawn",
       "spell_cast",
+      "defense_break",
       "end_turn",
       "begin_turn",
       "end_round",

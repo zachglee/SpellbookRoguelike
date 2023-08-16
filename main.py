@@ -15,9 +15,9 @@ from sound_utils import play_sound
 
 import random
 
-STARTING_EXPLORED = 2
-MAX_EXPLORE = 4
-PASSAGE_EXPERIENCE = 4
+STARTING_EXPLORED = 1
+# MAX_EXPLORE = 4
+# PASSAGE_EXPERIENCE = 4
 
 class GameOver(Exception):
   pass
@@ -63,6 +63,11 @@ class GameState:
       self.player.hp = 3
       self.player.conditions["undying"] -= 1
       return
+    # player drops all their items in current region
+    for item in self.player.inventory:
+      item.name = f"{self.player.name}'s {item.name}"
+    self.map.current_region.dropped_items += self.player.inventory
+    # death admin
     play_sound("player-death.mp3")
     print(self.player.render())
     input("Gained 30xp...")
@@ -79,7 +84,7 @@ class GameState:
     self.player.library = [spell for spell in self.player.library if spell.signature
                            or spell is retained_spell]
     # reset character back to starting layer
-    self.map.regions[0].nodes[0][0].safehouse.resting_characters.append(self.player)
+    self.map.regions[0].nodes[0][self.player.home_column].safehouse.resting_characters.append(self.player)
     self.end_run()
     self.save()
     raise GameOver()
@@ -88,17 +93,18 @@ class GameState:
 
   def discovery_phase(self):
     play_sound("passage-discovery.mp3")
+    explore_difficulty = self.map.current_region.explore_difficulty
     while self.player.explored > 0:
-      if random.random() < (self.player.explored * (1/MAX_EXPLORE)):
-        self.player.explored -= MAX_EXPLORE
-        self.player.experience += PASSAGE_EXPERIENCE
+      if random.random() < (self.player.explored * (1/explore_difficulty)):
+        self.player.explored -= explore_difficulty
+        self.player.experience += explore_difficulty
         if self.map.current_region.destination_node.boss:
-          print(colored(f"You gathered some material from the aftermath of the battle... Gained {PASSAGE_EXPERIENCE}xp.", "green"))
-          self.player.material += 1
+          print(colored(f"You gathered {explore_difficulty} material from the aftermath of the battle... Gained {explore_difficulty}xp.", "green"))
+          self.player.material += explore_difficulty
         else:
           self.map.current_region.destination_node.passages.append("pass")
-          print(colored(f"You found a passage and gained {PASSAGE_EXPERIENCE}xp!", "green"))
-        input(f"Press enter to continue exploring ({self.player.explored}/{MAX_EXPLORE}) ...")
+          print(colored(f"You found a passage and gained {explore_difficulty}xp!", "green"))
+        input(f"Press enter to continue exploring ({self.player.explored}/{explore_difficulty}) ...")
       else:
         print(colored("Found nothing this time...", "blue"))
         break
@@ -196,6 +202,7 @@ class GameState:
       self.run_encounter_round()
     self.encounter.render_combat()
     self.encounter.end_encounter()
+    self.map.current_region.dropped_items += encounter.dropped_items
     self.save()
 
 
@@ -204,7 +211,7 @@ class GameState:
       if self.map.current_region.current_node.position[0] == len(self.map.current_region.nodes) - 1:
         # if we're at the end of the region, progress to the next region
         self.map.current_region_idx += 1
-        self.map.current_region.current_node = self.map.current_region.nodes[0][0]
+        self.map.current_region.current_node = self.map.current_region.nodes[0][self.player.current_column]
         self.destination_node = None
       encounter = self.map.current_region.choose_route(self.player)
       if isinstance(encounter, Encounter):  
@@ -226,6 +233,8 @@ class GameState:
           print(colored(f"The heat of this node has increased to {destination_node.heat}.", "red"))
           break
     self.map.current_region.current_node = self.map.current_region.destination_node
+    if not self.map.current_region.current_node.boss:
+      self.player.current_column = self.map.current_region.current_node.position[1]
     if encounter != "navigate":
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=2, spell_pool=self.map.current_region.spell_pool)
@@ -236,14 +245,14 @@ class GameState:
         print(f"{ritual.name} progressed!")
         input(ritual.render())
         break
-      self.map.current_region.current_node.prompt_flavor()
     else:
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=1, spell_pool=self.map.current_region.spell_pool)
+    self.map.current_region.current_node.prompt_flavor(self.player, "fight" if isinstance(encounter, Encounter) else "navigate")
     # Help out characters resting at this safehouse
     safehouse = self.map.current_region.current_node.safehouse
     for character in safehouse.resting_characters:
-      character.heal(6)
+      character.heal(4)
       print(self.player.render_library())
       print(f"{character.name} has requested: \"{character.request}\"")
       spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
@@ -253,6 +262,7 @@ class GameState:
       item_to_give = choose_obj(self.player.inventory, f"Give an item to {character.name}? > ")
       if item_to_give:
         character.inventory.append(item_to_give)
+        self.player.inventory.remove(item_to_give)
       self.player.experience += 20
     self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
     self.save()
@@ -275,19 +285,29 @@ class GameState:
                     f"You take {corruption_damage} damage.", "red"))
 
     safehouse = self.map.current_region.current_node.safehouse
-    self.player.heal(3)
+    safehouse.resting_characters.append(self.player)
+    self.player.material += 1
+    self.player.heal(2)
     self.player.check_level_up()
 
+    # TODO: add a way to level up the safehouse
+    safehouse.build_phase(self.player)
+
     self.player.request = input("Broadcast a message to fellow Delvers? >")
-    safehouse.resting_characters.append(self.player)
+    self.save()
+
+  def prompt_log(self):
+    self.map.render_log()
+    log_entry = input(colored("Leave a log entry for your fellow players > ", "magenta"))
+    self.map.log_entries.append((log_entry, self.player.name))
     self.save()
 
   def end_run(self):
     self.map.end_run()
+    self.prompt_log()
     self.save()
 
   def play(self):
-    # for _ in range(len(self.map.regions)):
     while self.map.current_region_idx < len(self.map.regions) - 1:
       onwards = self.play_route()
       if not onwards:
@@ -299,7 +319,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-# gs.init()
-gs.init(map_file="saves/map.pkl")
+gs.init()
+# gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()

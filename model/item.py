@@ -15,12 +15,14 @@ class Item:
   
 class CustomItem(Item):
   def __init__(self, name, charges, description, use_commands,
-               generate_commands_pre=lambda e, t: [], time_cost=1, rare=False):
+               generate_commands_pre=lambda e, t: [], time_cost=1, rare=False, personal=False):
     super().__init__(charges, description)
     self.name = name
     self.use_commands = use_commands
     self.time_cost = time_cost
     self.generate_commands_pre = generate_commands_pre
+    self.rare = rare
+    self.personal = personal
 
   def use(self, encounter):
     # generate commands pre-execution
@@ -55,6 +57,8 @@ class EnergyPotion(Item):
     self.energy_amount = energy_amount
     self.charges = 1
     self.time_cost = 1
+    self.personal = False
+    self.rare = False
 
   def use(self, encounter):
     encounter.player.conditions[self.energy_color] += self.energy_amount
@@ -62,47 +66,3 @@ class EnergyPotion(Item):
 
   def render(self):
     return colorize(f"{self.energy_color.title()} Potion ({self.charges}): Gain {self.energy_amount} {self.energy_color} energy.")
-  
-class MeleeWeapon(Item):
-  def __init__(self, name, charges, damage):
-    self.name = name
-    self.charges = charges
-    self.damage = damage
-    self.time_cost = 1
-  
-  def use(self, encounter):
-    encounter.player.attack(encounter.player.get_immediate(encounter), self.damage)
-    self.charges -= 1
-
-  def render(self):
-    return colorize(f"{self.name} ({self.charges}): Deal {self.damage} damage.")
-
-class ConditionMeleeWeapon(Item):
-  def __init__(self, name, charges, condition, magnitude):
-    self.name = name
-    self.charges = charges
-    self.condition = condition
-    self.magnitude = magnitude
-    self.time_cost = 1
-
-  def use(self, encounter):
-    encounter.player.get_immediate(encounter).conditions[self.condition] += self.magnitude
-    self.charges -= 1
-  
-  def render(self):
-    return colorize(f"{self.name} ({self.charges}): Apply {self.magnitude} {self.condition} to immediate.")
-
-class ConditionSelfWeapon(Item):
-  def __init__(self, name, charges, condition, magnitude):
-    self.name = name
-    self.charges = charges
-    self.condition = condition
-    self.magnitude = magnitude
-    self.time_cost = 1
-
-  def use(self, encounter):
-    encounter.player.conditions[self.condition] += self.magnitude
-    self.charges -= 1
-
-  def render(self):
-    return colorize(f"{self.name} ({self.charges}): Gain {self.magnitude} {self.condition}.")

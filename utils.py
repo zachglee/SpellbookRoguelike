@@ -33,7 +33,7 @@ def colorize(s):
 def numbered_list(l) -> str:
   return "\n".join(f"{i + 1} - {item.render()}" for i, item in enumerate(l))
 
-def aligned_line(line_items, column_width=40):
+def aligned_line(line_items, column_width=25):
   padded_line_items = []
   for line in line_items:
     true_length = len(without_ansi_escapes(line))

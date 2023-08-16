@@ -1,80 +1,6 @@
 from model.spellbook import Spell
 from content.command_generators import *
-
-# Passive triggers_on
-
-def passive_face_noone_at_end(encounter, event):
-  return event.has_tag("end_turn") and encounter.faced_enemy_queue == []
-
-def passive_turn_3_onwards_at_begin(encounter, event):
-  return event.has_tag("begin_turn") and encounter.turn >= 3
-
-def passive_turn_start(encounter, event):
-  return event.has_tag("begin_turn")
-
-def passive_1_spell_in_turn(encounter, event):
-  return event.has_tag("end_turn") and len(encounter.spells_cast_this_turn) <= 1
-
-def passive_3_plus_enemies_at_begin(encounter, event):
-  return event.has_tag("begin_turn") and len(encounter.enemies) >= 3
-
-def passive_lose_hp(encounter, event):
-  # event.metadata is the amount of hp lost
-  return event.has_tag("lose_hp") and event.metadata["damage"] > 0 and event.metadata["target"].is_player()
-
-def passive_attacked_for_no_damage(encounter, event):
-  if event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player():
-    return event.metadata["attacker"].get_target_string(encounter)
-  return False
-
-def passive_third_spell_in_turn(encounter, event):
-  return event.has_tag("spell_cast") and len(encounter.spells_cast_this_turn) == 3
-
-def passive_for_survive_6_damage_in_turn(encounter, event):
-  if event.has_tag("end_round"):
-    print(f"----------------- damage survived: {encounter.player.damage_survived_this_turn}")
-    return int(encounter.player.damage_survived_this_turn / 6)
-  return False
-  
-def passive_block_at_end(encounter, event):
-  if event.has_tag("end_turn"):
-    return encounter.player.conditions["block"]
-  return False
-
-def passive_block_and_shield_at_end(encounter, event):
-  if event.has_tag("end_turn"):
-    return encounter.player.conditions["block"] + encounter.player.conditions["shield"]
-  return False
-
-def passive_first_damage_10hp_remains(encounter, event):
-  if (event.has_tag("attack") and not event.metadata["target"].is_player() and
-      event.metadata["target"].hp >= 10 and event.metadata["damage_dealt"] == event.metadata["target"].damage_taken_this_turn):
-    return event.metadata["target"].get_target_string(encounter)
-  return False
-
-def passive_on_page(encounter, event):
-  return event.has_tag("page")
-
-def passive_for_death_overkill(encounter, event):
-  if event.has_tag("enemy_death"):
-    return max(1, -1*event.source.hp)
-  
-def passive_no_dead_enemies_at_begin(encounter, event):
-  return event.has_tag("begin_turn") and len(encounter.dead_enemies) == 0
-
-def passive_on_entry(encounter, event):
-  if event.has_tag("enemy_spawn"):
-    return event.metadata["enemy"].get_target_string(encounter)
-  return False
-
-def passive_first_3_turns(encounter, event):
-  return event.has_tag("begin_turn") and encounter.turn <= 3
-
-def passive_first_face(encounter, event):
-  return event.has_tag("face") and encounter.player.face_count == 1
-
-def passive_use_last_charge(encounter, event):
-  return event.has_tag("spell_cast") and event.metadata["spell"].charges <= 0
+from content.trigger_functions import *
 
 # Red Color Identity:
 
@@ -187,8 +113,8 @@ red_spells = sum(red_pages, [])
 # Blue Color Identity
 
 blue_block_hits = [
-  [Spell("When you’re attacked and take no damage, deal 5 damage to attacker.", color="blue", type="Passive",
-         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 5"]),
+  [Spell("When you’re attacked and take no damage, deal 5 damage to attacker and block 1.", color="blue", type="Passive",
+         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 5", "block p 1"]),
   Spell("gain 1 block per enemy.", color="blue", type="Producer",
         generate_commands_pre=for_enemies(["block p *"])),
   Spell("Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
@@ -197,8 +123,9 @@ blue_block_hits = [
   #
   [Spell("When you’re attacked and take no damage, gain 2 retaliate.", color="blue", type="Passive",
          triggers_on=passive_attacked_for_no_damage, raw_commands=["retaliate p 2"]),
-  Spell("gain 1 block and Break: deal 6 damage to attacker.", color="blue", type="Producer", raw_commands=["block p 1"]),
+  Spell("gain 1 block and Break: deal 6 damage to attacker.", color="blue", type="Producer", raw_commands=["block p 1", "break damage ^ 6"]),
   Spell("Block 5. Deal 4 damage.", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 5", "damage _ 4"]),
+  # TODO: implement the damage scaling part
   Spell("Block 4. Break: Deal 4 times the breaker’s attack damage back.", color="blue", type="Consumer", raw_commands=["block p 4"])],
 ]
 
@@ -206,7 +133,8 @@ blue_turn_3 = [
   [Spell("At start of 3rd turn and onwards, block 4.", color="blue", type="Passive",
          triggers_on=passive_turn_3_onwards_at_begin, raw_commands=["block p 4"]),
   Spell("Inflict 1 stun on an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["stun _entered 1"]),
-  Spell("Stun 1 or deal 15 damage to a stunned enemy.", color="blue", type="Converter", conversion_color="red"), # NOTE: Purple # TODO
+  Spell("Stun 1 or deal 15 damage to a stunned enemy.", color="blue", type="Converter", conversion_color="red",
+        generate_commands_pre=if_enemy_condition("_", "stun", 1, ["damage _ 15"], else_commands=["stun _ 1"], above=True)),
   Spell("Inflict 3 stun.", color="blue", type="Consumer", raw_commands=["stun _ 3"])],
   #
   [Spell("At start of 3rd turn and onwards, deal 3 damage to all enemies.", color="blue", type="Passive",
@@ -220,8 +148,8 @@ blue_turn_3 = [
 blue_3_enemies = [
   [Spell("At start of your turn if there are 3 or more enemies, stun 2 of them at random.", color="blue", type="Passive",
          triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["stun r 1", "stun r 1"]),
-  Spell("gain 1 block and Break: stun 1.", color="blue", type="Producer", raw_commands=["block p 1"]),
-  Spell("Gain retaliate 2.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 2"]), # NOTE: Green
+  Spell("gain 1 block and Break: stun 1.", color="blue", type="Producer", raw_commands=["block p 1", "break stun ^ 1"]),
+  Spell("Gain retaliate 3.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 3"]),
   Spell("Deal 4 damage to all stunned enemies. Stun 1 all enemies.", color="blue", type="Consumer", raw_commands=["stun a 1"])],
   #
   [Spell("At start of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.", color="blue", type="Passive",
@@ -272,7 +200,7 @@ blue_on_entry = [
           triggers_on=passive_on_entry, raw_commands=["retaliate p 1", "block p 2"]),
   Spell("inflict 1 poison.", color="blue", type="Producer", raw_commands=["poison _ 1"]),
   Spell("Block 3. Break: Poison 3 all enemies.", color="blue", type="Converter", conversion_color="red",
-        raw_commands=["block p 3"]), # TODO: poison
+        raw_commands=["block p 3", "break poison a 3"]),
   Spell("All enemies gain 1 undying. You gain 3 shield for each enemy.", color="blue", type="Consumer",
         raw_commands=["undying a 1"], generate_commands_pre=for_enemies(["shield p *"], lambda s: 3*s))],
   #

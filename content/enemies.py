@@ -21,11 +21,11 @@ enemies = {
   "Hunter": Enemy(20, "Hunter", MultiAction([MoveAction(1), NearFarAction(AddConditionAction("armor", 1, "self"), AttackAction(10))])),
   "Charging Ogre": Enemy(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
   "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
-  "The Vulture": Enemy(30, "The Vulture", AttackAction(2), entry=TheVultureEntryAction()),
+  "The Vulture": Enemy(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
   "Decaying Corpse": Enemy(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
-  "Faerie Assassin": Enemy(8, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 2, "player"), AttackAction(3))),
+  "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
   "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
   "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
@@ -49,8 +49,8 @@ enemies = {
                             entry=AddConditionAction("durable", 2, "self"), exp=6),
   "Slumbering Giant": Enemy(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
-  "Witch of Withering": Enemy(12, "Witch of Withering", AddConditionAction("poison", 1, "all"), entry=AddConditionAction("poison", 2, "all")),
-  "Witch of Rebirth": Enemy(12, "Witch of Rebirth", AddConditionAction("regen", 2, "all"), entry=AddConditionAction("regen", 3, "all_enemies")),
+  "Midnight Courtier": Enemy(15, "Imperious Seelie", EnergyThresholdAction(
+      AddConditionAction("retaliate", 3, "self"), AddConditionAction("poison", 3, "player"), 2)),
   "Zealous Battlemage": Enemy(8, "Zealous Battlemage", AttackAction(1), entry=MultiAction([AddConditionAction("block", 8, "self"), AddConditionAction("empower", 8, "self")])),
   "Draelish Captain": Enemy(7, "Draelish Captain", AttackAction(0), entry=MultiAction([AddConditionAction("block", 4, "all_enemies"), AddConditionAction("empower", 4, "all_enemies")])),
   "Conscript": Enemy(6, "Conscript", CowardlyAction(NothingAction(), AttackAction(2), hp_threshold=7)),
@@ -195,6 +195,9 @@ enemies = {
       NothingAction(), AddConditionAction("armor", 1, "player"), 2)),
 
   # Hoarding Dragons? Wound them and they go away. Or they go into neutral mode They interact with your items?
+  # Anti-mage faction? A lot of spellcast threshold stuff? Pro item
+  # step-up faction? Little guys that get stronger as long as there are no higher maxhp enemies?
+  # set up break on you and they hurt you extra when they break. (rewards you for full-blocking)
 
   # Gets stronger if other enemies dead
   # Really late-spawning enemies where you actually do just need to survive them?
@@ -402,11 +405,12 @@ fae_realm = [
   EnemySet("Faerie Assassins", [
     EnemySpawn(2, "b", enemies["Faerie Assassin"]),
     EnemySpawn(4, "b", enemies["Faerie Assassin"]),
+    EnemySpawn(6, "b", enemies["Faerie Assassin"]),
   ], faction="Fae Realm"),
-  EnemySet("Witches of the Cycle", [
-    EnemySpawn(3, "b", enemies["Witch of Withering"]),
-    EnemySpawn(5, "f", enemies["Witch of Rebirth"]),
-  ], faction="Fae Realm"), # TODO rework
+  EnemySet("Midnight Court", [
+      EnemySpawn(2, "f", enemies["Midnight Courtier"]),
+      EnemySpawn(3, "b", enemies["Midnight Courtier"]),
+  ]),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", enemies["Fickle Witch-Queen"])
   ], faction="Fae Realm"),

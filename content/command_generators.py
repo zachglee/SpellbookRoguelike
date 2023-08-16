@@ -17,8 +17,6 @@ def if_facing_none(commands):
 
 def if_kill(target, commands):
   def on_kill_generator(encounter, targets_dict):
-    print(f"-------- {targets_dict[target][1].__dict__}")
-    print(f"-------- {targets_dict[target][1].hp}")
     if targets_dict[target][1].hp <= 0:
       return commands
     else:
@@ -48,6 +46,18 @@ def if_enemy_hp(target, hp_threshold, commands, above=True):
         return commands
     return []
   return if_enemy_hp_generator
+
+def if_enemy_condition(target, condition, condition_threshold, commands, else_commands=[], above=True):
+  def if_enemy_condition_generator(encounter, targets_dict):
+    enemy_condition = targets_dict[target][1].conditions[condition]
+    if above:
+      if enemy_condition >= condition_threshold:
+        return commands
+    else:
+      if enemy_condition <= condition_threshold:
+        return commands
+    return else_commands
+  return if_enemy_condition_generator
 
 def if_spell_charges(spell_charges, commands, above=True):
   def if_spell_charges_generator(encounter, targets_dict):

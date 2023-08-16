@@ -180,17 +180,15 @@ class Spellbook:
     self.current_page_idx = (self.current_page_idx + 1) % len(self.pages)
     play_sound("page-flip-1.mp3")
 
-  def render(self):
+  def render(self, editing_page_idx=None):
     rendered = ""
     for i, page in enumerate(self.pages):
-      rendered += f"Page {i + 1}:\n" + page.render() + "\n"
+      header = f"Page {i + 1}:"
+      if editing_page_idx is not None and i == editing_page_idx:
+        header = header + colored(" [EDITING]", "magenta")
+      rendered += f"{header}\n" + page.render() + "\n"
     return rendered
   
   def render_current_page(self):
     return f"Current Page ({self.current_page_idx + 1}):\n" + self.current_page.render()
 
-  def render_archive(self):
-    render_str = ""
-    for i, page in enumerate(self.archive):
-      render_str += f"Page {i + 1}:\n" + page.render() + "\n"
-    return render_str

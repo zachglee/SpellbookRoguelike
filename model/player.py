@@ -5,7 +5,7 @@ from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
-from model.item import EnergyPotion, MeleeWeapon
+from model.item import CustomItem, EnergyPotion
 from utils import choose_binary, colorize, numbered_list, choose_obj, energy_colors
 from sound_utils import play_sound
 from content.rituals import rituals
@@ -16,17 +16,19 @@ from model.event import Event
 class Player(CombatEntity):
   def __init__(self, hp, name, spellbook, inventory, library,
                signature_spell=None, signature_color=None, starting_inventory=None,
-               aspiration=None, starting_weapon=None):
+               aspiration=None, personal_destination=None, starting_weapon=None,
+               home_column=0):
     super().__init__(hp, name)
+
+    # Combat stuff
     self.spellbook = spellbook
     self.inventory = inventory
-    self.resources = defaultdict(lambda: 0)
     self.rituals = []
     self.time = 4
     self.facing = "front"
     self.explored = 1
 
-    #
+    # Meta state
     self.signature_spell = signature_spell
     self.signature_color = signature_color
     self.library = library
@@ -36,16 +38,22 @@ class Player(CombatEntity):
     if starting_weapon:
       self.starting_inventory.append(starting_weapon)
     self.material = 0
-    self.request = None
+    self.home_column = home_column
+    self.current_column = home_column
 
-    # 
-    self.capacity = 5
+    self.capacity = 8 # meant to be for inventory but not used right now
     self.library_capacity = 8
     self.level = 0
     self.experience = 0
-    self.aspiration = aspiration
     self.wounds = 0
     self.seen_items = []
+
+    # character role playing
+    self.personal_item = None
+    self.request = None
+    self.aspiration_statement = ""
+    self.aspiration = aspiration
+    self.personal_destination = personal_destination
 
   def total_energy(self, colors=energy_colors):
     player_energy = sum(self.conditions[color] for color in colors)
@@ -139,8 +147,22 @@ class Player(CombatEntity):
       elif self.level == 10:
         self.gain_signature_item()
 
+  def choose_personal_item(self):
+    item_description = input(colored(f"What item of personal significance does {self.name} bring with them on this journey? > ", "magenta"))
+    item_name = input(colored(f"Give it a name: ", "magenta"))
+    return CustomItem(item_name, 1, item_description, use_commands=["time -2"], personal=True)
+
+  def choose_aspiration(self):
+    self.aspiration_statement = input(colored(f"What does {self.name} aspire to? > ", "magenta"))
+
+  def prompt_personal_destination(self):
+    region_idx, layer_idx, node_idx = self.personal_destination
+    print(colored(f"Region {region_idx}, Node ({layer_idx}, {node_idx}) is of signifigance to you.", "magenta"))
+    input(colored("What do you hope to find there? > ", "magenta"))
 
   def init(self, spell_pool, new_character=False):
+    personal_item = self.choose_personal_item()
+
     print(numbered_list(self.starting_item_pool))
     chosen_weapon = choose_obj(self.starting_item_pool, "which weapon will you take > ")
     play_sound("inventory.mp3")
@@ -150,6 +172,10 @@ class Player(CombatEntity):
     # draft starting library
     if new_character:
       draft_player_library(self, spell_pool)
+
+    # NOTE: Leave these commented until I can find a good way to incorporate them
+    # self.choose_aspiration()
+    # self.prompt_personal_destination()
 
     # recharge signature spells to max
     for library_spell in self.library:
@@ -161,6 +187,7 @@ class Player(CombatEntity):
 
     inventory = deepcopy(self.starting_inventory)
     inventory.append(deepcopy(chosen_weapon))
+    inventory.append(personal_item)
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
@@ -191,14 +218,11 @@ class Player(CombatEntity):
 
   def render(self):
     entity_str = super().render()
+    time_str = '.' * self.time
+    triggers_str = colored("!" * len(self.event_triggers), "green")
     return entity_str.replace(self.name, f"[{self.level_progress_str}"
                                          f"{colored(',' * self.wounds, 'red')}] "
-                                         f"{self.name} ({'.' * self.time})")
-
-  def render_resources(self):
-    resource_strs = [f"- {k}: {v}" for k, v in self.resources.items()]
-    resources_str = "\n".join(resource_strs)
-    return colorize(resources_str)
+                                         f"{self.name} ({time_str}{triggers_str})")
   
   def render_rituals(self):
     render_str = "-------- PLAYER RITUALS --------\n"

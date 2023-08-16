@@ -20,12 +20,14 @@ class CombatEntity:
     self.events = []
     self.dead = False
     self.resurrected = False
+    self.event_triggers = []
 
     # combat bookkeeping
     self.damage_taken_this_turn = 0
     self.damage_survived_this_turn = 0
     self.face_count = 0 # relevant for player only
     self.spawned_turn = None # relevant for enemies only
+      
 
 
   def is_player(self):
@@ -139,12 +141,13 @@ class CombatEntity:
       final_damage = 0
 
     # if final_damage > 0:
-    self.assign_damage(target.conditions["retaliate"], increment_damage_survived=False)
-    damage_dealt = target.assign_damage(final_damage)
+    self.assign_damage(target.conditions["retaliate"], source=target)
+    damage_dealt = target.assign_damage(final_damage, source=self, increment_damage_survived=False)
     if lifesteal:
       self.heal(damage_dealt)
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
     self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target, "attacker": self}))
+    print(f"------- BEFORE INCREMENT {target.name} Damage survived: {target.damage_survived_this_turn}")
     target.damage_survived_this_turn += final_damage
     print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
@@ -163,7 +166,7 @@ class CombatEntity:
 
     return damage_dealt
 
-  def assign_damage(self, damage, increment_damage_survived=True) -> int:
+  def assign_damage(self, damage, source=None, increment_damage_survived=True) -> int:
     damage_to_encase = min(damage, self.conditions["encase"])
     self.conditions["encase"] -= damage_to_encase
     damage_after_encase = damage - damage_to_encase
@@ -186,6 +189,12 @@ class CombatEntity:
       taken_damage = min(taken_damage, remaining_potential_damage)
 
     self.suffer(taken_damage, increment_damage_survived=increment_damage_survived)
+
+    # create events for triggers
+    if ((damage_to_block > 0 and self.conditions["block"] == 0) or
+       (damage_to_shield > 0 and self.conditions["shield"] == 0) or
+       (damage_to_encase > 0 and self.conditions["encase"] == 0)):
+      self.events.append(Event(["defense_break"], metadata={"target": self, "source": source}))
 
     return taken_damage
 
@@ -228,13 +237,21 @@ class CombatEntity:
     self.damage_survived_this_turn = 0
     self.damage_taken_this_turn = 0
     self.face_count = 0
+
+    # Tick down event trigger durations
+    for event_trigger in self.event_triggers:
+      if event_trigger.turns_remaining != None:
+        event_trigger.turns_remaining -= 1
+    self.event_triggers = [et for et in self.event_triggers if not et.finished]
+    # self.event_triggers = [et for et in self.event_triggers if
+    #                        (et.turns_remaining is None or et.turns_remaining > 0) and
+    #                        (et.triggers_remaining is None or et.triggers_remaining) > 0]
+
     # zero out
     self.conditions["block"] = 0
     self.conditions["evade"] = 0
     
     # progress conditions
-    # self.conditions["burn"] = max(self.conditions["burn"] - 1, 0)
-    # self.conditions["regen"] = max(self.conditions["regen"] - 1, 0)
     self.conditions["stun"] = max(self.conditions["stun"] - 1, 0)
     self.conditions["inventive"] = max(self.conditions["inventive"] - 1, 0)
     self.conditions["vulnerable"] = max(self.conditions["vulnerable"] - 1, 0)

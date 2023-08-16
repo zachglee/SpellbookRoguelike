@@ -5,11 +5,9 @@ from utils import choose_obj, numbered_list, choose_idx
 from sound_utils import play_sound
 from generators import generate_library_spells
 
-def render_spell_draft(player, archive=False):
+def render_spell_draft(player, editing_page_idx):
     print("-------- Current Spellbook --------")
-    print(player.spellbook.render())
-    if archive:
-      print(player.spellbook.render_archive())
+    print(player.spellbook.render(editing_page_idx=editing_page_idx))
     if player.library:
       print(player.render_library())
 
@@ -33,15 +31,20 @@ def destination_draft(player, destination_node):
   first_spell = SpellbookSpell(destination_node.safehouse.library[0].spell)
   second_spell = SpellbookSpell(destination_node.safehouse.library[1].spell)
   player.spellbook.pages = [SpellbookPage([first_spell]), SpellbookPage([second_spell])]
-  edit_page_from_inventory(player, 1)
-  edit_page_from_inventory(player, 2)
+  for i in range(destination_node.num_pages):
+    edit_page_from_inventory(player, i+1, page_capacity=destination_node.page_capacity)
 
 
-def edit_page_from_inventory(player, page_number):
+def edit_page_from_inventory(player, page_number, page_capacity=3):
   active_page = player.spellbook.pages[page_number - 1]
-  while len(active_page.spells) < 3:
-    render_spell_draft(player)
-    library_spell = choose_obj(player.library, f"add spell to page {page_number} > ")
+  while len(active_page.spells) < page_capacity:
+    render_spell_draft(player, editing_page_idx=page_number-1)
+    capacity_str = f"({len(active_page.spells) + 1} of {page_capacity})"
+    if len(active_page.spells) + 1 == page_capacity:
+      capacity_str = colored(capacity_str, "red")
+    else:
+      capacity_str = colored(capacity_str, "green")
+    library_spell = choose_obj(player.library, f"add spell to page {page_number} {capacity_str} > ")
     if library_spell is None:
       break
     if library_spell.copies_remaining <= 0:
