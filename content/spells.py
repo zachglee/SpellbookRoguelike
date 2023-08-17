@@ -99,9 +99,9 @@ red_random_target = [
         raw_commands=["sharp p 2", "delay 0 sharp p -2", "vulnerable a 2"]),
   Spell("Deal 12 damage to any target.", color="red", type="Consumer", raw_commands=["damage _ 12"])],
   #
-  [Spell("At turn start, inflict 2 poison on a random enemy", color="red", type="Passive",
-          triggers_on=passive_turn_start, raw_commands=["poison r 2"]),
-  Spell("deal 1 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 1", "damage r 1"]),
+  [Spell("At turn start, inflict 3 poison on a random enemy", color="red", type="Passive",
+          triggers_on=passive_turn_start, raw_commands=["poison r 3"]),
+  Spell("deal 2 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 2", "damage r 2"]),
   Spell("Inflict 6 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 6"]),
   Spell("Gain 4 regen and 4 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 4", "vulnerable p 4"])]
 ]
@@ -113,16 +113,16 @@ red_spells = sum(red_pages, [])
 # Blue Color Identity
 
 blue_block_hits = [
-  [Spell("When you’re attacked and take no damage, deal 5 damage to attacker and block 1.", color="blue", type="Passive",
-         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 5", "block p 1"]),
+  [Spell("When you’re attacked and take no damage, deal 6 damage to attacker and block 1.", color="blue", type="Passive",
+         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 6", "block p 1"]),
   Spell("gain 1 block per enemy.", color="blue", type="Producer",
         generate_commands_pre=for_enemies(["block p *"])),
   Spell("Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
   Spell("Gain 8 armor this turn.", color="blue", type="Consumer",
         raw_commands=["armor p 8", "delay 0 armor p -8"])],
   #
-  [Spell("When you’re attacked and take no damage, gain 2 retaliate.", color="blue", type="Passive",
-         triggers_on=passive_attacked_for_no_damage, raw_commands=["retaliate p 2"]),
+  [Spell("When you’re attacked and take no damage, gain 3 retaliate and block 1", color="blue", type="Passive",
+         triggers_on=passive_attacked_for_no_damage, raw_commands=["retaliate p 3", "block p 1"]),
   Spell("gain 1 block and Break: deal 6 damage to attacker.", color="blue", type="Producer", raw_commands=["block p 1", "break damage ^ 6"]),
   Spell("Block 5. Deal 4 damage.", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 5", "damage _ 4"]),
   # TODO: implement the damage scaling part

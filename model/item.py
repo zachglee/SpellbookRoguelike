@@ -59,6 +59,7 @@ class EnergyPotion(Item):
     self.time_cost = 1
     self.personal = False
     self.rare = False
+    self.name = f"{self.energy_color.title()} Potion"
 
   def use(self, encounter):
     encounter.player.conditions[self.energy_color] += self.energy_amount

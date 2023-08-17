@@ -173,7 +173,7 @@ class Region:
     self.nodes.append(boss_layer)
     
     # 
-    self.current_node = None
+    self.current_node: Node = None
     self.destination_node = None
     self.player = None
 
@@ -254,19 +254,21 @@ class Region:
       routes = [self.get_route_for_node(node.layer, node.column) for node in  proximal_nodes[:2]]
     
     done_exploring = False
+    explore_cost = 1
     while True:
       # render the routes
       print(player.render_library() + "\n")
       for node, encounter in routes:
         print(node.render())
         print()
-      still_exploring = choose_binary(colored("Explore more? (Costs 1hp)", "red"))
+      still_exploring = choose_binary(colored(f"Explore more? (Costs {explore_cost}hp)", "red"))
       if still_exploring:
         route_nodes = [route[0] for route in  routes]
         discoverable_nodes = [node for node in next_layer if node not in route_nodes]
         route_node = random.choice(discoverable_nodes)
         routes.append(self.get_route_for_node(route_node.layer, route_node.column))
-        player.hp -= 1
+        player.hp -= explore_cost
+        explore_cost += 1
       else:
         break
     return routes
@@ -404,7 +406,7 @@ class Map:
         player.inspect()
         self.current_region_idx = region.position
         self.current_region.current_node = starting_node
-        if region.position == 0 and starting_node.position == (0, 0):
+        if region.position == 0 and starting_node.position[0] == 0:
           player.init(spell_pool=self.current_region.spell_pool)
     else:
       print("Starting a new character...")
@@ -440,36 +442,41 @@ class Map:
 
   def inspect(self):
     print(self.current_region.render())
-    last_inspected = self.current_region
+    last_inspected_region = self.current_region
+    last_inspected_node = self.current_region.current_node
     while (cmd := input("inspect the map > ")) != "done":
       cmd_tokens = cmd.split(" ")
       try:
         if cmd_tokens[0] == "region":
           idx = int(cmd_tokens[1]) - 1
           print(self.regions[idx].render())
-          last_inspected = self.regions[idx]
+          last_inspected_region = self.regions[idx]
         elif cmd_tokens[0] == "node":
-          region = last_inspected
+          region = last_inspected_region
           layer_idx = int(cmd_tokens[1])
           column_idx = int(cmd_tokens[2])
           print(region.nodes[layer_idx][column_idx].render())
+          last_inspected_node = region.nodes[layer_idx][column_idx]
+        elif cmd_tokens[0] == "character":
+          character_idx = int(cmd_tokens[1]) - 1
+          last_inspected_node.safehouse.resting_characters[character_idx].inspect()
         elif cmd_tokens[0] == "start":
-          region = last_inspected
+          region = last_inspected_region
           layer_idx = int(cmd_tokens[1])
           column_idx = int(cmd_tokens[2])
           node = region.nodes[layer_idx][column_idx]
           return region, node
         elif cmd == "log":
           print(self.render_log())
-        elif cmd in ["view", "v"] and isinstance(last_inspected, Region):
-          last_inspected.enemy_view = not last_inspected.enemy_view
-          print(last_inspected.render())
+        elif cmd in ["view", "v"] and isinstance(last_inspected_region, Region):
+          last_inspected_region.enemy_view = not last_inspected_region.enemy_view
+          print(last_inspected_region.render())
         elif cmd == "new character":
           return self.regions[0], None
       except (KeyError, IndexError, ValueError, TypeError) as e:
         print(e)
     
   def render_log(self) -> str:
-    render_str = "-------- World Log --------"
-    render_str += "\n\n".join([f"{i+1} - {entry[0]}: {entry[1]}" for i, entry in enumerate(self.log_entries)])
+    render_str = "-------- World Log --------\n"
+    render_str += "\n\n".join([f"{i+1} - {entry[1]}: {entry[0]}" for i, entry in enumerate(self.log_entries)])
     return colored(render_str, "magenta")

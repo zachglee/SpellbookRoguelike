@@ -41,8 +41,8 @@ class Player(CombatEntity):
     self.home_column = home_column
     self.current_column = home_column
 
-    self.capacity = 8 # meant to be for inventory but not used right now
-    self.library_capacity = 8
+    self.inventory_capacity = 10 # meant to be for inventory but not used right now
+    self.library_capacity = 10
     self.level = 0
     self.experience = 0
     self.wounds = 0
@@ -163,15 +163,15 @@ class Player(CombatEntity):
   def init(self, spell_pool, new_character=False):
     personal_item = self.choose_personal_item()
 
-    print(numbered_list(self.starting_item_pool))
-    chosen_weapon = choose_obj(self.starting_item_pool, "which weapon will you take > ")
-    play_sound("inventory.mp3")
-
     starting_spellbook = Spellbook(pages=[])
     
     # draft starting library
     if new_character:
       draft_player_library(self, spell_pool)
+
+    print(numbered_list(self.starting_item_pool))
+    chosen_weapon = choose_obj(self.starting_item_pool, "which weapon will you take > ")
+    play_sound("inventory.mp3")
 
     # NOTE: Leave these commented until I can find a good way to incorporate them
     # self.choose_aspiration()
@@ -240,6 +240,7 @@ class Player(CombatEntity):
     return render_str
   
   def inspect(self):
+    print(self.render_rituals())
     print(self.render_inventory())
     print(self.render_library())
     print(self.render())

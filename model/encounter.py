@@ -276,11 +276,16 @@ class Encounter:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(minor_energy_potions))
       input(colored("Something useful glints in the torchlight...", "green"))
-    elif r < 0.16 and len(self.unique_items) > 0:
+    elif r < 0.16:
       play_sound("explore-find.mp3")
-      found_item = random.choice(self.unique_items)
-      self.unique_items.remove(found_item)
-      input(colored("This belonged to a past delver...", "green"))
+      if len(self.unique_items) > 0:
+        found_item = random.choice(self.unique_items)
+        self.unique_items.remove(found_item)
+        input(colored("This belonged to a past delver...", "green"))
+      else:
+        self.player.material += 1
+        input(colored(f"You found some material! Now you have {self.player.material}", "green"))
+        return
     else:
       found_item = None
       print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))

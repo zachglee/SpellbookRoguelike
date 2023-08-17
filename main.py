@@ -235,9 +235,13 @@ class GameState:
     self.map.current_region.current_node = self.map.current_region.destination_node
     if not self.map.current_region.current_node.boss:
       self.player.current_column = self.map.current_region.current_node.position[1]
-    if encounter != "navigate":
+    if encounter != "navigate": # Fight case
+      self.player.material += 1
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=2, spell_pool=self.map.current_region.spell_pool)
+      if not self.map.current_region.current_node.boss:
+        self.map.current_region.current_node.safehouse.build_phase(self.player)
+    else: # Navigate case
       # progress rituals due to ambient energy
       for ritual in self.player.rituals:
         if ritual.energy_color == self.map.current_region.current_node.ambient_energy:
@@ -245,14 +249,13 @@ class GameState:
         print(f"{ritual.name} progressed!")
         input(ritual.render())
         break
-    else:
       safehouse_library_draft(self.player, self.map.current_region.current_node.safehouse,
                               copies=1, spell_pool=self.map.current_region.spell_pool)
     self.map.current_region.current_node.prompt_flavor(self.player, "fight" if isinstance(encounter, Encounter) else "navigate")
     # Help out characters resting at this safehouse
     safehouse = self.map.current_region.current_node.safehouse
     for character in safehouse.resting_characters:
-      character.heal(4)
+      character.heal(5)
       print(self.player.render_library())
       print(f"{character.name} has requested: \"{character.request}\"")
       spell_to_give = choose_obj(self.player.library, f"Give a spell to {character.name}? > ")
@@ -264,10 +267,16 @@ class GameState:
         character.inventory.append(item_to_give)
         self.player.inventory.remove(item_to_give)
       self.player.experience += 20
-    self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
+    # self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
     self.save()
+
     # Choose to press onwards or rest
-    onwards = choose_binary("Press onwards or rest?", choices=["onwards", "rest"])
+    if safehouse.restable:
+      onwards = choose_binary("Press onwards?", choices=["onwards", "rest"])
+    else:
+      input("You press onwards...")
+      onwards = True
+
     if onwards:
       print("Onwards...")
       play_sound("onwards.mp3")
@@ -286,12 +295,12 @@ class GameState:
 
     safehouse = self.map.current_region.current_node.safehouse
     safehouse.resting_characters.append(self.player)
-    self.player.material += 1
-    self.player.heal(2)
+    self.player.heal(safehouse.rest_heal_amount)
+    safehouse.inventory_draft_phase(self.player)
     self.player.check_level_up()
 
-    # TODO: add a way to level up the safehouse
-    safehouse.build_phase(self.player)
+    # TODO: this happens elsewhere now
+    # safehouse.build_phase(self.player)
 
     self.player.request = input("Broadcast a message to fellow Delvers? >")
     self.save()
@@ -304,6 +313,7 @@ class GameState:
 
   def end_run(self):
     self.map.end_run()
+    self.player.library = [ls for ls in self.player.library if ls.copies_remaining > 0 or ls.signature]
     self.prompt_log()
     self.save()
 
@@ -319,7 +329,7 @@ class GameState:
     self.end_run()
 
 gs = GameState()
-gs.init()
-# gs.init(map_file="saves/map.pkl")
+# gs.init()
+gs.init(map_file="saves/map.pkl")
 # gs.init(map_file="saves/map.pkl", character_file="saves/Kite.pkl")
 gs.play()
