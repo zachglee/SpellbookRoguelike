@@ -23,7 +23,7 @@ class Ritual:
     return self.progress >= self.required_progress
 
   def progressor(self, encounter):
-    while self.progress < self.required_progress and encounter.player.conditions[self.energy_color] > 0:
+    while encounter.player.conditions[self.energy_color] > 0:
       encounter.player.conditions[self.energy_color] -= 1
       self.progress += 1
 

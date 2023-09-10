@@ -1,4 +1,5 @@
 import random
+from typing import List
 from termcolor import colored
 import re
 
@@ -30,10 +31,16 @@ def colorize(s):
     s = s.replace(target_str, colored(target_str, color))
   return s
 
-def numbered_list(l) -> str:
-  return "\n".join(f"{i + 1} - {item.render()}" for i, item in enumerate(l))
+def flex_render(item):
+  if isinstance(item, (tuple, list)):
+    return str(item)
+  else:
+    return item.render()
 
-def aligned_line(line_items, column_width=25):
+def numbered_list(l) -> str:
+  return "\n".join(f"{i + 1} - {flex_render(item)}" for i, item in enumerate(l))
+
+def aligned_line(line_items, column_width=30):
   padded_line_items = []
   for line in line_items:
     true_length = len(without_ansi_escapes(line))
@@ -47,10 +54,10 @@ def aligned_line(line_items, column_width=25):
 
 # choosing
 
-def choose_str(choices, prompt):
+def choose_str(choices: List[str], prompt):
   while True:
     try:
-      choice = input(prompt)
+      choice = input(str(choices) + " " + prompt)
       if choice == "done":
         return None
       if choice in choices:

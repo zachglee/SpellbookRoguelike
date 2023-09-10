@@ -4,7 +4,7 @@
 
 # conditionals
 
-from typing import Literal
+from typing import List, Literal
 
 
 def if_facing_none(commands):
@@ -130,9 +130,9 @@ def for_enemies(commands, magnitude_func=lambda x: x, specifier: Literal["total"
     return [cmd.replace("*", str(enemies_magnitude)) for cmd in commands]
   return for_enemies_generator
 
-def for_player_condition(condition, commands, magnitude_func=lambda x: x):
+def for_player_condition(conditions: List[str], commands, magnitude_func=lambda x: x):
   def for_player_condition_generator(encounter, targets_dict):
-    raw_condition_magnitude = encounter.player.conditions[condition]
+    raw_condition_magnitude = sum([encounter.player.conditions[condition] for condition in conditions], 0)
     processed_condition_magnitude = magnitude_func(raw_condition_magnitude)
     return [cmd.replace("*", str(processed_condition_magnitude)) for cmd in commands]
   return for_player_condition_generator

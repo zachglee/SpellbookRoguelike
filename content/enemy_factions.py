@@ -7,7 +7,7 @@ from content.command_generators import *
 factions = [
   Faction("Freed Automata", freed_automata,
     basic_items=[
-      CustomItem("Reinforced Plating", 3, "Gain 1 armor.", ["armor p 1"]),
+      CustomItem("Heavy Plating", 3, "Gain 1 armor.", ["armor p 1"], time_cost=2),
       CustomItem("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
@@ -16,7 +16,7 @@ factions = [
   ),
   Faction("Undying Legion", undying_legion,
     basic_items=[
-      CustomItem("Regrowing Shield", 2, "Gain 3 block and break: 3 block.", ["block p 3"]),
+      CustomItem("Regrowing Shield", 2, "Gain 3 block and break: 3 block.", ["block p 3", "break block p 3"]),
       CustomItem("Embalming Wraps", 2, "Gain 4 encase and 4 empower", ["encase p 4", "empower p 4"])
     ],
     special_items=[
@@ -34,7 +34,7 @@ factions = [
   ),
   Faction("Doombringers", doombringers,
     basic_items=[
-      CustomItem("Underdog's Defiance", 2, "Gain 1 sharp and 1 armor.", ["sharp p 1", "armor p 1"]),
+      CustomItem("Underdog's Defiance", 1, "Gain 1 sharp and 1 armor.", ["sharp p 1", "armor p 1"]),
       CustomItem("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
     ],
     special_items=[
@@ -56,7 +56,7 @@ factions = [
       CustomItem("Sacrifice Dagger", 2, "Suffer 2 and deal 10 damage to immediate", ["suffer p 2", "damage i 10"]),
     ],
     special_items=[
-      CustomItem("Imir Blood Ward", 1, "Suffer 5 and banish an enemy for 2 turns.", ["suffer p 5", "banish _ 2"], rare=True,)
+      CustomItem("Imir Blood Ward", 1, "Suffer 5 and banish an enemy for 2 turns.", ["suffer p 5", "banish _ 2"], rare=True)
     ]
   ),
   Faction("Mov's Horde", movs_horde,
@@ -65,7 +65,7 @@ factions = [
       CustomItem("Ichor of Undeath", 1, "Gain 4 enduring this turn.", ["enduring p 4", "delay 0 enduring p -4"]),
     ],
     special_items=[
-      CustomItem("Soul-Catcher Siphon", 1, "", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies
+      CustomItem("Soul-Catcher Siphon", 1, "Gain regen equal to # of dead enemies.", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies
     ]
   ),
   Faction("Company of Blades", company_of_blades,
@@ -101,7 +101,7 @@ factions = [
       CustomItem("Animate Armor", 2, "Gain 1 armor.", ["armor p 1"]),
     ],
     special_items=[
-      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 3 prolific, and 4 sharp.", ["armor p 2", "prolific p 3", "sharp p 4"], rare=True)
+      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 2 prolific, and 2 sharp.", ["armor p 2", "prolific p 2", "sharp p 2"], rare=True)
     ]
   ),
   Faction("Infernal Plane", infernal_plane,

@@ -392,6 +392,10 @@ class MultiAction(Action):
   def __init__(self, action_list):
     self.action_list = action_list
 
+  @property
+  def non_undying_action_list(self):
+    return [action for action in self.action_list if not involves_add_undying(action)]
+
   def act(self, actor, enc) -> List[Event]:
     events = []
     for action in self.action_list:

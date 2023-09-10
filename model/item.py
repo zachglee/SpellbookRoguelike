@@ -5,7 +5,10 @@ class Item:
   def __init__(self, charges, description):
     self.description = description
     self.charges = charges
+    self.max_charges = charges
     self.time_cost = 1
+    self.material_cost = None
+    self.belonged_to = None
 
   def use(self, encounter):
     pass
@@ -15,12 +18,13 @@ class Item:
   
 class CustomItem(Item):
   def __init__(self, name, charges, description, use_commands,
-               generate_commands_pre=lambda e, t: [], time_cost=1, rare=False, personal=False):
+               generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, rare=False, personal=False):
     super().__init__(charges, description)
     self.name = name
     self.use_commands = use_commands
     self.time_cost = time_cost
     self.generate_commands_pre = generate_commands_pre
+    self.material_cost = material_cost
     self.rare = rare
     self.personal = personal
 
@@ -34,7 +38,8 @@ class CustomItem(Item):
     self.charges -= 1
 
   def render(self):
-    return colorize(f"{self.name} ({self.charges}): {self.description}")
+    belonged_to_str = f"{self.belonged_to}'s " if self.belonged_to else ""
+    return colorize(f"{belonged_to_str}{self.name} ({self.charges}): {self.description}")
 
 class SpellPotion(Item):
   def __init__(self, spell):

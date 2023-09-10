@@ -57,7 +57,8 @@ class Spell:
       processed_command = cmd
       for placeholder, (target, _) in chosen_targets.items():
         processed_command = processed_command.replace(placeholder, target)
-      processed_command = processed_command.replace("^", str(trigger_output))
+      if trigger_output != None:
+        processed_command = processed_command.replace("^", str(trigger_output))
       encounter.handle_command(processed_command)
 
     # generate and execute commands post main execution (for effects like 'if this kills')
@@ -90,11 +91,12 @@ class Spell:
     return self.description
 
 class LibrarySpell:
-  def __init__(self, spell: Spell, copies=3, signature=False):
+  def __init__(self, spell: Spell, copies=3, signature=False, in_archive=False):
     self.spell = spell
     self.signature = signature
     self.copies_remaining = copies
     self.max_copies_remaining = copies
+    self.in_archive = in_archive
   
   def render(self):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
@@ -109,6 +111,8 @@ class LibrarySpell:
     copies_remaining_part = f"[{self.copies_remaining}/{self.max_copies_remaining}]"
     if self.signature:
       copies_remaining_part = colored(copies_remaining_part, "magenta")
+    if self.copies_remaining <= 0:
+      copies_remaining_part = colored(copies_remaining_part, "red")
     return f"{copies_remaining_part} {rendered_str}"
 
 class SpellbookSpell:
@@ -159,7 +163,6 @@ class Spellbook:
   def __init__(self, pages):
     self.pages = pages
     self.current_page_idx = 0
-    self.archive = []
 
   @property
   def spells(self):
@@ -170,7 +173,7 @@ class Spellbook:
 
   @property
   def all_pages(self):
-    return self.pages + self.archive
+    return self.pages
 
   @property
   def current_page(self):

@@ -9,10 +9,10 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from model.combat_entity import CombatEntity
 from model.event import Event
-from content.enemy_actions import AddConditionAction, NothingAction, involves_add_undying
+from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
 from content.rituals import rituals
-from content.items import starting_weapons, minor_energy_potions
-from utils import energy_colors, colorize, get_combat_entities, choose_idx, get_spell
+from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
+from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list
 from sound_utils import play_sound
 
 
@@ -40,6 +40,7 @@ class EnemySet:
     self.enemy_spawns = enemy_spawns
     self.experience = exp or 15
     self.faction = faction
+    self.level = 0
   
   @property
   def instantiated_enemy_spawns(self):
@@ -49,6 +50,18 @@ class EnemySet:
       # instantiated_enemy.faction = self.faction
       enemy_spawns.append(EnemySpawn(es.turn, es.side, instantiated_enemy))
     return enemy_spawns
+
+  def level_up(self):
+    for es in self.enemy_spawns:
+      es.enemy.hp = math.ceil(es.enemy.hp * 1.25)
+      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.25)
+    self.level += 1
+
+  def render(self):
+    return f"{self.name}"
+
+  def __repr__(self):
+    return f"{self.name}"
 
 class EnemyWave:
   def __init__(self, enemy_sets, delay=0):
@@ -68,7 +81,7 @@ class Encounter:
   def __init__(self, waves, player, ambient_energy=None, basic_items=[], special_items=[], unique_items=[], boss=False):
     self.waves = waves
     self.rituals = []
-    self.ambient_energy = ambient_energy or random.choice(energy_colors)
+    self.ambient_energy = ambient_energy or random.choice(["red", "blue", "gold"])
     self.boss = boss
     self.enemy_spawns = []
     self.basic_items = basic_items
@@ -241,6 +254,8 @@ class Encounter:
     self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
 
   def banish(self, target, ward=0):
+    if target is None:
+      return
     idx = target.position(self)
     if target in self.back:
       self.back.pop(idx)
@@ -265,27 +280,18 @@ class Encounter:
     play_sound("explore.mp3")
     self.player.explored += 1
     r = random.random()
-    if r < 0.02:
+    found_item = None
+    if r < 0.01:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(self.special_items))
       input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"))
-    elif r < 0.08:
+    elif r < 0.05:
       found_item = deepcopy(random.choice(self.basic_items))
       input(colored("Something useful glints in the torchlight...", "green"))
-    elif r < 0.13:
+    elif r < 0.10:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(minor_energy_potions))
       input(colored("Something useful glints in the torchlight...", "green"))
-    elif r < 0.16:
-      play_sound("explore-find.mp3")
-      if len(self.unique_items) > 0:
-        found_item = random.choice(self.unique_items)
-        self.unique_items.remove(found_item)
-        input(colored("This belonged to a past delver...", "green"))
-      else:
-        self.player.material += 1
-        input(colored(f"You found some material! Now you have {self.player.material}", "green"))
-        return
     else:
       found_item = None
       print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
@@ -314,7 +320,6 @@ class Encounter:
         if self.player.time >= item.time_cost:
           self.player.spend_time(cost=item.time_cost)
           item.use(self)
-          self.dropped_items += [item for item in self.player.inventory if item.charges == 0 and item.personal]
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
         else:
@@ -324,6 +329,8 @@ class Encounter:
         self.explore()
       elif cmd == "face?":
         self.player.switch_face(event=False)
+      elif cmd == "face!":
+        self.player.switch_face()
       elif cmd == "face":
         self.player.spend_time()
         self.player.switch_face()
@@ -332,6 +339,8 @@ class Encounter:
         self.player.spellbook.switch_page()
         self.events.append(Event(["page"]))
       elif cmd == "page?":
+        self.player.spellbook.switch_page()
+      elif cmd == "page!":
         self.player.spellbook.switch_page()
         self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
@@ -444,8 +453,22 @@ class Encounter:
       time -= slow_applied
       self.player.conditions["slow"] -= slow_applied
     self.player.time = time
-    self.events.append(Event(["begin_turn"]))
+    if self.turn > 0:
+      self.events.append(Event(["begin_turn"]))
     self.resolve_events()
+
+  # Phases
+
+  def init_with_player(self, player):
+    self.player = player
+    self.player.conditions[self.ambient_energy] += 1
+    activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
+    if activable_rituals:
+      print(numbered_list(activable_rituals))
+      chosen_ritual = choose_obj(activable_rituals, "Choose a ritual to activate: ")
+      if chosen_ritual:
+        self.rituals = [chosen_ritual]
+        chosen_ritual.progress -= chosen_ritual.required_progress
 
   def upkeep_phase(self):
     # begin new round
@@ -478,8 +501,11 @@ class Encounter:
         destination.append(enemy)
         enemy.spawned = True
         enemy.spawned_turn = self.turn
-        skip_undying = (enemy.resurrected and involves_add_undying(enemy.entry)) 
-        if not skip_undying:
+        if enemy.resurrected and involves_add_undying(enemy.entry):
+          if isinstance(enemy.entry, MultiAction):
+            for action in enemy.entry.non_undying_action_list:
+              self.events += action.act(enemy, self)
+        else:
           self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     self.player_upkeep()
@@ -496,16 +522,18 @@ class Encounter:
       print(f"{faced[0].name} took {damage} damage from searing presence!")
       play_sound("tick-searing.mp3")
     # add end_turn event
-    self.events.append(Event(["end_turn"]))
+    if self.turn > 0:
+      self.events.append(Event(["end_turn"]))
     self.resolve_events()
     # recharge random spell
-    recharge_candidates = [sp for sp in self.player.spellbook.spells
-                          if sp.charges < sp.max_charges and
-                          sp.spell.type != "Passive" and
-                          "Unrechargeable" not in sp.spell.description and
-                          sp.echoing is None]
-    if len(recharge_candidates) > 0:
-      random.choice(recharge_candidates).recharge()
+    if self.turn > 0:
+      recharge_candidates = [sp for sp in self.player.spellbook.spells
+                            if sp.charges < sp.max_charges and
+                            sp.spell.type != "Passive" and
+                            "Unrechargeable" not in sp.spell.description and
+                            sp.echoing is None]
+      if len(recharge_candidates) > 0:
+        random.choice(recharge_candidates).recharge()
     # unexhaust all spells
     for spell in self.player.spellbook.spells:
       spell.exhausted = False
@@ -517,6 +545,7 @@ class Encounter:
       if enemy.conditions["stun"] <= 0:
         self.events += enemy.action.act(enemy, self)
       else:
+        enemy.conditions["stun"] = max(enemy.conditions["stun"] - 1, 0)
         print(f"{enemy.name} is stunned!")
     self.resolve_events()
 
@@ -527,7 +556,8 @@ class Encounter:
         self.handle_command(cmd)
 
   def round_end_phase(self):
-    self.events.append(Event(["end_round"]))
+    if self.turn > 0:
+      self.events.append(Event(["end_round"]))
     self.resolve_events()
     for entity in self.combat_entities:
       entity.end_round()
@@ -542,11 +572,19 @@ class Encounter:
     self.upkeep_phase()
 
   def end_encounter(self):
+
     # progress rituals
     for ritual in self.player.rituals:
       ritual.progressor(self)
       print(f"{ritual.name} progressed!")
       input(ritual.render())
+
+    # If you have 3 excess energy of one color, turn it into a potion
+    for color in energy_colors:
+      if self.player.conditions[color] >= 3:
+        self.player.inventory.append(deepcopy(minor_energy_potions_dict[color]))
+        self.player.conditions[color] -= 3
+        input(f"Converted 3 {color} energy into a potion!")
 
     experience_gained = 0
     for es in self.enemy_sets:

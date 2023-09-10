@@ -140,11 +140,11 @@ class CombatEntity:
       target.conditions["evade"] -= 1
       final_damage = 0
 
-    # if final_damage > 0:
+    potential_lifesteal = target.hp
     self.assign_damage(target.conditions["retaliate"], source=target)
     damage_dealt = target.assign_damage(final_damage, source=self, increment_damage_survived=False)
     if lifesteal:
-      self.heal(damage_dealt)
+      self.heal(min(damage_dealt, potential_lifesteal))
     print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
     self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target, "attacker": self}))
     print(f"------- BEFORE INCREMENT {target.name} Damage survived: {target.damage_survived_this_turn}")
@@ -243,16 +243,12 @@ class CombatEntity:
       if event_trigger.turns_remaining != None:
         event_trigger.turns_remaining -= 1
     self.event_triggers = [et for et in self.event_triggers if not et.finished]
-    # self.event_triggers = [et for et in self.event_triggers if
-    #                        (et.turns_remaining is None or et.turns_remaining > 0) and
-    #                        (et.triggers_remaining is None or et.triggers_remaining) > 0]
 
     # zero out
     self.conditions["block"] = 0
     self.conditions["evade"] = 0
     
     # progress conditions
-    self.conditions["stun"] = max(self.conditions["stun"] - 1, 0)
     self.conditions["inventive"] = max(self.conditions["inventive"] - 1, 0)
     self.conditions["vulnerable"] = max(self.conditions["vulnerable"] - 1, 0)
     self.conditions["dig"] = max(self.conditions["dig"] - 1, 0)

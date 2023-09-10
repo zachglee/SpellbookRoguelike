@@ -11,16 +11,15 @@ def render_spell_draft(player, editing_page_idx):
     if player.library:
       print(player.render_library())
 
-def draft_player_library(player, spell_pool, randoms=1, picks=2, choices_per_pick=2):
+def draft_player_library(player, spell_pool, randoms=1, picks=2, options_per_pick=2):
   # Get random spells from pool
   random_spells = generate_library_spells(randoms, spell_pool=spell_pool, copies=2)
   player.library += random_spells
   print(player.render_library())
   # Get picks from pool
-  all_choices = generate_library_spells(picks * choices_per_pick, spell_pool=spell_pool, copies=1)
+  all_choices = generate_library_spells(picks * options_per_pick, spell_pool=spell_pool, copies=1)
   for i in range(picks):
-    # Choose 1 of 2 spells
-    choices = all_choices[i * choices_per_pick : (i + 1) * choices_per_pick]
+    choices = all_choices[i * options_per_pick : (i + 1) * options_per_pick]
     print("---\n" + numbered_list(choices))
     choice = choose_obj(choices, "Which spell have you been studying > ")
     if choice:
@@ -34,6 +33,11 @@ def destination_draft(player, destination_node):
   for i in range(destination_node.num_pages):
     edit_page_from_inventory(player, i+1, page_capacity=destination_node.page_capacity)
 
+def encounter_draft(player, encounter, num_pages=2, page_capacity=3):
+  play_sound("build-spellbook.mp3")
+  player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
+  for i in range(num_pages):
+    edit_page_from_inventory(player, i+1, page_capacity=page_capacity)
 
 def edit_page_from_inventory(player, page_number, page_capacity=3):
   active_page = player.spellbook.pages[page_number - 1]
@@ -56,16 +60,28 @@ def edit_page_from_inventory(player, page_number, page_capacity=3):
 
 def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
   print(player.render_library())
+
+  # If no space left in library, exit
   if len(player.library) >= player.library_capacity:
     input(colored("You have no space left in your library...", "red"))
     return
+
   choices = safehouse.library
   print("---\n" + numbered_list(choices))
+
+  # If no copies remain, replenish them and exit
+  if all([choice.copies_remaining <= 0 for choice in choices]):
+    for choice in choices:
+      choice.copies_remaining = choice.max_copies_remaining
+    input(colored("No copies remain... You spend your time here replenishing them.", "red"))
+    return
+  
   copied_spell = choose_obj(choices, colored("copy a spell to your library > ", "blue"))
-  if copied_spell:
+  if copied_spell and copied_spell.copies_remaining > 0:
     library_spell = LibrarySpell(copied_spell.spell, copies=copies)
     library_spell.copies_remaining = copies
     player.library.append(library_spell)
+    copied_spell.copies_remaining -= 1
 
     print(f"Copied: {copied_spell.render()}")
     play_sound("copy-spell.mp3")

@@ -18,12 +18,12 @@ enemies = {
   "Bat": Enemy(3, "Bat", AttackAction(1)),
   "Vampire": Enemy(20, "Vampire", AttackAction(8, lifesteal=True)),
   "Hawk": Enemy(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
-  "Hunter": Enemy(20, "Hunter", MultiAction([MoveAction(1), NearFarAction(AddConditionAction("armor", 1, "self"), AttackAction(10))])),
+  "Hunter": Enemy(20, "Hunter", NearFarAction(MultiAction([MoveAction(1), AddConditionAction("armor", 1, "self")]), AttackAction(10))),
   "Charging Ogre": Enemy(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
   "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
   "The Vulture": Enemy(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
   #
-  "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(2), AttackAction(1), 3)),
+  "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),
   "Decaying Corpse": Enemy(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
   "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
   "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
@@ -70,7 +70,7 @@ enemies = {
                               AttackAction(6),
                               AddConditionAction("gold", 1, "player"),
                               AddConditionAction("empower", 6, "player")])),
-  "Vengeful Mine": Enemy(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(6), AttackAction(5)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 4, "self")),
+  "Vengeful Mine": Enemy(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(3), AttackAction(6)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 3, "self")),
   "Bomber Zealot": Enemy(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
   "Grizzled Shieldmage": Enemy(10, "Grizzled Shieldmage",
                                NearFarAction(AttackAction(3),
@@ -120,7 +120,7 @@ enemies = {
   "Tithetaker": Enemy(25, "Tithetaker",
                       EnergyThresholdAction(
                           AddConditionAction("regen", 1, "player"),
-                          AttackAction(16, lifesteal=True), 5)),
+                          AttackAction(13, lifesteal=True), 6)),
   "Generous Sprite": Enemy(1, "Generous Sprite",
                          BackstabAction(
                              WindupAction(AddConditionAction("green", 1, "player"), 2),
@@ -148,7 +148,7 @@ enemies = {
   "Dreamstalker": Enemy(20, "Dreamstalker", BackstabAction(
       AddConditionAction("slow", 2, "player"),
       AttackAction(6))),
-  "Shadow of a Doubt": Enemy(16, "Shadow of a Doubt", BackstabAction(
+  "Shadow of a Doubt": Enemy(20, "Shadow of a Doubt", BackstabAction(
       AttackAction(6),
       AddConditionAction("vulnerable", 2, "player"))),
   "Mov, the Necromancer": Enemy(12, "Mov, the Necromancer",
@@ -157,7 +157,8 @@ enemies = {
         AddConditionAction("undying", 1, "immediate"),
       ]),
       entry=AddConditionAction("undying", 1, "all_enemies")),
-  "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), AddConditionAction("shield", 2, "self"))),
+  "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
+      AddConditionAction("shield", 2, "self"), AttackAction(1)]))),
   "Aegis Orb": Enemy(20, "Aegis Orb", AddConditionAction("armor", 1, "all_enemies")),
   "Defective Shieldbot": Enemy(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
@@ -172,7 +173,7 @@ enemies = {
   "Intrepid Bannerman": Enemy(15, "Intrepid Bannerman", AddConditionAction("empower", 4, "side"),
     entry=AddConditionAction("undying", 1, "self")),
   "Inquisitive Eye": Enemy(4, "Inquisitive Eye", CallAction(None, 1)),
-  "Collector's Cage": Enemy(4, "Collector's Cage", AddConditionAction("encase", 4, "player")),
+  "Collector's Cage": Enemy(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1, windup_action=AddConditionAction("encase", 4, "player"))),
   "Grasping Hand": Enemy(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
   "Collector of Bodies": Enemy(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
                                entry=AddConditionAction("encase", 16, "player")),
@@ -195,6 +196,8 @@ enemies = {
       NothingAction(), AddConditionAction("armor", 1, "player"), 2)),
 
   # Hoarding Dragons? Wound them and they go away. Or they go into neutral mode They interact with your items?
+  # more enemy design that favor's blue playstyle -- enemies that attack every other turn but have tons of health
+  #  so its not efficient to kill them, you just want to block them
   # Anti-mage faction? A lot of spellcast threshold stuff? Pro item
   # step-up faction? Little guys that get stronger as long as there are no higher maxhp enemies?
   # set up break on you and they hurt you extra when they break. (rewards you for full-blocking)
@@ -279,6 +282,7 @@ undying_legion = [
   ], faction="Undying Legion"),
   EnemySet("Intrepid Bannerman", [
     EnemySpawn(3, "f", enemies["Intrepid Bannerman"]),
+    EnemySpawn(4, "f", enemies["Conscript"])
   ], faction="Undying Legion")
 ]
 
