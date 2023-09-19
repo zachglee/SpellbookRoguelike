@@ -31,7 +31,7 @@ class EnemySpawn:
     self.turn = turn
     self.original_turn = turn # unaffected by ward
     self.side = side
-    self.enemy = enemy
+    self.enemy = deepcopy(enemy)
     self.wave = wave
 
 class EnemySet:
@@ -58,10 +58,16 @@ class EnemySet:
     self.level += 1
 
   def render(self):
-    return f"{self.name}"
+    return_str = f"{self.name}"
+    if self.level > 0:
+      return_str += colored(f" (Lv{self.level})", "red")
+    return return_str
 
   def __repr__(self):
-    return f"{self.name}"
+    return_str = f"{self.name}"
+    if self.level > 0:
+      return_str += colored(f" (Lv{self.level})", "red")
+    return return_str
 
 class EnemyWave:
   def __init__(self, enemy_sets, delay=0):

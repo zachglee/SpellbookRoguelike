@@ -11,7 +11,7 @@ factions = [
       CustomItem("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
-      CustomItem("Rebellious Core", 6, "Gain 1 retaliate.", ["retaliate p 1"], rare=True)
+      CustomItem("Rebellious Core", 5, "Gain 2 retaliate.", ["retaliate p 2"], rare=True)
     ]
   ),
   Faction("Undying Legion", undying_legion,
@@ -20,7 +20,7 @@ factions = [
       CustomItem("Embalming Wraps", 2, "Gain 4 encase and 4 empower", ["encase p 4", "empower p 4"])
     ],
     special_items=[
-      CustomItem("Ambrosia of the Undying", 1, "Gain 1 undying.", ["undying p 1"], rare=True)
+      CustomItem("Ambrosia of the Undying", 1, "Gain 2 undying.", ["undying p 2"], rare=True)
     ]
   ),
   Faction("The Collectors", the_collectors,
@@ -110,7 +110,7 @@ factions = [
       CustomItem("Summoning Circle", 4, "Gain 1 regen and call 1.", ["regen p 1", "call 1"])
     ],
     special_items=[
-      CustomItem("Demon's Blood", 1, "burn 3 self, gain 9 searing presence, 9 retaliate", ["burn p 3", "searing p 8", "retaliate p 8"], rare=True)
+      CustomItem("Demon's Blood", 1, "burn 3 self, gain 6 searing presence, 6 retaliate", ["burn p 3", "searing p 6", "retaliate p 6"], rare=True)
     ]
   ),
   Faction("Dominion of Drael", dominion_of_drael,

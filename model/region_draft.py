@@ -27,6 +27,12 @@ class RegionDraft:
   def special_items(self):
     return sum([faction.special_items for faction in self.factions], [])
 
+  def init(self):
+    self.enemyset_pool_idx = 0
+    self.spell_pool_idx = 0
+    random.shuffle(self.enemyset_pool)
+    random.shuffle(self.spell_pool)
+
   def generate_material_pick_option(self):
     if self.enemyset_pool_idx >= len(self.enemyset_pool):
       return None

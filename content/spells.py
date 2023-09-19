@@ -39,12 +39,12 @@ red_take_damage = [
 red_big_attack = [
   [Spell("Gain 1 red, 1 sharp, and 1 prolific for every 6 damage you survive each round.", color="red", type="Passive",
          triggers_on=passive_for_survive_6_damage_in_turn, raw_commands=["red p ^", "sharp p ^", "prolific p ^"]),
-  Spell("If you're at or below half health, +1 more red.", color="red", type="Producer",
+  Spell("If you're at or below half health, +1 red.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
   # TODO: Fix this -- it's bugged and does 1 less energy than it should I think because the conversion is not instant?
   Spell("Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold",
         generate_commands_post=for_player_energy(["repeat * damage _ 2"])),
-  Spell("Deal 11 damage. Then you may consume 1 energy of any type to recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
+  Spell("Deal 11 damage. If you have 3 or more energy, recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
   [Spell("Gain 1 regen, deal 3 damage to all for every 6 damage you survive each round.", color="red", type="Passive",
          triggers_on=passive_for_survive_6_damage_in_turn, raw_commands=["regen p ^", "repeat ^ damage a 3"]),

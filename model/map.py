@@ -15,9 +15,15 @@ class Map:
     self.region_shops = [generate_shop(4, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions)
                         for region_draft in self.region_drafts]
+    self.runs = 0
 
   def init(self):
     # init shops
     self.region_shops = [generate_shop(4, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions)
                         for region_draft in self.region_drafts]
+    for region_draft in self.region_drafts:
+      region_draft.init()
+
+  def end_run(self):
+    self.runs += 1

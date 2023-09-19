@@ -81,7 +81,7 @@ class Player(CombatEntity):
   @property
   def next_exp_milestone(self):
     next_level = self.level + 1
-    total_exp_required = 50 + sum([i * 30 for i in range(1, next_level + 1)])
+    total_exp_required = 40 + sum([i * 40 for i in range(1, next_level + 1)])
     return total_exp_required
   
   @property
@@ -94,15 +94,23 @@ class Player(CombatEntity):
     else:
       raise ValueError(colored("Not enough time!", "red"))
 
-  # NOT CURRENTLY IN USE
   def memorize_spell(self):
     print(self.render_library())
-    chosen_spell = choose_obj(self.library, colored("Choose a spell to memorize > ", "cyan"))
+    choices = random.sample(self.archive, min(len(self.archive), 4))
+    print("---")
+    print(numbered_list(choices))
+    chosen_spell = deepcopy(choose_obj(choices, colored("Choose a spell to memorize > ", "cyan")))
+
+    duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == chosen_spell.spell.rules_text]
+    if duplicate_spells:
+      chosen_spell = duplicate_spells[0]
+
     if chosen_spell.signature:
       chosen_spell.max_copies_remaining += 1
     else:
       chosen_spell.signature = True
       chosen_spell.max_copies_remaining = 1
+      self.library.append(chosen_spell)
 
   def learn_ritual(self):
     random.shuffle(rituals)
@@ -137,44 +145,43 @@ class Player(CombatEntity):
   def check_level_up(self):
     while self.experience >= self.next_exp_milestone:
       self.level += 1
-      self.max_hp += 1
-      self.hp += 1
+      self.max_hp += 2
+      self.hp += 2
       print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"))
-      if self.level == 1:
-        self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
-        self.inventory.append(EnergyPotion(self.signature_color, 1))
-        print("You have gained another innate energy of your signature color!")
-      elif self.level == 2:
-        self.learn_ritual()
-      elif self.level == 3:
-        self.library_draft_options += 1
-        print(f"You will now have {self.library_draft_options} options when drafting your library.")
-      elif self.level == 4:
-        energy_options = ["red", "blue", "gold"]
-        print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
-        chosen_energy = choose_obj(energy_options, colored("Choose a new energy type to tap into > ", "cyan"))
-        self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
-        self.inventory.append(EnergyPotion(chosen_energy, 1))
-      elif self.level == 5:
-        self.gain_starting_item()
-      elif self.level == 6:
-        self.library_draft_picks += 1
-        self.library_draft_randoms -= 1
-        print(f"You will now have {self.library_draft_picks} picks when drafting your library.")
-      elif self.level == 7:
-        self.memorize_spell()
-      elif self.level == 8:
-        self.learn_ritual()
-      elif self.level == 9:
-        self.library_draft_options += 1
-        print(f"You will now have {self.library_draft_options} options when drafting your library.")
-      elif self.level == 10:
-        self.gain_signature_item()
+      self.memorize_spell()
+      # if self.level == 1:
+      #   self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
+      #   self.inventory.append(EnergyPotion(self.signature_color, 1))
+      #   print("You have gained another innate energy of your signature color!")
+      # elif self.level == 2:
+      #   self.learn_ritual()
+      # elif self.level == 3:
+      #   self.library_draft_options += 1
+      #   print(f"You will now have {self.library_draft_options} options when drafting your library.")
+      # elif self.level == 4:
+      #   energy_options = ["red", "blue", "gold"]
+      #   print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
+      #   chosen_energy = choose_obj(energy_options, colored("Choose a new energy type to tap into > ", "cyan"))
+      #   self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
+      #   self.inventory.append(EnergyPotion(chosen_energy, 1))
+      # elif self.level == 5:
+      #   self.gain_starting_item()
+      # elif self.level == 6:
+      #   self.library_draft_picks += 1
+      #   self.library_draft_randoms -= 1
+      #   print(f"You will now have {self.library_draft_picks} picks when drafting your library.")
+      # elif self.level == 7:
+      #   self.memorize_spell()
+      # elif self.level == 8:
+      #   self.learn_ritual()
+      # elif self.level == 9:
+      #   self.library_draft_options += 1
+      #   print(f"You will now have {self.library_draft_options} options when drafting your library.")
+      # elif self.level == 10:
+      #   self.gain_signature_item()
 
   def choose_personal_item(self):
-    # item_description = input(colored(f"What item of personal significance does {self.name} bring with them on this journey? > ", "magenta"))
-    # item_name = input(colored(f"Give it a name: ", "magenta"))
-    return CustomItem(f"{self.name}'s Locket", 1, "A small locket.", use_commands=["time -2"], personal=True)
+    return CustomItem(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True)
 
   def choose_aspiration(self):
     self.aspiration_statement = input(colored(f"What does {self.name} aspire to? > ", "magenta"))
@@ -189,15 +196,11 @@ class Player(CombatEntity):
     print(colored(f"You gained {amount} material! Now you have {self.material}.", "yellow"))
 
   def init(self):
-    # self.current_column = self.home_column # TODO REMOVE THIS
+    self.pursuing_enemysets = []
     personal_item = self.choose_personal_item()
 
     starting_spellbook = Spellbook(pages=[])
     self.library = [ls for ls in self.library if ls.signature]
-
-    # NOTE: Leave these commented until I can find a good way to incorporate them
-    # self.choose_aspiration()
-    # self.prompt_personal_destination()
 
     # recharge signature spells to max
     for library_spell in self.library:
@@ -208,7 +211,6 @@ class Player(CombatEntity):
       ritual.progress = 0
 
     inventory = deepcopy(self.starting_inventory)
-    # inventory.append(deepcopy(chosen_weapon))
     inventory.append(personal_item)
     self.hp = self.max_hp
     self.clear_conditions()

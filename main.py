@@ -1,5 +1,6 @@
 import random
 import dill
+import os
 from drafting import destination_draft, encounter_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import Map
@@ -13,6 +14,9 @@ from content.items import minor_energy_potions, health_potions
 from utils import choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list
 
 STARTING_EXPLORED = 1
+
+class GameOver(Exception):
+  pass
 
 class GameStateV2:
   def __init__(self, n_regions=4):
@@ -136,6 +140,37 @@ class GameStateV2:
     self.player.explored = STARTING_EXPLORED
     self.save()
 
+  def player_death(self):
+    if self.player.conditions["undying"] > 0:
+      self.player.hp = 3
+      self.player.conditions["undying"] -= 1
+      return
+    # player drops all their items in current region
+    # for item in self.player.inventory:
+    #   item.belonged_to = self.player.name
+    # self.map.current_region.dropped_items += self.player.inventory
+    self.player.inventory = []
+    # death admin
+    play_sound("player-death.mp3")
+    print(self.player.render())
+    input("Gained 30xp...")
+    self.player.experience += 30
+    input("Press enter to continue...")
+    self.discovery_phase()
+    self.player.wounds += 1
+    
+    # self.map.inactive_characters[self.player.name] = self.player
+    self.end_run()
+    self.save()
+    raise GameOver()
+
+  def end_run(self):
+    self.map.end_run()
+    self.player.archive_library_spells(copies_threshold=10)
+    # self.prompt_log()
+    self.player.check_level_up()
+    self.save()
+
   def choose_character(self):
     character_choice = input("Choose a character ('new' to make a new character) > ")
     if character_choice == "new":
@@ -148,10 +183,12 @@ class GameStateV2:
     self.player = player
   
   def choose_map(self, map_file):
-    if map_file:
+    if map_file and os.path.exists(map_file):
       with open(map_file, "rb") as f:
         self.map = dill.load(f)
-      self.map.init()
+    else:
+      self.map = Map()
+    self.map.init()
 
   def play_setup(self, map_file=None):
     self.choose_map(map_file)
@@ -165,7 +202,7 @@ class GameStateV2:
     self.encounter_phase(encounter)
 
   def play(self, map_file=None):
-    self.play_setup()
+    self.play_setup(map_file=map_file)
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
@@ -181,13 +218,16 @@ class GameStateV2:
       persistent_enemyset.level_up()
       self.player.pursuing_enemysets.append(persistent_enemyset)
       print(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"))
+      for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
+        enemyset.level = 0
 
       self.discovery_phase()
 
     # Now need to play the final combat with your backlog enemies?
     # NOTE: still untested
-    encounter = self.generate_encounter(self.player, difficulty=4)
-    self.play_encounter(encounter)
+    # encounter = self.generate_encounter(self.player, difficulty=4)
+    # self.play_encounter(encounter)
+    self.end_run()
 
 
 # helpers

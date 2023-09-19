@@ -38,7 +38,7 @@ enemies = {
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
-  "Demon of the Inferno": Enemy(66, "Demon of the Inferno", AttackAction(13, lifesteal=True), entry=AddConditionAction("burn", 6, "player")),
+  "Demon of the Inferno": Enemy(40, "Demon of the Inferno", AttackAction(10, lifesteal=True), entry=AddConditionAction("burn", 4, "player")),
   "Injured Troll": Enemy(40, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
   "Crossbow Deadeye": Enemy(12, "Crossbow Deadeye", WindupAction(AttackAction(10), 1)),
   "Herald of Doom": Enemy(5, "Herald of Doom", SelfDamageAction(5)),
@@ -151,10 +151,10 @@ enemies = {
   "Shadow of a Doubt": Enemy(20, "Shadow of a Doubt", BackstabAction(
       AttackAction(6),
       AddConditionAction("vulnerable", 2, "player"))),
-  "Mov, the Necromancer": Enemy(12, "Mov, the Necromancer",
+  "Necromancer Apprentice": Enemy(12, "Necromancer Apprentice",
       MultiAction([
         MoveAction(1),
-        AddConditionAction("undying", 1, "immediate"),
+        AddConditionAction("regen", 3, "immediate"),
       ]),
       entry=AddConditionAction("undying", 1, "all_enemies")),
   "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
@@ -362,8 +362,8 @@ movs_horde = [
     EnemySpawn(6, "f", enemies["Skitterer"]),
     EnemySpawn(6, "b", enemies["Skitterer"]),
   ], faction="Mov's Horde"),
-  EnemySet("Mov, the Necromancer", [
-    EnemySpawn(4, "f", enemies["Mov, the Necromancer"]),
+  EnemySet("Necromancer Apprentice", [
+    EnemySpawn(4, "f", enemies["Necromancer Apprentice"]),
   ]),
 ]
 
