@@ -7,7 +7,7 @@ from content.command_generators import *
 factions = [
   Faction("Freed Automata", freed_automata,
     basic_items=[
-      CustomItem("Heavy Plating", 3, "Gain 1 armor.", ["armor p 1"], time_cost=2),
+      CustomItem("Heavy Plating", 3, "Gain 1 armor. (takes 2 actions)", ["armor p 1"], time_cost=2),
       CustomItem("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
@@ -38,7 +38,7 @@ factions = [
       CustomItem("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
     ],
     special_items=[
-      CustomItem("Omen of Doom", 3, "Inflict doom 1.", ["doom _ 1"], rare=True)
+      CustomItem("Omen of Doom", 3, "Inflict doom 2.", ["doom _ 2"], rare=True)
     ]
   ),
   Faction("Sa'ik Collective", saik_collective,
@@ -101,7 +101,7 @@ factions = [
       CustomItem("Animate Armor", 2, "Gain 1 armor.", ["armor p 1"]),
     ],
     special_items=[
-      CustomItem("Amarian Warsuit", 1, "Gain 2 armor, 2 prolific, and 2 sharp.", ["armor p 2", "prolific p 2", "sharp p 2"], rare=True)
+      CustomItem("Amarian Warsuit", 1, "Gain 1 armor, 2 prolific, and 3 sharp.", ["armor p 1", "prolific p 2", "sharp p 3"], rare=True)
     ]
   ),
   Faction("Infernal Plane", infernal_plane,

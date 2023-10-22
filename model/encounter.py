@@ -587,7 +587,7 @@ class Encounter:
 
     # If you have 3 excess energy of one color, turn it into a potion
     for color in energy_colors:
-      if self.player.conditions[color] >= 3:
+      while self.player.conditions[color] >= 3:
         self.player.inventory.append(deepcopy(minor_energy_potions_dict[color]))
         self.player.conditions[color] -= 3
         input(f"Converted 3 {color} energy into a potion!")

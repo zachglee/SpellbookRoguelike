@@ -5,6 +5,7 @@ from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
 from content.rituals import rituals
+from content.items import ancient_key
 from content.enemy_factions import factions
 
 
@@ -41,7 +42,7 @@ def generate_rituals(size, ritual_pool=rituals):
   random.shuffle(ritual_pool)
   return [r for r in ritual_pool[:size]]
 
-def generate_shop(n_items, item_pool):
+def generate_shop(n_items, item_pool, key=False):
   random.shuffle(item_pool)
   shop_items = []
   for item in item_pool[:n_items]:
@@ -50,7 +51,7 @@ def generate_shop(n_items, item_pool):
       cost = item.material_cost
     elif item.rare:
       stock = 1
-      cost = 12
+      cost = 15
     elif item.name in ["Gold Potion", "Red Potion", "Blue Potion"]:
       stock = 2
       cost = 3
@@ -58,4 +59,6 @@ def generate_shop(n_items, item_pool):
       stock = 1
       cost = 6
     shop_items.append(ShopItem(item, cost=cost, stock=stock))
+  if key:
+    shop_items.append(ShopItem(ancient_key, cost=36, stock=1))
   return Shop(shop_items)

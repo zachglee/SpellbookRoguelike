@@ -44,6 +44,7 @@ red_big_attack = [
   # TODO: Fix this -- it's bugged and does 1 less energy than it should I think because the conversion is not instant?
   Spell("Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold",
         generate_commands_post=for_player_energy(["repeat * damage _ 2"])),
+  # TODO: implement the 3+ energy part
   Spell("Deal 11 damage. If you have 3 or more energy, recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 11"])],
   #
   [Spell("Gain 1 regen, deal 3 damage to all for every 6 damage you survive each round.", color="red", type="Passive",
@@ -178,8 +179,8 @@ blue_excess_block = [
 ]
 
 blue_no_enemy_deaths = [
-  [Spell("At turn start, if no enemies are dead, gain 6 block.", color="blue", type="Passive",
-          triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["block p 6"]),
+  [Spell("At turn start, if no enemies are dead, gain 8 block.", color="blue", type="Passive",
+          triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["block p 8"]),
   Spell("encase self 5", color="blue", type="Producer", raw_commands=["encase p 5"]),
   Spell("Inflict 4 doom.", color="blue", type="Converter", conversion_color="red",
         raw_commands=["doom _ 4"]),
@@ -224,7 +225,7 @@ gold_3rd_spell = [
          triggers_on=passive_third_spell_in_turn, raw_commands=["sharp p 3"]),
   Spell("Deal 2 damage to each adjacent enemy.", color="gold", type="Producer", raw_commands=["damage f1 2", "damage b1 2"]),
   Spell("Deal 3 damage to immediate enemy. Repeat twice more.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 3", "damage i 3", "damage i 3"]),
-  Spell("Deal 10 damage to immediate, deal 4 damage to immediate behind. Refresh this.", color="gold", type="Consumer", raw_commands=["damage i 10", "damage bi 4"])],
+  Spell("Deal 12 damage to immediate, deal 6 damage to immediate behind.", color="gold", type="Consumer", raw_commands=["damage i 12", "damage bi 6"])],
   #
   [Spell("When you cast your 3rd spell in a turn, gain 9 block.", color="gold", type="Passive",
          triggers_on=passive_third_spell_in_turn, raw_commands=["block p 9"]),
@@ -245,15 +246,15 @@ gold_turn_page = [
   [Spell("When you turn to this page, gain 1 inventive.", color="gold", type="Passive",
          triggers_on=passive_on_page, raw_commands=["inventive p 1"]),
   Spell("refresh a spell.", color="gold", type="Producer"),
-  Spell("+4 time, +1 inventive, refresh other spells on this page.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["time -4", "inventive p 1"]), # NOTE: Green
+  Spell("+4 time, +1 inventive, refresh and recharge last spell cast.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["time -4", "inventive p 1", "recharge last"]),
   Spell("Gain 2x shield and deal 2x to all where x is # of spells cast this turn.", color="gold", type="Consumer",
         generate_commands_pre=for_spells_cast(["shield p *", "damage a *"], lambda s: 2*s))], 
 ]
 
 gold_1_spell = [
   [Spell("If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
-         triggers_on=passive_1_spell_in_turn, raw_commands=["gold p 1"]), # TODO fix this
+         triggers_on=passive_1_spell_in_turn, raw_commands=[]), # TODO fix this
   Spell("you may convert 1 energy to another color.", color="gold", type="Producer"),
   Spell("Deal 4 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["damage _ 4", "damage _ 4", "slow p 2"]), # NOTE: Green

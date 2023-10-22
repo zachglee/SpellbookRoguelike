@@ -41,7 +41,7 @@ class RegionDraft:
 
     self.enemyset_pool_idx += 1
 
-    material = random.randint(1, 8) 
+    material = random.randint(2, 8)
     return (enemyset, material)
 
   def generate_spell_pick_option(self):

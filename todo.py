@@ -10,6 +10,31 @@
 
 # -------------------------------------------------
 
+# Multiplayer design?
+# - Maybe I should do this first?
+# - To start with just have a single player manage two characters. You just play their combats in order.
+# - To facilitate this I probably need a Team class that has a list of players?
+# - Need to do a playtest of this
+# To implement this:
+# - When you run the client, you choose a character, and you also join a party/run by id
+# - You can only make choices for your own character, so in the region-draft, you would pick your pick
+#   and your partner would have to pick the other one. For now, if they pick the same one the server just gives an error.
+# - To execute the pick, the server does the modifications to your run state in memory, and then saves it to the database,
+#   then returns you the run state, maybe as a python object over the wire? Then your client renders it and can prompt
+#   you for input and the loop repeats.
+# - I think I should prove out this model for a single player first, make a flow diagram for how the server and client
+#   interact.
+
+# New map design:
+# - So I need to refactor regiondraft and regionshop into one thing -- a region?
+# - And then a map is a grid of regions, generated from 4 factions
+# - There's a new interactive phase after a combat where you choose which region you're going to
+# ^ This is a stable milestone to reach
+# - Here I should probably test what it's like to bring old characters to new maps...
+# 
+# - Once I have that I might be ready to move to building the remote state database?
+# - First we get single player working with a data store. Probably nosql?
+
 # SHowvik + Sooji playtest:
 # - enemy that turns you around
 # - enemies that swap places in they queue

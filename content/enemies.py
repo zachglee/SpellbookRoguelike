@@ -149,17 +149,17 @@ enemies = {
       AddConditionAction("slow", 2, "player"),
       AttackAction(6))),
   "Shadow of a Doubt": Enemy(20, "Shadow of a Doubt", BackstabAction(
-      AttackAction(6),
-      AddConditionAction("vulnerable", 2, "player"))),
+      AddConditionAction("vulnerable", 2, "player"),
+      AttackAction(6))),
   "Necromancer Apprentice": Enemy(12, "Necromancer Apprentice",
-      MultiAction([
-        MoveAction(1),
-        AddConditionAction("regen", 3, "immediate"),
-      ]),
+      NearFarAction(
+        MultiAction([MoveAction(1), AttackAction(3), SelfDamageAction(3)]),
+        AddConditionAction("regen", 4, "immediate"),
+      ),
       entry=AddConditionAction("undying", 1, "all_enemies")),
   "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
-      AddConditionAction("shield", 2, "self"), AttackAction(1)]))),
-  "Aegis Orb": Enemy(20, "Aegis Orb", AddConditionAction("armor", 1, "all_enemies")),
+      AddConditionAction("shield", 2, "self"), AttackAction(2)]))),
+  "Aegis Orb": Enemy(20, "Aegis Orb", MultiAction([AddConditionAction("armor", 1, "all_enemies"), AddConditionAction("retaliate", 1, "all_enemies")])),
   "Defective Shieldbot": Enemy(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
                                entry=AddConditionAction("shield", 30, "self")),

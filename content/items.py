@@ -9,6 +9,8 @@ middling_health_potion = CustomItem("Middling Health Potion", 2, "Heal 4", ["hea
 major_health_potion = CustomItem("Major Health Potion", 5, "Heal 3", ["heal p 3"], material_cost=18)
 health_potions = [minor_health_potion, middling_health_potion, major_health_potion]
 
+ancient_key = CustomItem("Ancient Key", 1, "A key to a door long forgotten.", [], rare=True)
+
 minor_energy_potions = [red_potion, blue_potion, gold_potion]
 minor_energy_potions_dict = {"red": red_potion, "blue": blue_potion, "gold": gold_potion}
 
