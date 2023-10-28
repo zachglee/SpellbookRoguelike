@@ -2,7 +2,7 @@
 from generators import generate_faction_sets, generate_shop, generate_spell_pools
 from model.region_draft import RegionDraft
 from content.items import minor_energy_potions, health_potions
-
+from pydantic import BaseModel
 
 class Map:
   def __init__(self, n_regions=4):

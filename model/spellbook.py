@@ -1,37 +1,36 @@
 import os
+from typing import Literal
+from pydantic import BaseModel
 from termcolor import colored
-from utils import numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol
+from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol
 from sound_utils import play_sound
 
-class Spell:
-  def __init__(self, rules_text, color, type, conversion_color=None,
-               raw_commands=None, targets=None,
-               generate_commands_pre=lambda e, t: [], generate_commands_post=lambda e, t: [],
-               triggers_on=lambda encounter, event: False):
-    self.rules_text = rules_text
-    self.color = color
-    self.type = type
-    self.conversion_color = conversion_color
-    self.raw_commands = raw_commands or []
-    self.sound_file = None
-    self.targets = targets or []
-    self.generate_commands_pre = generate_commands_pre
-    self.generate_commands_post = generate_commands_post
-    self.triggers_on = triggers_on
+class Spell(BaseModel):
+  rules_text: str
+  color: Color
+  type: Literal["Producer", "Converter", "Consumer", "Passive"]
+  conversion_color: Color = None
+  raw_commands: list[str] = []
+  targets: list[str] = []
+  generate_commands_pre: callable = lambda e, t: []
+  generate_commands_post: callable = lambda e, t: []
+  triggers_on: callable = lambda encounter, event: False
+  sound_file: str = None
+  id: int = None
 
-    if self.type == "Producer":
-      self.raw_commands.append(f"{color} p 1")
-    if self.type == "Converter" and conversion_color is not None:
-      self.raw_commands.append(f"{conversion_color} p 1")
-    if self.type == "Consumer":
-      file_stem = f"{self.color}-consumer-cast"
-      self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
+  class Config:
+    arbitrary_types_allowed = True
 
   def cast(self, encounter, cost_energy=True, cost_charges=True, trigger_output=None):
     if cost_energy:
-      if self.type in ["Converter", "Consumer"]:
-        # TODO: eventually enforce that you must have the correct energy
-        encounter.player.conditions[self.color] -= 1
+      if self.type == "Producer":
+        encounter.handle_command(f"{self.color} p 1")
+      if self.type == "Converter" and self.conversion_color is not None:
+        encounter.handle_command(f"{self.color} to {self.conversion_color}")
+      if self.type == "Consumer":
+        file_stem = f"{self.color}-consumer-cast"
+        self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
+        encounter.handle_command(f"{self.color} p -1")
     
     # choose targets
     chosen_targets = {}

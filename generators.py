@@ -42,7 +42,7 @@ def generate_rituals(size, ritual_pool=rituals):
   random.shuffle(ritual_pool)
   return [r for r in ritual_pool[:size]]
 
-def generate_shop(n_items, item_pool, key=False):
+def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)
   shop_items = []
   for item in item_pool[:n_items]:

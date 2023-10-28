@@ -1,8 +1,9 @@
 import random
-from typing import List
+from typing import List, Literal
 from termcolor import colored
 import re
 
+Color = Literal["red", "gold", "blue"]
 energy_colors = ["red", "blue", "gold", "green", "purple"]
 energy_pip_symbol = "●"
 

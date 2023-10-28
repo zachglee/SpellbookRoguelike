@@ -234,8 +234,8 @@ class GameStateV2:
 
 # main
 game_state = GameStateV2()
-# game_state.play()
-game_state.play(map_file="saves/map.pkl")
+game_state.play()
+# game_state.play(map_file="saves/map.pkl")
 
 
 
