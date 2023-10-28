@@ -1,6 +1,6 @@
 import os
-from typing import Literal
-from pydantic import BaseModel
+from typing import Any, Dict, Literal
+from pydantic import BaseModel, model_serializer
 from termcolor import colored
 from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol
 from sound_utils import play_sound
@@ -20,6 +20,14 @@ class Spell(BaseModel):
 
   class Config:
     arbitrary_types_allowed = True
+
+  # -------- Serialization and Deserialization --------- #
+
+  @model_serializer
+  def serialize(self) -> Dict[str, Any]:
+    return {"id": self.id}
+  
+  # -------- Methods --------
 
   def cast(self, encounter, cost_energy=True, cost_charges=True, trigger_output=None):
     if cost_energy:

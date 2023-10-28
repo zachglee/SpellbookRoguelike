@@ -5,7 +5,7 @@ from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import Spellbook
-from model.item import CustomItem, EnergyPotion
+from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors
 from sound_utils import play_sound
 from content.rituals import rituals
@@ -34,7 +34,6 @@ class Player(CombatEntity):
     self.library = library
     self.archive = []
     self.starting_inventory = starting_inventory or []
-    # self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
     self.starting_item_pool = starting_weapons
     if starting_weapon:
       self.starting_inventory.append(starting_weapon)
@@ -149,39 +148,9 @@ class Player(CombatEntity):
       self.hp += 2
       print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"))
       self.memorize_spell()
-      # if self.level == 1:
-      #   self.starting_inventory.append(EnergyPotion(self.signature_color, 1))
-      #   self.inventory.append(EnergyPotion(self.signature_color, 1))
-      #   print("You have gained another innate energy of your signature color!")
-      # elif self.level == 2:
-      #   self.learn_ritual()
-      # elif self.level == 3:
-      #   self.library_draft_options += 1
-      #   print(f"You will now have {self.library_draft_options} options when drafting your library.")
-      # elif self.level == 4:
-      #   energy_options = ["red", "blue", "gold"]
-      #   print("\n".join(f"{i + 1} - {energy}" for i, energy in enumerate(energy_options)))
-      #   chosen_energy = choose_obj(energy_options, colored("Choose a new energy type to tap into > ", "cyan"))
-      #   self.starting_inventory.append(EnergyPotion(chosen_energy, 1))
-      #   self.inventory.append(EnergyPotion(chosen_energy, 1))
-      # elif self.level == 5:
-      #   self.gain_starting_item()
-      # elif self.level == 6:
-      #   self.library_draft_picks += 1
-      #   self.library_draft_randoms -= 1
-      #   print(f"You will now have {self.library_draft_picks} picks when drafting your library.")
-      # elif self.level == 7:
-      #   self.memorize_spell()
-      # elif self.level == 8:
-      #   self.learn_ritual()
-      # elif self.level == 9:
-      #   self.library_draft_options += 1
-      #   print(f"You will now have {self.library_draft_options} options when drafting your library.")
-      # elif self.level == 10:
-      #   self.gain_signature_item()
 
   def choose_personal_item(self):
-    return CustomItem(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True)
+    return Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True)
 
   def choose_aspiration(self):
     self.aspiration_statement = input(colored(f"What does {self.name} aspire to? > ", "magenta"))

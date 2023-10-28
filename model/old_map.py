@@ -1,7 +1,7 @@
 import random
 from copy import deepcopy
 from typing import List, Literal, Optional, Tuple
-from model.item import CustomItem
+from model.item import Item
 from termcolor import colored
 from collections import defaultdict
 from termcolor import colored
@@ -196,7 +196,7 @@ class Region:
     # for node in high_reward_nodes:
     #   node.reward_material = 10
     for node in key_nodes:
-      key_item = CustomItem("Ancient Key", 1, "A key to a door long forgotten.", [], rare=True)
+      key_item = Item.make("Ancient Key", 1, "A key to a door long forgotten.", [], rare=True)
       node.reward_items.append(key_item)
 
     # 

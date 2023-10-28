@@ -328,5 +328,7 @@ gold_spells = sum(gold_pages, [])
 
 spells = red_spells + blue_spells + gold_spells
 
+spells_by_id = {}
 for i, spell in enumerate(spells):
   spell.id = i
+  spells_by_id[i] = spell

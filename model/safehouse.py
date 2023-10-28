@@ -1,7 +1,6 @@
 from termcolor import colored
 import random
 from utils import choose_binary, choose_idx, choose_obj, choose_str, energy_colors, numbered_list
-from model.item import EnergyPotion, SpellPotion
 from model.spellbook import LibrarySpell
 
 class Safehouse:
