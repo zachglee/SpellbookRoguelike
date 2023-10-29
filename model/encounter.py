@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Dict, Literal, Optional
 from content.trigger_functions import trigger_player_defense_break
 from model.action import Action
 from model.triggers import EventTrigger
@@ -18,27 +18,21 @@ from sound_utils import play_sound
 
 
 class Enemy(CombatEntity):
-  # def __init__(self, hp, name, action, entry=NothingAction(), exp=None):
-  #   super().__init__(hp, name)
-  #   self.faction = None
-  #   self.action = action
-  #   self.entry = entry
-  #   self.spawned = False
-  #   self.experience = exp or math.ceil(self.max_hp / 2)
-  #   # add ability triggers?
 
-  faction: str = None
+  faction: Optional[str] = None
   action: Action = NothingAction()
   entry: Action = NothingAction()
   spawned: bool = False
-  experience: int = None
+  experience: Optional[int] = None
 
   class Config:
     arbitrary_types_allowed = True
 
   @classmethod
   def make(cls, hp, name, action, entry=NothingAction(), exp=None):
-    return cls(hp=hp, max_hp=hp, name=name, action=action, entry=entry, exp=exp)
+    exp = exp or math.ceil(hp / 2)
+    # print(f"-------------- {exp=}")
+    return cls(hp=hp, max_hp=hp, name=name, action=action, entry=entry, experience=exp)
 
 class EnemySpawn:
   def __init__(self, turn, side: Literal["f", "b"], enemy, wave=1):

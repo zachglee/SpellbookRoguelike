@@ -1,35 +1,10 @@
-from typing import Optional
-from pydantic import BaseModel, model_serializer
+from typing import Any, Dict, Optional
+from pydantic import BaseModel
 
 from utils import colorize
 from model.spellbook import SpellbookSpell
-
-# class Item(BaseModel):
-#   description: str
-#   charges: int
-#   max_charges: int
-#   time_cost: int = 1
-#   material_cost: int = None
-#   belonged_to: str = None
-#   id: int = None
-
-#   def use(self, encounter):
-#     pass
-
-#   def render(self):
-#     return self.description
   
 class Item(BaseModel):
-  # def __init__(self, name, charges, description, use_commands,
-  #              generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, rare=False, personal=False):
-  #   super().__init__(charges, description)
-  #   self.name = name
-  #   self.use_commands = use_commands
-  #   self.time_cost = time_cost
-  #   self.generate_commands_pre = generate_commands_pre
-  #   self.material_cost = material_cost
-  #   self.rare = rare
-  #   self.personal = personal
   name: str
   charges: int
   max_charges: int
@@ -41,7 +16,6 @@ class Item(BaseModel):
   rare: bool = False
   personal: bool = False
   belonged_to: Optional[str] = None
-  id: Optional[int] = None
 
   class Config:
     arbitrary_types_allowed = True
