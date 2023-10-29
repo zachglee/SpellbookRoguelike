@@ -107,8 +107,12 @@ def get_spell(enc, target_string):
   elif target_string == "_":
     input_target_string = input(colored("Choose a spell > ", "cyan"))
     return get_spell(enc, input_target_string)
-  else:
+  elif target_string.isnumeric() and int(target_string) > 0:
     spell_idx = int(target_string) - 1
+  elif target_string.lstrip("-").isnumeric() and int(target_string) < 0:
+    return enc.spells_cast_this_turn[int(target_string)]
+  else:
+    raise ValueError(f"Invalid spell target: {target_string}")
   target = enc.player.spellbook.current_page.spells[spell_idx]
   return target
 

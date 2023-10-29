@@ -431,7 +431,7 @@ class Map:
       chosen_color = choose_str(["red", "blue", "gold"], "choose an energy color > ")
       name = input("What shall they be called? > ")
       library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
-      player = Player(hp=30, name=name,
+      player = Player.make(hp=30, name=name,
                       spellbook=None,
                       inventory=[],
                       library=library,

@@ -11,188 +11,188 @@ from content.enemy_actions import (
 #
 
 enemies = {
-  "Harpy Harrier": Enemy(10, "Harpy Harrier", BackstabAction(AttackAction(4), AttackAction(2))),
-  "Ravenous Hound": Enemy(10, "Ravenous Hound", PackTacticsAction(AttackAction(5), AttackAction(2))),
-  "Zombie": Enemy(16, "Zombie", NearFarAction(AttackAction(6), MoveAction(-1))),
-  "Bandit": Enemy(15, "Bandit", CowardlyAction(MoveAction(1), AttackAction(4))),
-  "Bat": Enemy(3, "Bat", AttackAction(1)),
-  "Vampire": Enemy(20, "Vampire", AttackAction(8, lifesteal=True)),
-  "Hawk": Enemy(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
-  "Hunter": Enemy(20, "Hunter", NearFarAction(MultiAction([MoveAction(1), AddConditionAction("armor", 1, "self")]), AttackAction(10))),
-  "Charging Ogre": Enemy(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
-  "Evasive Skydancer": Enemy(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
-  "The Vulture": Enemy(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
+  "Harpy Harrier": Enemy.make(10, "Harpy Harrier", BackstabAction(AttackAction(4), AttackAction(2))),
+  "Ravenous Hound": Enemy.make(10, "Ravenous Hound", PackTacticsAction(AttackAction(5), AttackAction(2))),
+  "Zombie": Enemy.make(16, "Zombie", NearFarAction(AttackAction(6), MoveAction(-1))),
+  "Bandit": Enemy.make(15, "Bandit", CowardlyAction(MoveAction(1), AttackAction(4))),
+  "Bat": Enemy.make(3, "Bat", AttackAction(1)),
+  "Vampire": Enemy.make(20, "Vampire", AttackAction(8, lifesteal=True)),
+  "Hawk": Enemy.make(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
+  "Hunter": Enemy.make(20, "Hunter", NearFarAction(MultiAction([MoveAction(1), AddConditionAction("armor", 1, "self")]), AttackAction(10))),
+  "Charging Ogre": Enemy.make(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
+  "Evasive Skydancer": Enemy.make(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
+  "The Vulture": Enemy.make(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
   #
-  "Skitterer": Enemy(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),
-  "Decaying Corpse": Enemy(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
-  "Faerie Assassin": Enemy(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
-  "Knifehand": Enemy(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
-  "Blazing Eye": Enemy(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
-  "Creeping Shadow": Enemy(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
-  "Stoneguard": Enemy(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
-  "Conniving Impfiend": Enemy(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
-  "Insistent Duelist": Enemy(20, "Insistent Duelist",
+  "Skitterer": Enemy.make(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),
+  "Decaying Corpse": Enemy.make(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
+  "Faerie Assassin": Enemy.make(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
+  "Knifehand": Enemy.make(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
+  "Blazing Eye": Enemy.make(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
+  "Creeping Shadow": Enemy.make(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
+  "Stoneguard": Enemy.make(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
+  "Conniving Impfiend": Enemy.make(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
+  "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
                               SideOverwhelmAction(
                                 MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("armor", 2, "self")]),
                                 MultiAction([SetConditionAction("armor", 0, "self"), AttackAction(3), AttackAction(3)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
-  "Cultist": Enemy(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
-  "Demon of the Inferno": Enemy(40, "Demon of the Inferno", AttackAction(10, lifesteal=True), entry=AddConditionAction("burn", 4, "player")),
-  "Injured Troll": Enemy(40, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
-  "Crossbow Deadeye": Enemy(12, "Crossbow Deadeye", WindupAction(AttackAction(10), 1)),
-  "Herald of Doom": Enemy(5, "Herald of Doom", SelfDamageAction(5)),
-  "The Executioner": Enemy(40, "The Executioner", WindupAction(AttackAction(25), 1)),
-  "Cloud of Daggers": Enemy(6, "Cloud of Daggers",
+  "Cultist": Enemy.make(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
+  "Demon of the Inferno": Enemy.make(40, "Demon of the Inferno", AttackAction(10, lifesteal=True), entry=AddConditionAction("burn", 4, "player")),
+  "Injured Troll": Enemy.make(40, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
+  "Crossbow Deadeye": Enemy.make(12, "Crossbow Deadeye", WindupAction(AttackAction(10), 1)),
+  "Herald of Doom": Enemy.make(5, "Herald of Doom", SelfDamageAction(5)),
+  "The Executioner": Enemy.make(40, "The Executioner", WindupAction(AttackAction(25), 1)),
+  "Cloud of Daggers": Enemy.make(6, "Cloud of Daggers",
                             MultiAction([AttackAction(2), AttackAction(2), AttackAction(2),
                                         AttackSide(2), AttackSide(2), AttackSide(2)]),
                             entry=AddConditionAction("durable", 2, "self"), exp=6),
-  "Slumbering Giant": Enemy(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
-  "Mindless Maw": Enemy(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
-  "Midnight Courtier": Enemy(15, "Imperious Seelie", EnergyThresholdAction(
+  "Slumbering Giant": Enemy.make(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
+  "Mindless Maw": Enemy.make(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
+  "Midnight Courtier": Enemy.make(15, "Imperious Seelie", EnergyThresholdAction(
       AddConditionAction("retaliate", 3, "self"), AddConditionAction("poison", 3, "player"), 2)),
-  "Zealous Battlemage": Enemy(8, "Zealous Battlemage", AttackAction(1), entry=MultiAction([AddConditionAction("block", 8, "self"), AddConditionAction("empower", 8, "self")])),
-  "Draelish Captain": Enemy(7, "Draelish Captain", AttackAction(0), entry=MultiAction([AddConditionAction("block", 4, "all_enemies"), AddConditionAction("empower", 4, "all_enemies")])),
-  "Conscript": Enemy(6, "Conscript", CowardlyAction(NothingAction(), AttackAction(2), hp_threshold=7)),
+  "Zealous Battlemage": Enemy.make(8, "Zealous Battlemage", AttackAction(1), entry=MultiAction([AddConditionAction("block", 8, "self"), AddConditionAction("empower", 8, "self")])),
+  "Draelish Captain": Enemy.make(7, "Draelish Captain", AttackAction(0), entry=MultiAction([AddConditionAction("block", 4, "all_enemies"), AddConditionAction("empower", 4, "all_enemies")])),
+  "Conscript": Enemy.make(6, "Conscript", CowardlyAction(NothingAction(), AttackAction(2), hp_threshold=7)),
   #
-  "Fire Elemental": Enemy(20, "Fire Elemental",
+  "Fire Elemental": Enemy.make(20, "Fire Elemental",
                       MultiAction([
                         AddConditionAction("burn", 3, "player"),
                         AddConditionAction("red", 1, "player"),
                         SetConditionAction("burn", 0, "self")])),
-  "Frost Elemental": Enemy(25, "Frost Elemental",
+  "Frost Elemental": Enemy.make(25, "Frost Elemental",
                        MultiAction([
                           AddConditionAction("slow", 2, "player"),
                           AddConditionAction("blue", 1, "player"),
                           AttackAction(1)])),
-  "Lightning Elemental": Enemy(15, "Lightning Elemental",
+  "Lightning Elemental": Enemy.make(15, "Lightning Elemental",
                             MultiAction([
                               AttackAction(6),
                               AddConditionAction("gold", 1, "player"),
                               AddConditionAction("empower", 6, "player")])),
-  "Vengeful Mine": Enemy(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(3), AttackAction(6)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 3, "self")),
-  "Bomber Zealot": Enemy(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
-  "Grizzled Shieldmage": Enemy(10, "Grizzled Shieldmage",
+  "Vengeful Mine": Enemy.make(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(3), AttackAction(6)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 3, "self")),
+  "Bomber Zealot": Enemy.make(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
+  "Grizzled Shieldmage": Enemy.make(10, "Grizzled Shieldmage",
                                NearFarAction(AttackAction(3),
                                              MultiAction([AddConditionAction("shield", 5, "immediate"), AddConditionAction("retaliate", 1, "immediate")])),
                                entry=AddConditionAction("block", 10, "self")),
-  "Incubated Fleshling": Enemy(6, "Incubated Fleshling", AttackAction(1)),
-  "Corrupting Spire": Enemy(1, "Corrupting Spire", NothingAction(), entry=MultiAction([
+  "Incubated Fleshling": Enemy.make(6, "Incubated Fleshling", AttackAction(1)),
+  "Corrupting Spire": Enemy.make(1, "Corrupting Spire", NothingAction(), entry=MultiAction([
     AddConditionAction("stun", 1, "all_enemies"),
     AddConditionAction("sharp", 5, "all_enemies"),
     AddConditionAction("regen", 5, "all_enemies"),
     AddConditionAction("block", 5, "all_enemies"),
   ])),
-  "Lurking Scavenger": Enemy(12, "Lurking Scavenger", PackTacticsAction(AttackAction(5, lifesteal=True), AddConditionAction("regen", 2, "self"))),
-  "Artificer Princess": Enemy(10, "Artificer Princess",
+  "Lurking Scavenger": Enemy.make(12, "Lurking Scavenger", PackTacticsAction(AttackAction(5, lifesteal=True), AddConditionAction("regen", 2, "self"))),
+  "Artificer Princess": Enemy.make(10, "Artificer Princess",
                               NearFarAction(AttackAction(1),
                                             MultiAction([
                                               AddConditionAction("sharp", 2, "self"),
                                               AddConditionAction("armor", 2, "self"),
                                             ])),
                               entry=AddConditionAction("sharp", 2, "all_enemies")),
-  "Vampire Lord": Enemy(24, "Vampire Lord",
+  "Vampire Lord": Enemy.make(24, "Vampire Lord",
                         HealthThresholdAction(
                           AddConditionAction("sharp", 1, "player"), AttackAction(6, lifesteal=True), 24),
                         entry=MultiAction([
                           SelfDamageAction(6),
                           AddConditionAction("retaliate", 3, "self"),
                         ])),
-  "Cocky Descender": Enemy(9, "Cocky Descender",
+  "Cocky Descender": Enemy.make(9, "Cocky Descender",
                                   HealthThresholdAction(
                                     MultiAction([AttackAction(4), AttackAction(4)]),
                                     AttackAction(2), 9)),
-  "Fickle Witch-Queen": Enemy(12, "Fickle Witch-Queen",
+  "Fickle Witch-Queen": Enemy.make(12, "Fickle Witch-Queen",
                            CautiousAction(NothingAction(), WindupAction(MultiAction([
                                SetConditionAction("poison", 0, "player"),
                                AddConditionAction("regen", 4, "player")
                                ]), 2)),
                            entry=AddConditionAction("poison", 3, "player")),
-  "Screeching Fury": Enemy(18, "Screeching Fury",
+  "Screeching Fury": Enemy.make(18, "Screeching Fury",
                            HealthThresholdAction(AttackAction(2),
                                                  MultiAction([
                                                      AttackAction(4),
                                                      AttackAction(4),
                                                      AddConditionAction("sharp", 1, "self")]
                                                  ), 18)),
-  "Witch-Burner Devil": Enemy(20, "Witch-Burner Devil",
+  "Witch-Burner Devil": Enemy.make(20, "Witch-Burner Devil",
                               EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(1), 1)),
-  "Tithetaker": Enemy(25, "Tithetaker",
+  "Tithetaker": Enemy.make(25, "Tithetaker",
                       EnergyThresholdAction(
                           AddConditionAction("regen", 1, "player"),
                           AttackAction(13, lifesteal=True), 6)),
-  "Generous Sprite": Enemy(1, "Generous Sprite",
+  "Generous Sprite": Enemy.make(1, "Generous Sprite",
                          BackstabAction(
                              WindupAction(AddConditionAction("green", 1, "player"), 2),
                              SelfDamageAction(1),
                          )),
-  "Blue Spirit-Hunter": Enemy(12, "Blue Spirit-Hunter", EnergyThresholdAction(
+  "Blue Spirit-Hunter": Enemy.make(12, "Blue Spirit-Hunter", EnergyThresholdAction(
       MultiAction([
           AddConditionAction("shield", 3, "self"),
           AttackAction(3),
       ]),
       NothingAction(), 1, colors=["blue"])),
-  "Red Spirit-Hunter": Enemy(12, "Red Spirit-Hunter", EnergyThresholdAction(
+  "Red Spirit-Hunter": Enemy.make(12, "Red Spirit-Hunter", EnergyThresholdAction(
       AddConditionAction("burn", 3, "player"),
       NothingAction(), 1, colors=["red"])),
-  "Gold Spirit-Hunter": Enemy(12, "Gold Spirit-Hunter", EnergyThresholdAction(
+  "Gold Spirit-Hunter": Enemy.make(12, "Gold Spirit-Hunter", EnergyThresholdAction(
       AttackAction(6),
       NothingAction(), 1, colors=["gold"])),
-  "Font of Magic": Enemy(16, "Font of Magic",
+  "Font of Magic": Enemy.make(16, "Font of Magic",
                          MultiAction([
                             AddConditionAction("red", 1, "player"),
                             AddConditionAction("gold", 1, "player"),
                             AddConditionAction("blue", 1, "player"),
                          ])),
-  "Nightmare Remnant": Enemy(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
-  "Dreamstalker": Enemy(20, "Dreamstalker", BackstabAction(
+  "Nightmare Remnant": Enemy.make(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
+  "Dreamstalker": Enemy.make(20, "Dreamstalker", BackstabAction(
       AddConditionAction("slow", 2, "player"),
       AttackAction(6))),
-  "Shadow of a Doubt": Enemy(20, "Shadow of a Doubt", BackstabAction(
+  "Shadow of a Doubt": Enemy.make(20, "Shadow of a Doubt", BackstabAction(
       AddConditionAction("vulnerable", 2, "player"),
       AttackAction(6))),
-  "Necromancer Apprentice": Enemy(12, "Necromancer Apprentice",
+  "Necromancer Apprentice": Enemy.make(12, "Necromancer Apprentice",
       NearFarAction(
         MultiAction([MoveAction(1), AttackAction(3), SelfDamageAction(3)]),
         AddConditionAction("regen", 4, "immediate"),
       ),
       entry=AddConditionAction("undying", 1, "all_enemies")),
-  "Assault Golem": Enemy(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
+  "Assault Golem": Enemy.make(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
       AddConditionAction("shield", 2, "self"), AttackAction(2)]))),
-  "Aegis Orb": Enemy(20, "Aegis Orb", MultiAction([AddConditionAction("armor", 1, "all_enemies"), AddConditionAction("retaliate", 1, "all_enemies")])),
-  "Defective Shieldbot": Enemy(10, "Defective Shieldbot",
+  "Aegis Orb": Enemy.make(20, "Aegis Orb", MultiAction([AddConditionAction("armor", 1, "all_enemies"), AddConditionAction("retaliate", 1, "all_enemies")])),
+  "Defective Shieldbot": Enemy.make(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
                                entry=AddConditionAction("shield", 30, "self")),
-  "Plated Warmech": Enemy(12, "Plated Warmech", AttackAction(4), entry=AddConditionAction("armor", 6, "self")),
-  "Relentless Legionnaire": Enemy(8, "Relentless Legionnaire", AttackAction(2),
+  "Plated Warmech": Enemy.make(12, "Plated Warmech", AttackAction(4), entry=AddConditionAction("armor", 6, "self")),
+  "Relentless Legionnaire": Enemy.make(8, "Relentless Legionnaire", AttackAction(2),
     entry=MultiAction([AddConditionAction("undying", 1, "self"), AddConditionAction("empower", 3, "self")])),
-  "Eternal Berserker": Enemy(12, "Eternal Berserker", MultiAction([
+  "Eternal Berserker": Enemy.make(12, "Eternal Berserker", MultiAction([
      AttackAction(2), AddConditionAction("sharp", 2, "self"), AddConditionAction("regen", 3, "self")]),
     entry=MultiAction([AddConditionAction("undying", 3, "self")])),
-  "Risen Warrior": Enemy(15, "Risen Warrior", AttackAction(10), entry=AddConditionAction("encase", 20, "self")),
-  "Intrepid Bannerman": Enemy(15, "Intrepid Bannerman", AddConditionAction("empower", 4, "side"),
+  "Risen Warrior": Enemy.make(15, "Risen Warrior", AttackAction(10), entry=AddConditionAction("encase", 20, "self")),
+  "Intrepid Bannerman": Enemy.make(15, "Intrepid Bannerman", AddConditionAction("empower", 4, "side"),
     entry=AddConditionAction("undying", 1, "self")),
-  "Inquisitive Eye": Enemy(4, "Inquisitive Eye", CallAction(None, 1)),
-  "Collector's Cage": Enemy(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1, windup_action=AddConditionAction("encase", 4, "player"))),
-  "Grasping Hand": Enemy(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
-  "Collector of Bodies": Enemy(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
+  "Inquisitive Eye": Enemy.make(4, "Inquisitive Eye", CallAction(None, 1)),
+  "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1, windup_action=AddConditionAction("encase", 4, "player"))),
+  "Grasping Hand": Enemy.make(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
+  "Collector of Bodies": Enemy.make(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
                                entry=AddConditionAction("encase", 16, "player")),
-  "Collector of Magic": Enemy(20, "Collector of Magic", EnergyThresholdAction(AttackAction(10), NothingAction(), 1)),
-  "Collector of Still-lifes": Enemy(20, "Collector of Still-lifes", SpellcastThresholdAction(
+  "Collector of Magic": Enemy.make(20, "Collector of Magic", EnergyThresholdAction(AttackAction(10), NothingAction(), 1)),
+  "Collector of Still-lifes": Enemy.make(20, "Collector of Still-lifes", SpellcastThresholdAction(
       AttackAction(10), AddConditionAction("slow", 1, "player"), 1)),
-  "Doom of Blades": Enemy(40, "Doom of Blades", MultiAction([AttackAll(15), AttackAction(15)])),
-  "Doom of Plagues": Enemy(40, "Doom of Plagues", AddConditionAction("poison", 3, "player"),
+  "Doom of Blades": Enemy.make(40, "Doom of Blades", MultiAction([AttackAll(15), AttackAction(15)])),
+  "Doom of Plagues": Enemy.make(40, "Doom of Plagues", AddConditionAction("poison", 3, "player"),
                            entry=AddConditionAction("poison", 6, "player")),
-  "Wave of Doom": Enemy(15, "Wave of Doom", WindupAction(AttackAction(8), 1),
+  "Wave of Doom": Enemy.make(15, "Wave of Doom", WindupAction(AttackAction(8), 1),
                          entry=AddConditionAction("retaliate", 1, "self")),
-  "Horde Beast": Enemy(10, "Horde Beast", OverwhelmAction(AttackAction(8), AttackAction(4), 4)),
-  "Blade Forger": Enemy(8, "Blade Forger", SideOverwhelmAction(
+  "Horde Beast": Enemy.make(10, "Horde Beast", OverwhelmAction(AttackAction(8), AttackAction(4), 4)),
+  "Blade Forger": Enemy.make(8, "Blade Forger", SideOverwhelmAction(
       NothingAction(), AddConditionAction("sharp", 2, "player"), 2)),
-  "Wandering Healer": Enemy(8, "Wandering Healer", CautiousAction(NothingAction(),
+  "Wandering Healer": Enemy.make(8, "Wandering Healer", CautiousAction(NothingAction(),
       AddConditionAction("regen", 2, "player")), entry=AddConditionAction("regen", 3, "player")),
-  "Defiant Survivor": Enemy(8, "Defiant Survivor", CautiousAction(
+  "Defiant Survivor": Enemy.make(8, "Defiant Survivor", CautiousAction(
       NothingAction(), AddConditionAction("searing", 3, "player"))),
-  "Grizzled Armorer": Enemy(8, "Grizzled Armorer", SideOverwhelmAction(
+  "Grizzled Armorer": Enemy.make(8, "Grizzled Armorer", SideOverwhelmAction(
       NothingAction(), AddConditionAction("armor", 1, "player"), 2)),
 
   # Hoarding Dragons? Wound them and they go away. Or they go into neutral mode They interact with your items?

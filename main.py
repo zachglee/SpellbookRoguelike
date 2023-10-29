@@ -51,7 +51,7 @@ class GameStateV2:
     chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
     name = input("What shall they be called? > ")
     library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
-    player = Player(hp=30, name=name,
+    player = Player.make(hp=30, name=name,
                     spellbook=None,
                     inventory=[],
                     library=library,
@@ -193,7 +193,8 @@ class GameStateV2:
   def play_setup(self, map_file=None):
     self.choose_map(map_file)
     self.choose_character()
-    self.run_length = int(input("How many regions are you playing for? > "))
+    self.run_length = 4
+    # self.run_length = int(input("How many regions are you playing for? > "))
 
   def play_encounter(self, encounter):
     encounter.init_with_player(self.player)

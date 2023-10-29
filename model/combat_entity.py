@@ -1,4 +1,5 @@
-from typing import List
+from typing import Any, List
+from pydantic import validator, BaseModel
 import math
 from collections import defaultdict
 from termcolor import colored
@@ -6,29 +7,35 @@ from model.event import Event
 from utils import energy_color_map, energy_pip_symbol
 from sound_utils import play_sound
 
-class CombatEntity:
-  def __init__(self, max_hp, name):
-    self.max_hp = max_hp
-    self.hp = max_hp
-    self.name = name
+class CombatEntity(BaseModel):
+  max_hp: int
+  hp: int
+  name: str
 
-    # current state
-    self.conditions = defaultdict(lambda: 0)
-    self.conditions["enduring"] = None
-    self.conditions["durable"] = None
-    self.location = {"side": None, "position": None}
-    self.events = []
-    self.dead = False
-    self.resurrected = False
-    self.event_triggers = []
+  # current state
+  conditions: Any = defaultdict(lambda: 0)
+  location: dict = {"side": None, "position": None}
+  events: List[Event] = []
+  dead: bool = False
+  resurrected: bool = False
+  event_triggers: list = []
 
-    # combat bookkeeping
-    self.damage_taken_this_turn = 0
-    self.damage_survived_this_turn = 0
-    self.face_count = 0 # relevant for player only
-    self.spawned_turn = None # relevant for enemies only
-      
+  # combat bookkeeping
+  damage_taken_this_turn: int = 0
+  damage_survived_this_turn: int = 0
+  face_count: int = 0 # relevant for player only
+  spawned_turn: int = None # relevant for enemies only
 
+  class Config:
+    arbitrary_types_allowed = True
+
+  @validator("conditions", always=True)
+  def none_conditions(cls, data, values):
+    if data["enduring"] == 0:
+      data["enduring"] = None
+    if data["durable"] == 0:
+      data["durable"] = None
+    return data
 
   def is_player(self):
     return self.__class__.__name__ == "Player"

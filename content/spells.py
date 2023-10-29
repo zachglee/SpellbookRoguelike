@@ -247,7 +247,7 @@ gold_turn_page = [
          triggers_on=passive_on_page, raw_commands=["inventive p 1"]),
   Spell(rules_text="refresh a spell.", color="gold", type="Producer"),
   Spell(rules_text="+4 time, +1 inventive, refresh and recharge last spell cast.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["time -4", "inventive p 1", "recharge last"]),
+        raw_commands=["time -4", "inventive p 1", "recharge -2"]),
   Spell(rules_text="Gain 2x shield and deal 2x to all where x is # of spells cast this turn.", color="gold", type="Consumer",
         generate_commands_pre=for_spells_cast(["shield p *", "damage a *"], lambda s: 2*s))], 
 ]
@@ -299,8 +299,8 @@ gold_first_face = [
   Spell(rules_text="inflict 3 vulnerable on immediate behind.", color="gold", type="Producer", raw_commands=["vulnerable bi 3"]),
   Spell(rules_text="Gain 2 sharp this turn, face, deal 4 to immediate.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["sharp p 2", "delay 0 sharp p -2", "face!", "damage i 4"]),
-  Spell(rules_text="Deal 6 damage to immediate. If facing no enemies, face and deal 16 damage to immediate.", color="gold", type="Consumer",
-        raw_commands=["damage i 8"], generate_commands_post=if_facing_none(["face!", "damage i 16"]))]
+  Spell(rules_text="Deal 10 damage to immediate. Then, if facing no enemies, face and deal 10 damage to immediate.", color="gold", type="Consumer",
+        raw_commands=["damage i 10"], generate_commands_post=if_facing_none(["face!", "damage i 10"]))]
 ]
 
 gold_use_last_charge = [

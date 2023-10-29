@@ -1,10 +1,12 @@
+from typing import Optional
 from drafting import draft_player_library
+from model.ritual import Ritual
 from termcolor import colored
 import random
 from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
-from model.spellbook import Spellbook
+from model.spellbook import LibrarySpell, Spellbook
 from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors
 from sound_utils import play_sound
@@ -14,64 +16,77 @@ from content.enemy_factions import all_special_items, all_basic_items
 from model.event import Event
 
 class Player(CombatEntity):
-  def __init__(self, hp, name, spellbook, inventory, library,
-               signature_spell=None, signature_color=None, starting_inventory=None,
-               aspiration=None, personal_destination=None, starting_weapon=None,
-               home_column=0):
-    super().__init__(hp, name)
+  # def __init__(self, hp, name, spellbook, inventory, library,
+  #              signature_spell=None, starting_inventory=None,
+  #              ):
+  #   super().__init__(hp, name)
 
-    # Combat stuff
-    self.spellbook = spellbook
-    self.inventory = inventory
-    self.rituals = []
-    self.time = 4
-    self.facing = "front"
-    self.explored = 1
+  #   # Combat stuff
+  #   self.spellbook = spellbook
+  #   self.inventory = inventory
+  #   self.rituals = []
+  #   self.time = 4
+  #   self.facing = "front"
+  #   self.explored = 1
 
-    # Meta state
-    self.signature_spell = signature_spell
-    self.signature_color = signature_color
-    self.library = library
-    self.archive = []
-    self.starting_inventory = starting_inventory or []
-    self.starting_item_pool = starting_weapons
-    if starting_weapon:
-      self.starting_inventory.append(starting_weapon)
-    self.material = 0
+  #   # Meta state
+  #   self.signature_spell = signature_spell
+  #   self.library = library
+  #   self.archive = []
+  #   self.starting_inventory = starting_inventory or []
+  #   self.material = 0
 
-    # self.character_class = choose_str(["Explorer", "Builder", "Scholar"], "Choose a character class > ")
-    self.character_class = "Builder"
-    if self.character_class == "Explorer":
-      self.find_route_cost = 1
-      self.find_route_cost_scale_amount = 1
-    elif self.character_class == "Builder":
-      self.find_route_cost = 2
-      self.find_route_cost_scale_amount = 2
-      self.material = 10
-    if self.character_class == "Scholar":
-      self.find_route_cost = 3
-      self.find_route_cost_scale_amount = 3
+  #   self.inventory_capacity = 10 # meant to be for inventory but not used right now
+  #   self.library_capacity = 10
 
-    self.home_column = home_column
-    self.current_column = home_column
-    self.inventory_capacity = 10 # meant to be for inventory but not used right now
-    self.library_capacity = 10
-    self.library_draft_randoms = 1
-    self.library_draft_picks = 2
-    self.library_draft_options = 2
+  #   self.level = 0
+  #   self.experience = 0
+  #   self.wounds = 0
+  #   self.seen_items = []
+  #   self.pursuing_enemysets = []
 
-    self.level = 0
-    self.experience = 0
-    self.wounds = 0
-    self.seen_items = []
-    self.pursuing_enemysets = []
+  #   # character role playing
+  #   self.personal_item = None
+  #   self.request = None
 
-    # character role playing
-    self.personal_item = None
-    self.request = None
-    self.aspiration_statement = ""
-    self.aspiration = aspiration
-    self.personal_destination = personal_destination
+  # Combat stuff
+  spellbook: Optional[Spellbook]
+  inventory: list[Item]
+  rituals: list[Ritual] = []
+  time: int = 4
+  facing: str = "front"
+  explored: int = 1
+
+  # Meta state
+  signature_spell: LibrarySpell
+  library: list[LibrarySpell]
+  archive: list[LibrarySpell] = []
+  starting_inventory: list[Item] = []
+  material: int = 0
+
+  inventory_capacity: int = 10
+  library_capacity: int = 10
+
+  level: int = 0
+  experience: int = 0
+  wounds: int = 0
+  seen_items: list[Item] = []
+  pursuing_enemysets: list[list[str]] = []
+  personal_item: Item = None
+  request: str = None
+
+  class Config:
+    arbitrary_types_allowed = True
+
+  @classmethod
+  def make(cls, hp, name, spellbook, inventory, library,
+           signature_spell=None, starting_inventory=None):
+    starting_inventory = starting_inventory or []
+    player = Player(hp=hp, max_hp=hp, name=name, spellbook=spellbook, inventory=inventory, library=library,
+                  signature_spell=signature_spell, starting_inventory=starting_inventory)
+    return player
+
+  # --------
 
   def total_energy(self, colors=energy_colors):
     player_energy = sum(self.conditions[color] for color in colors)
@@ -187,6 +202,7 @@ class Player(CombatEntity):
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
+    self.material = 10
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,
