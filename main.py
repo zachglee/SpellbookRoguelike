@@ -167,7 +167,6 @@ class GameStateV2:
   def end_run(self):
     self.map.end_run()
     self.player.archive_library_spells(copies_threshold=10)
-    # self.prompt_log()
     self.player.check_level_up()
     self.save()
 
@@ -194,7 +193,6 @@ class GameStateV2:
     self.choose_map(map_file)
     self.choose_character()
     self.run_length = 4
-    # self.run_length = int(input("How many regions are you playing for? > "))
 
   def play_encounter(self, encounter):
     encounter.init_with_player(self.player)
