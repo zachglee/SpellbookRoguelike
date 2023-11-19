@@ -1,0 +1,23 @@
+{
+  "name": "spellbookroguelike",
+  "version": "1.0.0",
+  "description": "Spellbook Roguelike Prototyping",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zachglee/SpellbookRoguelike.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zachglee/SpellbookRoguelike/issues"
+  },
+  "homepage": "https://github.com/zachglee/SpellbookRoguelike#readme",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "xterm": "^5.3.0"
+  }
+}

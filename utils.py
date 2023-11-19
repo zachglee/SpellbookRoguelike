@@ -3,6 +3,8 @@ from typing import List, Literal
 from termcolor import colored
 import re
 
+from fastapi import WebSocket
+
 Color = Literal["red", "gold", "blue"]
 energy_colors = ["red", "blue", "gold", "green", "purple"]
 energy_pip_symbol = "●"
@@ -20,6 +22,18 @@ energy_color_map = {
   "Green": "green",
   "Purple": "magenta",
 }
+
+# websocket interactions
+
+async def ws_input(prompt, websocket: WebSocket):
+    prompt = prompt.replace("\n", "\n\r")
+    await websocket.send_text(f"{prompt}")
+    data = await websocket.receive_text()
+    return data
+
+async def ws_print(s, websocket: WebSocket):
+    s = s.replace("\n", "\n\r")
+    await websocket.send_text(f"{s}\n\r")
 
 # rendering
 
@@ -67,15 +81,15 @@ def choose_str(choices: List[str], prompt):
     except (ValueError, TypeError, IndexError) as e:
       print(e)
 
-def choose_obj(choices, prompt):
+async def choose_obj(choices, prompt, websocket: WebSocket):
   while True:
     try:
-      choice = input(prompt)
+      choice = await ws_input(prompt, websocket)
       if choice == "done":
         return None
       return choices[int(choice) - 1]
     except (ValueError, TypeError, IndexError) as e:
-      print(e)
+      await ws_print(e, websocket)
 
 def choose_idx(choices, prompt):
   while True:
@@ -161,7 +175,7 @@ def get_combat_entities(enc, target_string):
     return targets
       
   
-def command_reference():
+async def command_reference(websocket=None):
   help_string = """
   UI Commands:
    - help: Display this message
@@ -193,9 +207,9 @@ def command_reference():
    - cast <n>: casts the n'th spell on this page
    - time <n>: removes n units of time. If you want to get time back use negative numbers.
   """
-  input(help_string)
+  await ws_input(help_string, websocket)
 
-def help_reference(subject):
+async def help_reference(subject, websocket=None):
   if subject == "burn":
     help_text = ("Burn is a condition. At the end of every turn, an entity with burn"
                 "suffers damage equal to its burn and its burn decreases by 1.")
@@ -256,5 +270,4 @@ def help_reference(subject):
   # TODO: encase, undying, evade
   else:
     help_text = (f"Sorry, there is no help entry for '{subject}'")
-  input(help_text)
-  
+  await ws_input(help_text, websocket)

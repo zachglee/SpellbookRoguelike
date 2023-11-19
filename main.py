@@ -11,7 +11,7 @@ from termcolor import colored
 from generators import generate_faction_sets, generate_library_spells, generate_shop, generate_spell_pools
 from model.region_draft import RegionDraft
 from content.items import minor_energy_potions, health_potions
-from utils import choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list
+from utils import choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
 STARTING_EXPLORED = 1
 
@@ -19,7 +19,7 @@ class GameOver(Exception):
   pass
 
 class GameStateV2:
-  def __init__(self, n_regions=4):
+  def __init__(self, n_regions=4, websocket=None):
     self.map = Map(n_regions=n_regions)
     self.current_region_idx = 0
     self.player = None
@@ -27,6 +27,9 @@ class GameStateV2:
     #
     self.show_intents = False
     self.run_length = None
+
+    #
+    self.websocket = websocket
 
   # Properties
 
@@ -44,12 +47,12 @@ class GameStateV2:
 
   # Generators
 
-  def generate_new_character(self, spell_pool):
-    print("Starting a new character...")
+  async def generate_new_character(self, spell_pool):
+    await ws_print("Starting a new character...", self.websocket)
     signature_spell_options = generate_library_spells(2, spell_pool=spell_pool)
-    print(numbered_list(signature_spell_options))
-    chosen_spell = choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"))
-    name = input("What shall they be called? > ")
+    await ws_print(numbered_list(signature_spell_options), self.websocket)
+    chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), self.websocket)
+    name = await ws_input("What shall they be called? > ", self.websocket)
     library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
     player = Player.make(hp=30, name=name,
                     spellbook=None,
@@ -70,7 +73,7 @@ class GameStateV2:
 
   # Game Phases
 
-  def handle_command(self, cmd, encounter):
+  async def handle_command(self, cmd, encounter, websocket=None):
     cmd_tokens = cmd.split(" ")
     try:
       if cmd == "die":
@@ -79,12 +82,12 @@ class GameStateV2:
       elif cmd == "debug":
         targets = get_combat_entities(self, cmd_tokens[1])
         for target in targets:
-          print(target.__dict__)
+          await ws_print(target.__dict__, websocket)
         return
       elif cmd == "help":
-        command_reference()
+        await command_reference(websocket=websocket)
       elif cmd in ["inventory", "inv", "i"]:
-        print(encounter.player.render_inventory())
+        await ws_print(encounter.player.render_inventory(), websocket)
         play_sound("inventory.mp3")
         return
       elif cmd in ["intent", "intents", "int"]:
@@ -98,27 +101,27 @@ class GameStateV2:
         return
       elif cmd[-1] == "?":
         subject = cmd[:-1]
-        help_reference(subject)
+        await help_reference(subject, websocket=websocket)
         return
     except (KeyError, IndexError, ValueError, TypeError) as e:
-      print(e)
+      await ws_print(e, websocket)
 
     # If not a UI command, see if it can be handled as an encounter command
-    encounter.handle_command(cmd)
+    await encounter.handle_command(cmd, websocket=websocket)
 
-  def run_encounter_round(self, encounter):
+  async def run_encounter_round(self, encounter, websocket=None):
     while True:
-      encounter.render_combat(show_intents=self.show_intents)
-      cmd = input("> ")
+      await encounter.render_combat(show_intents=self.show_intents, websocket=websocket)
+      cmd = await ws_input("> ", websocket)
       if cmd == "done":
         encounter.end_player_turn()
         break
-      self.handle_command(cmd, encounter)
+      await self.handle_command(cmd, encounter, websocket=websocket)
 
-  def encounter_phase(self, encounter):
+  async def encounter_phase(self, encounter):
     while not encounter.overcome:
-      self.run_encounter_round(encounter)
-    encounter.render_combat()
+      await self.run_encounter_round(encounter)
+    await encounter.render_combat(websocket=self.websocket)
     encounter.end_encounter()
     self.save()
 
@@ -170,10 +173,10 @@ class GameStateV2:
     self.player.check_level_up()
     self.save()
 
-  def choose_character(self):
-    character_choice = input("Choose a character ('new' to make a new character) > ")
+  async def choose_character(self):
+    character_choice = await ws_input("Choose a character ('new' to make a new character) > ", self.websocket)
     if character_choice == "new":
-      player = self.generate_new_character(self.map.region_drafts[0].spell_pool)
+      player = await self.generate_new_character(self.map.region_drafts[0].spell_pool)
     else:
       character_file = f"saves/{character_choice}.pkl"
       with open(character_file, "rb") as f:
@@ -189,34 +192,35 @@ class GameStateV2:
       self.map = Map()
     self.map.init()
 
-  def play_setup(self, map_file=None):
+  async def play_setup(self, map_file=None):
     self.choose_map(map_file)
-    self.choose_character()
+    await self.choose_character()
     self.run_length = 4
 
-  def play_encounter(self, encounter):
+  async def play_encounter(self, encounter, websocket=None):
     encounter.init_with_player(self.player)
-    encounter_draft(self.player, encounter, num_pages=2, page_capacity=3)
+    await encounter_draft(self.player, num_pages=2, page_capacity=3, websocket=websocket)
     self.player.archive_library_spells()
-    self.encounter_phase(encounter)
+    await self.encounter_phase(encounter, websocket=websocket)
 
-  def play(self, map_file=None):
-    self.play_setup(map_file=map_file)
+  async def play(self, map_file=None):
+    await self.play_setup(map_file=map_file)
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
 
-      region_draft.play(self.player)
-      region_shop.play(self.player)
+      await region_draft.play(self.player, self.websocket)
+      await region_shop.play(self.player, self.websocket)
       encounter = self.generate_encounter(self.player, difficulty=2+region_draft.difficulty)
+      await self.play_encounter(encounter, self.websocket)
 
-      self.play_encounter(encounter)
+      return encounter
 
       # Persistent enemy sets
       persistent_enemyset = random.choice(encounter.enemy_sets)
       persistent_enemyset.level_up()
       self.player.pursuing_enemysets.append(persistent_enemyset)
-      print(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"))
+      await ws_print(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"), self.websocket)
       for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
         enemyset.level = 0
 

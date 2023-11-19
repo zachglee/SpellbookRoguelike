@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from model.encounter import EnemySet
 from model.spellbook import LibrarySpell, Spell
-from utils import choose_obj, numbered_list
+from utils import choose_obj, numbered_list, ws_print
 
 class RegionDraft:
   def __init__(self, difficulty, factions, spell_pool, n_options=2, n_picks=3):
@@ -71,20 +71,20 @@ class RegionDraft:
       picks.append(pick)
     return picks
   
-  def draft_pick(self, pick_options: List[Tuple[EnemySet, Spell]]):
+  async def draft_pick(self, pick_options: List[Tuple[EnemySet, Spell]], websocket=None):
     # print pick options
-    print(numbered_list(pick_options))
+    await ws_print(numbered_list(pick_options), websocket)
     # choose pick
-    return choose_obj(pick_options, "pick one > ")
+    return await choose_obj(pick_options, "pick one > ", websocket)
   
-  def play(self, player):
+  async def play(self, player, websocket=None):
     for i in range(self.n_picks):
-      print(player.render_state())
-      print()
-      print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~")
+      await ws_print(player.render_state(), websocket)
+      await ws_print("\n", websocket)
+      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", websocket)
       upside_type = "material" if i == 0 else "spell"
       pick_options = self.generate_draft_pick_options(self.n_options, upside=upside_type)
-      chosen_enemyset, chosen_upside = self.draft_pick(pick_options)
+      chosen_enemyset, chosen_upside = await self.draft_pick(pick_options, websocket=websocket)
 
       if isinstance(chosen_upside, Spell):
         chosen_spell = chosen_upside

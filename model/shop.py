@@ -1,7 +1,7 @@
 from sound_utils import play_sound
 from termcolor import colored
 from copy import deepcopy
-from utils import choose_obj, numbered_list
+from utils import choose_obj, numbered_list, ws_print
 
 
 class ShopItem:
@@ -24,14 +24,14 @@ class Shop:
     render_str += numbered_list(self.shop_items)
     return render_str
   
-  def play(self, player):
+  async def play(self, player, websocket=None):
     while True:
-      print(player.render_state())
-      print()
-      print(self.render())
-      print()
-      print(colored(f"You have {player.material}⛁", "yellow"))
-      chosen_item = choose_obj(self.shop_items, "Choose an item to buy > ")
+      await ws_print(player.render_state(), websocket)
+      await ws_print("\n", websocket)
+      await ws_print(self.render(), websocket)
+      await ws_print("\n", websocket)
+      await ws_print(colored(f"You have {player.material}⛁", "yellow"), websocket)
+      chosen_item = await choose_obj(self.shop_items, "Choose an item to buy > ", websocket)
       if chosen_item is None:
         break
       if player.material >= chosen_item.cost:
@@ -39,7 +39,7 @@ class Shop:
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
         chosen_item.stock -= 1
-        print(f"You bought {chosen_item.item.render()}")
+        await ws_print(f"You bought {chosen_item.item.render()}", websocket)
       else:
-        print("You cannot afford that item")
+        await ws_print("You cannot afford that item", websocket)
       self.shop_items = [item for item in self.shop_items if item.stock > 0]

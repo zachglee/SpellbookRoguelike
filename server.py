@@ -1,4 +1,5 @@
 from typing import Union
+from main import GameStateV2
 from pydantic import BaseModel
 
 from fastapi import FastAPI, WebSocket
@@ -45,22 +46,15 @@ html = """
 async def get():
     return HTMLResponse(html)
 
-
-async def websocket_input(prompt, websocket: WebSocket):
-    await websocket.send_text(f"{prompt}")
-    data = await websocket.receive_text()
-    return data
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        new_or_existing = await websocket_input("New or existing character?:", websocket)
-        if new_or_existing == "new":
-            await websocket.send_text(f"You chose new.")
-        elif new_or_existing == "existing":
-            await websocket.send_text(f"You chose existing.")
-        else:
-            await websocket.send_text(f"Invalid choice: {new_or_existing}")
-        # data = await websocket.receive_text()
-        # await websocket.send_text(f"Message text was: {data}")
+
+    game_state = GameStateV2(websocket=websocket)
+    ret = await game_state.play()
+    print(f"----------- DONE!")
+    print(ret)
+
+    # while True:
+    #     data = await websocket.receive_text()
+    #     await websocket.send_text(f"You said: {data}\r$ ")

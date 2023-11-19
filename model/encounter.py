@@ -13,7 +13,7 @@ from model.event import Event
 from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
 from content.rituals import rituals
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
-from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list
+from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
 from sound_utils import play_sound
 
 
@@ -289,7 +289,7 @@ class Encounter:
         target_spawn = sorted(non_imminent_spawns, key=lambda es: es.turn)[0]
       target_spawn.turn -= magnitude
 
-  def explore(self):
+  async def explore(self, websocket=None):
     play_sound("explore.mp3")
     self.player.explored += 1
     r = random.random()
@@ -297,25 +297,25 @@ class Encounter:
     if r < 0.01:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(self.special_items))
-      input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"))
+      await ws_input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"), websocket)
     elif r < 0.05:
       found_item = deepcopy(random.choice(self.basic_items))
-      input(colored("Something useful glints in the torchlight...", "green"))
+      await ws_input(colored("Something useful glints in the torchlight...", "green"), websocket)
     elif r < 0.10:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(minor_energy_potions))
-      input(colored("Something useful glints in the torchlight...", "green"))
+      await ws_input(colored("Something useful glints in the torchlight...", "green"), websocket)
     else:
       found_item = None
-      print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"))
+      await ws_print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"), websocket)
     
     if found_item:
-      print(f"Found: {found_item.render()}")
+      await ws_print(f"Found: {found_item.render()}", websocket)
       self.player.inventory.append(found_item)
       self.player.seen_items.append(found_item)
 
-  def handle_command(self, cmd):
-    print(f"Handling command '{cmd}' ...")
+  async def handle_command(self, cmd, websocket=None):
+    await ws_print(f"Handling command '{cmd}' ...", websocket)
     cmd_tokens = cmd.split(" ")
     try:
       if cmd == "win":
@@ -336,10 +336,10 @@ class Encounter:
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
         else:
-          input(colored("Not enough time to use that item!", "red"))
+          await ws_input(colored("Not enough time to use that item!", "red"), websocket)
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
-        self.explore()
+        await self.explore(websocket=websocket)
       elif cmd == "face?":
         self.player.switch_face(event=False)
       elif cmd == "face!":
@@ -362,7 +362,7 @@ class Encounter:
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         if target.spell.type == "Passive":
-          input(colored("Cannot cast passive spells.", "red"))
+          await ws_input(colored("Cannot cast passive spells.", "red"), websocket)
           return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
@@ -420,7 +420,7 @@ class Encounter:
         magnitude = int(cmd_tokens[1])
         repeated_command = " ".join(cmd_tokens[2:])
         for _ in range(magnitude):
-          self.handle_command(repeated_command)
+          await self.handle_command(repeated_command, websocket=websocket)
       else:
         condition = cmd_tokens[0]
         targets = get_combat_entities(self, cmd_tokens[1])
@@ -627,14 +627,14 @@ class Encounter:
       f"{len(self.enemy_sets)} ({preview_enemy_set_names}), "
       f"Ambient {self.ambient_energy}")
 
-  def render_combat(self, show_intents=False):
-    print(self.player.spellbook.render_current_page() + "\n")
-    print(f"-------- Front --------")
+  async def render_combat(self, show_intents=False, websocket=None):
+    await ws_print(self.player.spellbook.render_current_page() + "\n", websocket)
+    await ws_print(f"-------- Front --------", websocket)
     for enemy in reversed(self.front):
       render_str = f"- {enemy.render()}"
       if show_intents:
         render_str += f" | {enemy.action}"
-      print(render_str)
+      await ws_print(render_str, websocket)
 
     turn_str = f"(T{self.turn})"
     if self.turn == self.escape_turn:
@@ -642,13 +642,13 @@ class Encounter:
 
     face_character = "↑" if self.player.facing == "front" else "↓"
     bookend = colored(f"{face_character*8} ", "green" if self.player.facing == "front" else "red")
-    print(f"\n {bookend}" + f"{self.player.render()} {turn_str}" + f"{bookend} \n")
+    await ws_print(f"\n {bookend}" + f"{self.player.render()} {turn_str}" + f"{bookend} \n", websocket)
     for enemy in self.back:
       render_str = f"- {enemy.render()}"
       if show_intents:
         render_str += f" | {enemy.action}"
-      print(render_str)
-    print(f"-------- Back --------")
+      await ws_print(render_str, websocket)
+    await ws_print(f"-------- Back --------", websocket)
     
 
   
