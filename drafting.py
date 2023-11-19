@@ -33,11 +33,11 @@ def destination_draft(player, destination_node):
   for i in range(destination_node.num_pages):
     edit_page_from_inventory(player, i+1, page_capacity=destination_node.page_capacity)
 
-async def encounter_draft(player, num_pages=2, page_capacity=3, websocket=None):
+async def encounter_draft(player, num_pages=2, page_capacity=3):
   play_sound("build-spellbook.mp3")
   player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
   for i in range(num_pages):
-    await edit_page_from_inventory(player, i+1, page_capacity=page_capacity, websocket=websocket)
+    await edit_page_from_inventory(player, i+1, page_capacity=page_capacity, websocket=player.websocket)
 
 async def edit_page_from_inventory(player, page_number, page_capacity=3, websocket=None):
   active_page = player.spellbook.pages[page_number - 1]

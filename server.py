@@ -1,6 +1,7 @@
 from typing import Union
 from main import GameStateV2
 from pydantic import BaseModel
+import uuid
 
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
@@ -41,6 +42,7 @@ html = """
 </html>
 """
 
+game_state = GameStateV2()
 
 @app.get("/")
 async def get():
@@ -50,9 +52,10 @@ async def get():
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    game_state = GameStateV2(websocket=websocket)
-    ret = await game_state.play()
-    print(f"----------- DONE!")
+    # game_state = GameStateV2(websocket=websocket)
+    player_id = uuid.uuid4().hex
+    print(f"----------- BEGINNING {player_id}!")
+    ret = await game_state.play(player_id, websocket)
     print(ret)
 
     # while True:

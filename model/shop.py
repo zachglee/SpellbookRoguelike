@@ -24,14 +24,14 @@ class Shop:
     render_str += numbered_list(self.shop_items)
     return render_str
   
-  async def play(self, player, websocket=None):
+  async def play(self, player):
     while True:
-      await ws_print(player.render_state(), websocket)
-      await ws_print("\n", websocket)
-      await ws_print(self.render(), websocket)
-      await ws_print("\n", websocket)
-      await ws_print(colored(f"You have {player.material}⛁", "yellow"), websocket)
-      chosen_item = await choose_obj(self.shop_items, "Choose an item to buy > ", websocket)
+      await ws_print(player.render_state(), player.websocket)
+      await ws_print("\n", player.websocket)
+      await ws_print(self.render(), player.websocket)
+      await ws_print("\n", player.websocket)
+      await ws_print(colored(f"You have {player.material}⛁", "yellow"), player.websocket)
+      chosen_item = await choose_obj(self.shop_items, "Choose an item to buy > ", player.websocket)
       if chosen_item is None:
         break
       if player.material >= chosen_item.cost:
@@ -39,7 +39,7 @@ class Shop:
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
         chosen_item.stock -= 1
-        await ws_print(f"You bought {chosen_item.item.render()}", websocket)
+        await ws_print(f"You bought {chosen_item.item.render()}", player.websocket)
       else:
-        await ws_print("You cannot afford that item", websocket)
+        await ws_print("You cannot afford that item", player.websocket)
       self.shop_items = [item for item in self.shop_items if item.stock > 0]

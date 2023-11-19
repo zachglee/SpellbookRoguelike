@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from drafting import draft_player_library
 from model.ritual import Ritual
 from termcolor import colored
@@ -16,38 +16,6 @@ from content.enemy_factions import all_special_items, all_basic_items
 from model.event import Event
 
 class Player(CombatEntity):
-  # def __init__(self, hp, name, spellbook, inventory, library,
-  #              signature_spell=None, starting_inventory=None,
-  #              ):
-  #   super().__init__(hp, name)
-
-  #   # Combat stuff
-  #   self.spellbook = spellbook
-  #   self.inventory = inventory
-  #   self.rituals = []
-  #   self.time = 4
-  #   self.facing = "front"
-  #   self.explored = 1
-
-  #   # Meta state
-  #   self.signature_spell = signature_spell
-  #   self.library = library
-  #   self.archive = []
-  #   self.starting_inventory = starting_inventory or []
-  #   self.material = 0
-
-  #   self.inventory_capacity = 10 # meant to be for inventory but not used right now
-  #   self.library_capacity = 10
-
-  #   self.level = 0
-  #   self.experience = 0
-  #   self.wounds = 0
-  #   self.seen_items = []
-  #   self.pursuing_enemysets = []
-
-  #   # character role playing
-  #   self.personal_item = None
-  #   self.request = None
 
   # Combat stuff
   spellbook: Optional[Spellbook]
@@ -74,6 +42,10 @@ class Player(CombatEntity):
   pursuing_enemysets: list[list[str]] = []
   personal_item: Item = None
   request: str = None
+
+  done: bool = False
+  id: Optional[str] = None
+  websocket: Any = None
 
   class Config:
     arbitrary_types_allowed = True
