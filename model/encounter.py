@@ -42,12 +42,13 @@ class EnemySpawn:
     self.wave = wave
 
 class EnemySet:
-  def __init__(self, name, enemy_spawns, faction="Unknown", exp=None):
+  def __init__(self, name, enemy_spawns, faction="Unknown", exp=None, description=""):
     self.name = name
     self.enemy_spawns = enemy_spawns
     self.experience = exp or 15
     self.faction = faction
     self.level = 0
+    self.description = description
 
     self.pickable = True
   
@@ -67,16 +68,14 @@ class EnemySet:
     self.level += 1
 
   def render(self):
-    return_str = f"{self.name}"
+    return_str = colored(f"{self.name}", "red")
     if self.level > 0:
       return_str += colored(f" (Lv{self.level})", "red")
+    return_str += colored(f" - {self.description}", "magenta")
     return return_str
 
   def __repr__(self):
-    return_str = f"{self.name}"
-    if self.level > 0:
-      return_str += colored(f" (Lv{self.level})", "red")
-    return return_str
+    return self.render()
 
 class EnemyWave:
   def __init__(self, enemy_sets, delay=0):

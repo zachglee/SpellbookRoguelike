@@ -1,3 +1,5 @@
+import os
+import time
 from typing import Union
 from main import GameStateV2
 from pydantic import BaseModel
@@ -52,7 +54,7 @@ async def get():
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    # game_state = GameStateV2(websocket=websocket)
+    game_state = GameStateV2(websocket=websocket)
     player_id = uuid.uuid4().hex
     print(f"----------- BEGINNING {player_id}!")
     ret = await game_state.play(player_id, websocket)
@@ -61,3 +63,4 @@ async def websocket_endpoint(websocket: WebSocket):
     # while True:
     #     data = await websocket.receive_text()
     #     await websocket.send_text(f"You said: {data}\r$ ")
+

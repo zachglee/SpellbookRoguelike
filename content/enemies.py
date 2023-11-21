@@ -223,24 +223,24 @@ doombringers = [
   EnemySet("Doom of Blades", [
     EnemySpawn(4, "b", enemies["Blade Forger"]),
     EnemySpawn(6, "f", enemies["Doom of Blades"]),
-  ], faction="Doombringers"),
+  ], faction="Doombringers", description="Death to all, both friend and foe. Sharpen your blades before it comes."),
   EnemySet("Doom of Plagues", [
     EnemySpawn(3, "b", enemies["Wandering Healer"]),
     EnemySpawn(5, "f", enemies["Doom of Plagues"]),
-  ], faction="Doombringers"),
+  ], faction="Doombringers", description="An inexorable sickness. Healing is necessary to survive."),
   EnemySet("Doom of Waves", [
     EnemySpawn(3, "b", enemies["Defiant Survivor"]),
     EnemySpawn(4, "f", enemies["Wave of Doom"]),
     EnemySpawn(5, "f", enemies["Wave of Doom"]),
     EnemySpawn(6, "f", enemies["Wave of Doom"]),
-  ], faction="Doombringers"),
+  ], faction="Doombringers", description="Three waves. They loom before they crash."),
   EnemySet("Doom of Hordes", [
     EnemySpawn(4, "b", enemies["Grizzled Armorer"]),
     EnemySpawn(6, "f", enemies["Horde Beast"]),
     EnemySpawn(6, "f", enemies["Horde Beast"]),
     EnemySpawn(6, "b", enemies["Horde Beast"]),
     EnemySpawn(6, "b", enemies["Horde Beast"]),
-  ], faction="Doombringers")
+  ], faction="Doombringers", description="Prepare your walls. The horde is coming.")
 ]
 
 the_collectors = [
@@ -273,33 +273,33 @@ undying_legion = [
     EnemySpawn(2, "f", enemies["Relentless Legionnaire"]),
     EnemySpawn(3, "b", enemies["Relentless Legionnaire"]),
     EnemySpawn(4, "f", enemies["Relentless Legionnaire"])
-  ], faction="Undying Legion"),
+  ], faction="Undying Legion", description="In life and in death, they march on."),
   EnemySet("Eternal Berserker", [
     EnemySpawn(1, "f", enemies["Eternal Berserker"]),
-  ], faction="Undying Legion"),
+  ], faction="Undying Legion", description="He has died a thousand times, and will die a thousand more."),
   EnemySet("Risen Warrior", [
     EnemySpawn(1, "b", enemies["Risen Warrior"])
-  ], faction="Undying Legion"),
+  ], faction="Undying Legion", description="It claws at its sarcogphagus. How long before it escapes?"),
   EnemySet("Intrepid Bannerman", [
     EnemySpawn(3, "f", enemies["Intrepid Bannerman"]),
     EnemySpawn(4, "f", enemies["Conscript"])
-  ], faction="Undying Legion")
+  ], faction="Undying Legion", description="The Banners of the Legion inspire a fervor that transcends death.")
 ]
 
 freed_automata = [
   # Freed Automata
   EnemySet("Assault Golem", [
     EnemySpawn(2, "f", enemies["Assault Golem"])
-  ], faction="Freed Automata"),
+  ], faction="Freed Automata", description="An industrial golem, factoryless and wandering. Attack at your own peril."),
   EnemySet("Aegis Orb", [
     EnemySpawn(1, "f", enemies["Aegis Orb"])
-  ], faction="Freed Automata"),
+  ], faction="Freed Automata", description="A floating chrome orb. It pulses with silver light."),
   EnemySet("Defective Shieldbot", [
     EnemySpawn(1, "f", enemies["Defective Shieldbot"])
-  ], faction="Freed Automata"),
+  ], faction="Freed Automata", description="A shield generator, damaged and dangerously defective as it decays."),
   EnemySet("Plated Warmech", [
     EnemySpawn(3, "f", enemies["Plated Warmech"])
-  ], faction="Freed Automata")
+  ], faction="Freed Automata", description="It was built to march through armies unscathed."),
 ]
 
 saik_collective = [
@@ -308,17 +308,17 @@ saik_collective = [
     EnemySpawn(1, "b", enemies["Harpy Harrier"]),
     EnemySpawn(2, "f", enemies["Harpy Harrier"]),
     EnemySpawn(3, "b", enemies["Harpy Harrier"])
-  ], faction="Sa'ik Collective"),
+  ], faction="Sa'ik Collective", description="A flock of harpies, swooping and diving. Don't turn your back."),
   EnemySet("Evasive Skydancer", [
     EnemySpawn(2, "f", enemies["Evasive Skydancer"])
-  ], faction="Sa'ik Collective"),
+  ], faction="Sa'ik Collective", description="She weaves through the air, waiting to strike."),
   EnemySet("Sa'ik Descenders", [
     EnemySpawn(3, "f", enemies["Cocky Descender"]),
     EnemySpawn(3, "b", enemies["Cocky Descender"]),
-  ], faction="Sa'ik Collective"),
+  ], faction="Sa'ik Collective", description="They're not used to prey that fights back."),
   EnemySet("Screeching Fury", [
     EnemySpawn(3, "b", enemies["Screeching Fury"]),
-  ], faction="Sa'ik Collective")
+  ], faction="Sa'ik Collective", description="Raise her ire at your own peril."),
 ]
 
 house_of_imir = [
@@ -327,19 +327,19 @@ house_of_imir = [
     EnemySpawn(2, "f", enemies["Ravenous Hound"]),
     EnemySpawn(3, "b", enemies["Ravenous Hound"]),
     EnemySpawn(4, "f", enemies["Ravenous Hound"])
-  ], faction="House of Imir"),
+  ], faction="House of Imir", description="They surround and tear apart their quarries."),
   EnemySet("Wanton Vampire", [
     EnemySpawn(3, "b", enemies["Bat"]),
     EnemySpawn(4, "f", enemies["Vampire"])
-  ], faction="House of Imir"),
+  ], faction="House of Imir", description="It thrives on the lifeblood of others."),
   EnemySet("Lurking Scavengers", [
     EnemySpawn(1, "b", enemies["Lurking Scavenger"]),
     EnemySpawn(3, "b", enemies["Lurking Scavenger"]),
     EnemySpawn(5, "b", enemies["Lurking Scavenger"]),
-  ], faction="House of Imir"),
+  ], faction="House of Imir", description="Alone they scavenge. Together they hunt."),
   EnemySet("Vampire Lord", [
     EnemySpawn(3, "f", enemies["Vampire Lord"]),
-  ], faction="House of Imir"),
+  ], faction="House of Imir", description="Blood hunted is standard fare. Blood freely offered is a delicacy."),
 ]
 
 movs_horde = [
@@ -348,10 +348,10 @@ movs_horde = [
     EnemySpawn(3, "f", enemies["Zombie"]),
     EnemySpawn(4, "f", enemies["Zombie"]),
     EnemySpawn(5, "f", enemies["Zombie"])
-  ], faction="Mov's Horde"),
+  ], faction="Mov's Horde", description="Don't let them get close."),
   EnemySet("Decaying Corpse", [
     EnemySpawn(1, "f", enemies["Decaying Corpse"])
-  ], faction="Mov's Horde"),
+  ], faction="Mov's Horde", description="It falls apart as it rushes towards you."),
   EnemySet("Skittering Swarm", [
     EnemySpawn(1, "f", enemies["Skitterer"]),
     EnemySpawn(2, "f", enemies["Skitterer"]),
@@ -361,10 +361,10 @@ movs_horde = [
     EnemySpawn(5, "b", enemies["Skitterer"]),
     EnemySpawn(6, "f", enemies["Skitterer"]),
     EnemySpawn(6, "b", enemies["Skitterer"]),
-  ], faction="Mov's Horde"),
+  ], faction="Mov's Horde", description="A nuisance, until they gather that is..."),
   EnemySet("Necromancer Apprentice", [
     EnemySpawn(4, "f", enemies["Necromancer Apprentice"]),
-  ]),
+  ], faction="Mov's Horde", description="She trains under Mov herself, and learns the secrets of undeath."),
 ]
 
 company_of_blades = [
@@ -372,36 +372,36 @@ company_of_blades = [
   EnemySet("Bandit Ambush", [
     EnemySpawn(2, "f", enemies["Bandit"]),
     EnemySpawn(2, "b", enemies["Bandit"])
-  ], faction="Company of Blades"),
+  ], faction="Company of Blades", description="Their courage is... variable."),
   EnemySet("Hunter and Hawk", [
     EnemySpawn(3, "b", enemies["Hawk"]),
     EnemySpawn(4, "f", enemies["Hunter"])
-  ], faction="Company of Blades"),
+  ], faction="Company of Blades", description="Her arrows from a distance spell death."),
   EnemySet("Insistent Duelist", [
     EnemySpawn(2, "f", enemies["Insistent Duelist"])
-  ], faction="Company of Blades"),
+  ], faction="Company of Blades", description="He seeks a challenge and will not be denied."),
   EnemySet("Crossbow Deadeyes", [
     EnemySpawn(2, "b", enemies["Crossbow Deadeye"]),
     EnemySpawn(4, "f", enemies["Crossbow Deadeye"]),
     EnemySpawn(6, "b", enemies["Crossbow Deadeye"]),
-  ], faction="Company of Blades"),
+  ], faction="Company of Blades", description="Load, aim, fire, kill."),
 ]
 
 giantkin = [
   # Giantkin
   EnemySet("Charging Ogre", [
     EnemySpawn(4, "f", enemies["Charging Ogre"])
-  ], faction="Giantkin"),
+  ], faction="Giantkin", description="An ogre. Pray your defenses are ready when you come face to face with it."),
   EnemySet("Injured Troll", [
     EnemySpawn(2, "f", enemies["Injured Troll"])
-  ], faction="Giantkin"),
+  ], faction="Giantkin", description="A troll can heal from even the most grevious wounds."),
   EnemySet("Slumbering Giant", [
     EnemySpawn(1, "f", enemies["Slumbering Giant"]),
-  ], faction="Giantkin"),
+  ], faction="Giantkin", description="Shields will be meager comfort once it wakes."),
   EnemySet("The Executioner", [
     EnemySpawn(4, "b", enemies["Herald of Doom"]),
     EnemySpawn(6, "f", enemies["The Executioner"]),
-  ], faction="Giantkin"),
+  ], faction="Giantkin", description="He wields a massive axe. One swing will turn you into a trophy on its belt."),
 ]
 
 fae_realm = [
@@ -410,61 +410,61 @@ fae_realm = [
     EnemySpawn(2, "b", enemies["Faerie Assassin"]),
     EnemySpawn(4, "b", enemies["Faerie Assassin"]),
     EnemySpawn(6, "b", enemies["Faerie Assassin"]),
-  ], faction="Fae Realm"),
+  ], faction="Fae Realm", description="They flit through the twilight, most dangerous when unseen."),
   EnemySet("Midnight Court", [
       EnemySpawn(2, "f", enemies["Midnight Courtier"]),
       EnemySpawn(3, "b", enemies["Midnight Courtier"]),
-  ]),
+  ], faction="Fae Realm", description="A lack of magic is looked upon... unfavorably."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", enemies["Fickle Witch-Queen"])
-  ], faction="Fae Realm"),
+  ], faction="Fae Realm", description="Cruel tests of resolve are her entertainment."),
   EnemySet("Tithetaker", [
       EnemySpawn(1, "b", enemies["Generous Sprite"]),
       EnemySpawn(5, "f", enemies["Tithetaker"])
-  ], faction="Fae Realm"),
+  ], faction="Fae Realm", description="Have you prepared a worthy offering?"),
 ]
 
 kingdom_of_amar = [
   # Kingdom of Amar
   EnemySet("Knifehand", [
     EnemySpawn(5, "f", enemies["Knifehand"])
-  ], faction="Kingdom of Amar"),
+  ], faction="Kingdom of Amar", description="It unleashes an onslaught of strikes in combat."),
   EnemySet("Stoneguard Patrol", [
     EnemySpawn(3, "f", enemies["Stoneguard"]),
     EnemySpawn(3, "f", enemies["Stoneguard"]),
     EnemySpawn(5, "b", enemies["Stoneguard"]),
     EnemySpawn(5, "b", enemies["Stoneguard"]),
-  ], faction="Kingdom of Amar"),
+  ], faction="Kingdom of Amar", description="Cheap but sturdy, they march two by two."),
   EnemySet("Cloud of Daggers", [
     EnemySpawn(3, "f", enemies["Cloud of Daggers"]),
     EnemySpawn(3, "b", enemies["Cloud of Daggers"]),
-  ], faction="Kingdom of Amar"),
+  ], faction="Kingdom of Amar", description="It cuts everything to ribbons."),
   EnemySet("Princess' Entourage", [
     EnemySpawn(2, "f", enemies["Stoneguard"]),
     EnemySpawn(2, "f", enemies["Stoneguard"]),
     EnemySpawn(5, "f", enemies["Artificer Princess"]),
-  ], faction="Kingdom of Amar"),
+  ], faction="Kingdom of Amar", description="She is a boon to any army with blades."),
 ]
 
 infernal_plane = [
   # Infernal Plane
   EnemySet("Blazing Eye", [
     EnemySpawn(3, "f", enemies["Blazing Eye"])
-  ], faction="Infernal Plane"),
+  ], faction="Infernal Plane", description="It sears the flesh to even look upon it."),
   EnemySet("Conniving Impfiends", [
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
     EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
-  ], faction="Infernal Plane"),
+  ], faction="Infernal Plane", description="Together, they plot and scheme."),
   EnemySet("Cult of the Inferno", [
     EnemySpawn(1, "b", enemies["Cultist"]),
     EnemySpawn(2, "b", enemies["Cultist"]),
     EnemySpawn(3, "b", enemies["Cultist"]),
     EnemySpawn(11, "f", enemies["Demon of the Inferno"]),
-  ], faction="Infernal Plane"),
+  ], faction="Infernal Plane", description="Do not let them summon their master. None have survived him."),
   EnemySet("Witch-Burner Devil", [
       EnemySpawn(2, "f", enemies["Witch-Burner Devil"])
-  ], faction="Infernal Plane"),
+  ], faction="Infernal Plane", description="It can smell magic like blood in the water."),
 ]
 
 dominion_of_drael = [
@@ -472,48 +472,48 @@ dominion_of_drael = [
   EnemySet("Zealous Battlemages", [
     EnemySpawn(1, "f", enemies["Zealous Battlemage"]),
     EnemySpawn(2, "f", enemies["Zealous Battlemage"]),
-  ], faction="Dominion of Drael"),
+  ], faction="Dominion of Drael", description="'Strike first. Strike hard. Strike once.' --Draelish proverb"),
   EnemySet("Draelish Patrol", [
     EnemySpawn(2, "f", enemies["Conscript"]),
     EnemySpawn(3, "f", enemies["Conscript"]),
     EnemySpawn(4, "f", enemies["Conscript"]),
     EnemySpawn(5, "f", enemies["Draelish Captain"])
-  ], faction="Dominion of Drael"),
+  ], faction="Dominion of Drael", description="Discipline remains while the captain stands."),
   EnemySet("Draelish Bombsquad", [
     EnemySpawn(2, "f", enemies["Bomber Zealot"]),
     EnemySpawn(4, "b", enemies["Bomber Zealot"]),
-  ], faction="Dominion of Drael"),
+  ], faction="Dominion of Drael", description="Blind zeal and bombs are a dangerous thing."),
   EnemySet("Shieldmage Squad", [
     EnemySpawn(3, "f", enemies["Grizzled Shieldmage"]),
     EnemySpawn(4, "f", enemies["Grizzled Shieldmage"]),
     EnemySpawn(5, "f", enemies["Grizzled Shieldmage"]),
-  ], faction="Dominion of Drael"),
+  ], faction="Dominion of Drael", description="A single squad can turn the tide of battle with a good frontline."),
 ]
 
 spirits = [
   # Spirits
   EnemySet("Lightning Elemental", [
     EnemySpawn(1, "f", enemies["Lightning Elemental"])
-  ], faction="Spirits"),
+  ], faction="Spirits", description="There is danger and power in its touch."),
   EnemySet("Frost Elemental", [
     EnemySpawn(2, "f", enemies["Frost Elemental"])
-  ], faction="Spirits"),
+  ], faction="Spirits", description="Body parts of previous victims are frozen within."),
   EnemySet("Fire Elemental", [
     EnemySpawn(3, "f", enemies["Fire Elemental"])
-  ], faction="Spirits"),
+  ], faction="Spirits", description="Many have tried to harness it. Most burned."),
   EnemySet("Font of Magic", [
       EnemySpawn(4, "f", enemies["Blue Spirit-Hunter"]),
       EnemySpawn(4, "f", enemies["Red Spirit-Hunter"]),
       EnemySpawn(4, "f", enemies["Gold Spirit-Hunter"]),
       EnemySpawn(5, "b", enemies["Font of Magic"])
-  ], faction="Spirits"),
+  ], faction="Spirits", description="You are not the only one who seeks it."),
 ]
 
 shadow_realm = [
   # Shadow Realm
   EnemySet("Creeping Shadow", [
     EnemySpawn(1, "b", enemies["Creeping Shadow"])
-  ], faction="Shadow Realm"),
+  ], faction="Shadow Realm", description="You could swear it's gotten bigger since the last time you looked... And closer."),
   EnemySet("Nightmare Remnant", [
     EnemySpawn(2, "b", enemies["Nightmare Remnant"]),
     EnemySpawn(2, "f", enemies["Nightmare Remnant"]),
@@ -521,13 +521,13 @@ shadow_realm = [
     EnemySpawn(3, "f", enemies["Nightmare Remnant"]),
     EnemySpawn(4, "b", enemies["Nightmare Remnant"]),
     EnemySpawn(4, "f", enemies["Nightmare Remnant"]),
-  ], faction="Shadow Realm"),
+  ], faction="Shadow Realm", description="They can't hurt you... can they?"),
   EnemySet("Dreamstalker", [
     EnemySpawn(3, "b", enemies["Dreamstalker"])
-  ], faction="Shadow Realm"),
+  ], faction="Shadow Realm", description="It takes root in your mind, and eats at your will."),
   EnemySet("Shadow of a Doubt", [
     EnemySpawn(4, "b", enemies["Shadow of a Doubt"])
-  ])
+  ], faction="Shadow Realm", description="It whispers the inevitability of your demise. You cannot help but listen."),
 ]
 
 ancient_horrors = [
@@ -537,19 +537,19 @@ ancient_horrors = [
     EnemySpawn(2, "b", enemies["Vengeful Mine"]),
     EnemySpawn(3, "f", enemies["Vengeful Mine"]),
     EnemySpawn(4, "b", enemies["Vengeful Mine"]),
-  ], faction="Ancient Horrors"),
+  ], faction="Ancient Horrors", description="Do not touch them. The slightest nudge will set them off."),
   EnemySet("Corrupting Spire", [
     EnemySpawn(2, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(3, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(4, "b", enemies["Incubated Fleshling"]),
     EnemySpawn(5, "b", enemies["Corrupting Spire"]),
-  ], faction="Ancient Horrors"),
+  ], faction="Ancient Horrors", description="It twists all to its unknowable purpose."),
   EnemySet("Mindless Maw", [
     EnemySpawn(4, "f", enemies["Mindless Maw"]),
-  ], faction="Ancient Horrors"),
+  ], faction="Ancient Horrors", description="It devours anything in its path."),
   EnemySet("The Vulture", [
     EnemySpawn(6, "b", enemies["The Vulture"])
-  ], faction="Ancient Horrors"),
+  ], faction="Ancient Horrors", description="It's coming spells doom for all, and it draws its power from death."),
 ]
 
 factions = [
