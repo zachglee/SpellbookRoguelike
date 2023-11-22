@@ -4,7 +4,7 @@ import math
 from collections import defaultdict
 from termcolor import colored
 from model.event import Event
-from utils import energy_color_map, energy_pip_symbol
+from utils import energy_color_map, energy_pip_symbol, ws_input
 from sound_utils import play_sound
 
 class CombatEntity(BaseModel):
@@ -217,9 +217,10 @@ class CombatEntity(BaseModel):
                                  "target": self
                                }))
 
-  def heal(self, healing):
+  async def heal(self, healing):
     self.hp = min(self.hp + healing, self.max_hp)
-    input(f"{self.name} heals {healing} hp!")
+    if self.websocket:
+        await ws_input(f"{self.name} heals {healing} hp!", self.websocket)
 
   # Game phase handlers and game logic
 

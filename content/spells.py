@@ -235,16 +235,16 @@ gold_3rd_spell = [
 ]
 
 gold_turn_page = [
-  [Spell(rules_text="When you turn to this page, recharge a random spell.", color="gold", type="Passive",
-         triggers_on=passive_on_page, raw_commands=["recharge r"]),
+  [Spell(rules_text="When you turn to this page, recharge a random spell and +1 time.", color="gold", type="Passive",
+         triggers_on=passive_on_page, raw_commands=["recharge r", "time -1"]),
   Spell(rules_text="if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
   Spell(rules_text="Deal 6 damage to immediate. Gain 1 empower for each missing spell charge on this page.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["damage i 6"], generate_commands_post=for_missing_charges(["empower p *"])),
   Spell(rules_text="Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
   #
-  [Spell(rules_text="When you turn to this page, gain 1 inventive.", color="gold", type="Passive",
-         triggers_on=passive_on_page, raw_commands=["inventive p 1"]),
+  [Spell(rules_text="When you turn to this page, gain 1 inventive and +1 time.", color="gold", type="Passive",
+         triggers_on=passive_on_page, raw_commands=["inventive p 1", "time -1"]),
   Spell(rules_text="refresh a spell.", color="gold", type="Producer"),
   Spell(rules_text="+4 time, +1 inventive, refresh and recharge last spell cast.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["time -4", "inventive p 1", "recharge -2"]),

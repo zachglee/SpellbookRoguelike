@@ -81,7 +81,7 @@ class GameStateV2:
         self.player_death()
         return
       elif cmd == "debug":
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=encounter.player.websocket)
         for target in targets:
           await ws_print(target.__dict__, encounter.player.websocket)
         return
@@ -126,25 +126,13 @@ class GameStateV2:
     encounter.end_encounter()
     self.save()
 
-  def discovery_phase(self, player):
+  async def discovery_phase(self, player):
     play_sound("passage-discovery.mp3")
-    explore_difficulty = 4
-    discoveries = 0
-    while player.explored > 0:
-      if random.random() < (player.explored * (1/explore_difficulty)):
-        player.explored -= explore_difficulty
-        player.experience += explore_difficulty
-        print(colored(f"Gained {explore_difficulty}xp.", "yellow"))
-        player.gain_material(explore_difficulty)
-        discoveries += 1
-        input(f"Press enter to continue exploring ({player.explored}/{explore_difficulty}) ...")
-      else:
-        print(colored("Found nothing this time...", "blue"))
-        break
+    await ws_print(colored(f"You explored a total of {player.explored} times.", "green"), player.websocket)
     player.explored = STARTING_EXPLORED
     self.save()
 
-  def player_death(self, player):
+  async def player_death(self, player):
     if player.conditions["undying"] > 0:
       player.hp = 3
       player.conditions["undying"] -= 1
@@ -156,11 +144,11 @@ class GameStateV2:
     player.inventory = []
     # death admin
     play_sound("player-death.mp3")
-    print(player.render())
-    input("Gained 30xp...")
+    ws_print(player.render(), player.websocket)
+    ws_input("Gained 30xp...", player.websocket)
     player.experience += 30
-    input("Press enter to continue...")
-    self.discovery_phase(player)
+    # ws_input("Press enter to continue...", player.websocket)
+    await self.discovery_phase(player)
     player.wounds += 1
     
     # self.map.inactive_characters[self.player.name] = self.player
@@ -204,7 +192,7 @@ class GameStateV2:
     return player
 
   async def play_encounter(self, player, encounter):
-    encounter.init_with_player(player)
+    await encounter.init_with_player(player)
     await encounter_draft(player, num_pages=2, page_capacity=3)
     player.archive_library_spells()
     await self.encounter_phase(encounter)
@@ -230,7 +218,7 @@ class GameStateV2:
       for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
         enemyset.level = 0
 
-      self.discovery_phase(player)
+      await self.discovery_phase(player, player.websocket)
 
     # Now need to play the final combat with your backlog enemies?
     # NOTE: still untested

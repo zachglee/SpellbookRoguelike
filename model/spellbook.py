@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, Literal
 from pydantic import BaseModel
 from termcolor import colored
-from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol
+from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol, ws_input
 from sound_utils import play_sound
 
 class Spell(BaseModel):
@@ -23,26 +23,26 @@ class Spell(BaseModel):
   
   # -------- Methods --------
 
-  def cast(self, encounter, cost_energy=True, cost_charges=True, trigger_output=None):
+  async def cast(self, encounter, cost_energy=True, cost_charges=True, trigger_output=None):
     if cost_energy:
       if self.type == "Producer":
-        encounter.handle_command(f"{self.color} p 1")
+        await encounter.handle_command(f"{self.color} p 1")
       if self.type == "Converter" and self.conversion_color is not None:
-        encounter.handle_command(f"{self.color} to {self.conversion_color}")
+        await encounter.handle_command(f"{self.color} to {self.conversion_color}")
       if self.type == "Consumer":
         file_stem = f"{self.color}-consumer-cast"
         self.sound_file = f"{file_stem}.mp3" if os.path.isfile(f"assets/sounds/{file_stem}.mp3") else f"{file_stem}.wav"
-        encounter.handle_command(f"{self.color} p -1")
+        await encounter.handle_command(f"{self.color} p -1")
     
     # choose targets
     chosen_targets = {}
     for target_placeholder in self.targets:
       if target_placeholder in ["_"]:
         # FIXME: Add error handling for invalid targets
-        target_ref = input(f"Choose a target for {target_placeholder} > ")
+        target_ref = ws_input(f"Choose a target for {target_placeholder} > ", websocket=encounter.player.websocket)
       else:
         target_ref = target_placeholder
-      target_entities = get_combat_entities(encounter, target_ref)
+      target_entities = await get_combat_entities(encounter, target_ref, websocket=encounter.player.websocket)
       if len(target_entities) > 1:
         raise ValueError("Targeting more than one entity is not yet supported.")
       else:
@@ -60,12 +60,12 @@ class Spell(BaseModel):
         processed_command = processed_command.replace(placeholder, target)
       if trigger_output != None:
         processed_command = processed_command.replace("^", str(trigger_output))
-      encounter.handle_command(processed_command)
+      await encounter.handle_command(processed_command)
 
     # generate and execute commands post main execution (for effects like 'if this kills')
     generated_commands_post = self.generate_commands_post(encounter, chosen_targets)
     for cmd in generated_commands_post:
-      encounter.handle_command(cmd)
+      await encounter.handle_command(cmd)
 
     if sound_file := self.sound_file:
       play_sound(sound_file, channel=3)
@@ -127,11 +127,11 @@ class SpellbookSpell:
   def recharge(self):
     self.charges = min(self.charges + 1, self.max_charges)
 
-  def cast(self, encounter, cost_energy=True, cost_charges=True):
+  async def cast(self, encounter, cost_energy=True, cost_charges=True):
     if cost_charges:
       self.charges -= 1
     self.exhausted = True
-    self.spell.cast(encounter, cost_energy=cost_energy, cost_charges=cost_charges)
+    await self.spell.cast(encounter, cost_energy=cost_energy, cost_charges=cost_charges)
 
   def render(self):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))

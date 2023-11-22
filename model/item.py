@@ -29,13 +29,13 @@ class Item(BaseModel):
                rare=rare, personal=personal)
     
 
-  def use(self, encounter):
+  async def use(self, encounter):
     # generate commands pre-execution
     generated_commands_pre = self.generate_commands_pre(encounter, None)
     raw_commands = self.use_commands + generated_commands_pre
 
     for command in raw_commands:
-      encounter.handle_command(command)
+      await encounter.handle_command(command)
     self.charges -= 1
 
   def render(self):

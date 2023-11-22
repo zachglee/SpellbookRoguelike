@@ -24,6 +24,7 @@ class Enemy(CombatEntity):
   entry: Action = NothingAction()
   spawned: bool = False
   experience: Optional[int] = None
+  websocket: Any = None
 
   class Config:
     arbitrary_types_allowed = True
@@ -240,16 +241,16 @@ class Encounter:
     for entity in self.combat_entities:
       self.events += entity.pop_events()
 
-  def resolve_events(self):
+  async def resolve_events(self):
     self.run_state_triggers()
     self.gather_events_from_combat_entities()
     while len(self.events) > 0:
       # resolve every event
       event = self.events.pop(0)
       if event.blocking:
-        input(f"Resolving event {event}...")
+        await ws_input(f"Resolving event {event}...", self.player.websocket)
       else:
-        print(f"Resolving event {event}...")
+        await ws_print(f"Resolving event {event}...", self.player.websocket)
       event.resolve()
       # run triggers based on this event
       self.run_event_triggers(event)
@@ -258,14 +259,15 @@ class Encounter:
       self.run_state_triggers()
       self.gather_events_from_combat_entities()
 
-  def use_item(self, idx=None):
-    if idx:
-      item_idx = idx - 1
-    else:
-      item_idx = choose_idx(self.player.inventory, "use item > ")
-    item = self.player.inventory[item_idx]
-    item.use(self)
-    self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
+  # This seems to not be used anywhere?
+  # def use_item(self, idx=None):
+  #   if idx:
+  #     item_idx = idx - 1
+  #   else:
+  #     item_idx = choose_idx(self.player.inventory, "use item > ")
+  #   item = self.player.inventory[item_idx]
+  #   item.use(self)
+  #   self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
 
   def banish(self, target, ward=0):
     if target is None:
@@ -293,6 +295,8 @@ class Encounter:
   async def explore(self):
     play_sound("explore.mp3")
     self.player.explored += 1
+    self.player.experience += 1
+    self.player.gain_material(1)
     r = random.random()
     found_item = None
     if r < 0.01:
@@ -333,7 +337,7 @@ class Encounter:
         item = self.player.inventory[item_idx]
         if self.player.time >= item.time_cost:
           self.player.spend_time(cost=item.time_cost)
-          item.use(self)
+          await item.use(self, websocket=self.player.websocket)
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
         else:
@@ -358,7 +362,7 @@ class Encounter:
         self.player.spellbook.switch_page()
         self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
-        target = get_spell(self, cmd_tokens[1])
+        target = await get_spell(self, cmd_tokens[1], self.player.websockets)
         target.recharge()
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
@@ -367,7 +371,7 @@ class Encounter:
           return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
-        target.cast(self,
+        await target.cast(self,
                   cost_energy=not cmd_tokens[0] == "ccast",
                   cost_charges=not cmd_tokens[0] == "ecast")
         self.events.append(Event(["spell_cast"], metadata={"spell": target}))
@@ -383,27 +387,27 @@ class Encounter:
         self.call(magnitude)
       elif cmd_tokens[0] == "banish":
         ward = int(cmd_tokens[2]) if len(cmd_tokens) > 2 else 0
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         for target in targets:
           self.banish(target, ward=ward)
       elif cmd_tokens[0] == "damage" or cmd_tokens[0] == "d":
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         magnitude = int(cmd_tokens[2])
         for target in targets:
           self.player.attack(target, magnitude)
       elif cmd_tokens[0] == "lifesteal":
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         magnitude = int(cmd_tokens[2])
         for target in targets:
           self.player.attack(target, magnitude, lifesteal=True)
       elif cmd_tokens[0] == "suffer" or cmd_tokens[0] == "s":
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         magnitude = int(cmd_tokens[2])
         for target in targets:
           target.suffer(magnitude)
         play_sound("suffer.mp3")
       elif cmd_tokens[0] == "heal":
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         magnitude = int(cmd_tokens[2])
         for target in targets:
           target.hp += magnitude
@@ -424,7 +428,7 @@ class Encounter:
           await self.handle_command(repeated_command)
       else:
         condition = cmd_tokens[0]
-        targets = get_combat_entities(self, cmd_tokens[1])
+        targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         if cmd_tokens[2][0] == "=":
           magnitude = int(cmd_tokens[2][1:])
           set_value = True
@@ -444,8 +448,8 @@ class Encounter:
             target.conditions["durable"] = None
         play_sound(f"apply-{condition}.mp3", channel=1)
     except (KeyError, IndexError, ValueError, TypeError) as e:
-      print(e)
-    self.resolve_events()
+      await ws_print(e, self.player.websocket)
+    await self.resolve_events()
 
   # Phase handlers
 
@@ -455,7 +459,7 @@ class Encounter:
         ritual.effect(self)
         print(colored(f"{ritual.name} triggered on turn {self.turn}!", "yellow"))
     
-  def player_upkeep(self):
+  async def player_upkeep(self):
     prolific = self.player.conditions["prolific"]
     slow = self.player.conditions["slow"]
     time = 4
@@ -469,22 +473,22 @@ class Encounter:
     self.player.time = time
     if self.turn > 0:
       self.events.append(Event(["begin_turn"]))
-    self.resolve_events()
+    await self.resolve_events()
 
   # Phases
 
-  def init_with_player(self, player):
+  async def init_with_player(self, player):
     self.player = player
     self.player.conditions[self.ambient_energy] += 1
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
     if activable_rituals:
-      print(numbered_list(activable_rituals))
-      chosen_ritual = choose_obj(activable_rituals, "Choose a ritual to activate: ")
+      await ws_print(numbered_list(activable_rituals), player.websocket)
+      chosen_ritual = await choose_obj(activable_rituals, "Choose a ritual to activate: ", player.websocket)
       if chosen_ritual:
         self.rituals = [chosen_ritual]
         chosen_ritual.progress -= chosen_ritual.required_progress
 
-  def upkeep_phase(self):
+  async def upkeep_phase(self):
     # begin new round
     self.turn += 1
     self.spells_cast_this_turn = []
@@ -506,15 +510,16 @@ class Encounter:
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
     for enemy, destination in (front_spawns + back_spawns):
       if self.player.conditions["ward"] > 0:
-        print(f"{enemy.name} was warded!")
+        await ws_print(f"{enemy.name} was warded!", self.player.websocket)
         self.player.conditions["ward"] -= 1
       elif enemy.conditions["ward"] > 0:
-        print(f"{enemy.name} was warded!")
+        await ws_print(f"{enemy.name} was warded!", self.player.websocket)
         enemy.conditions["ward"] -= 1
       else:
         destination.append(enemy)
         enemy.spawned = True
         enemy.spawned_turn = self.turn
+        enemy.websocket = self.player.websocket
         if enemy.resurrected and involves_add_undying(enemy.entry):
           if isinstance(enemy.entry, MultiAction):
             for action in enemy.entry.non_undying_action_list:
@@ -525,7 +530,7 @@ class Encounter:
     self.player_upkeep()
     self.ritual_upkeep()
 
-  def player_end_phase(self):
+  async def player_end_phase(self):
     # self.resolve_events()
     # player end step
     for entity in self.combat_entities:
@@ -533,12 +538,12 @@ class Encounter:
     # tick searing presence
     if (faced := self.faced_enemy_queue) and (searing := self.player.conditions["searing"]):
       damage = faced[0].assign_damage(searing)
-      print(f"{faced[0].name} took {damage} damage from searing presence!")
+      await ws_print(f"{faced[0].name} took {damage} damage from searing presence!", self.player.websocket)
       play_sound("tick-searing.mp3")
     # add end_turn event
     if self.turn > 0:
       self.events.append(Event(["end_turn"]))
-    self.resolve_events()
+    await self.resolve_events()
     # recharge random spell
     if self.turn > 0:
       recharge_candidates = [sp for sp in self.player.spellbook.spells
@@ -551,60 +556,60 @@ class Encounter:
     # unexhaust all spells
     for spell in self.player.spellbook.spells:
       spell.exhausted = False
-    self.resolve_events()
+    await self.resolve_events()
 
-  def enemy_phase(self):
+  async def enemy_phase(self):
     # do enemy turn
     for enemy in self.enemies:
       if enemy.conditions["stun"] <= 0:
         self.events += enemy.action.act(enemy, self)
       else:
         enemy.conditions["stun"] = max(enemy.conditions["stun"] - 1, 0)
-        print(f"{enemy.name} is stunned!")
-    self.resolve_events()
+        await ws_print(f"{enemy.name} is stunned!", self.player.websocket)
+    await self.resolve_events()
 
-  def post_enemy_scheduled_commands(self):
+  async def post_enemy_scheduled_commands(self):
     # execute any scheduled commands
     for cmd, turn in self.scheduled_commands:
       if self.turn == turn:
-        self.handle_command(cmd)
+        await self.handle_command(cmd)
 
-  def round_end_phase(self):
+  async def round_end_phase(self):
     if self.turn > 0:
       self.events.append(Event(["end_round"]))
-    self.resolve_events()
+    await self.resolve_events()
     for entity in self.combat_entities:
       entity.end_round()
 
-  def end_player_turn(self):
+  async def end_player_turn(self):
     play_sound("turn-end.mp3")
-    self.player_end_phase()
-    self.enemy_phase()
-    self.post_enemy_scheduled_commands()
-    self.round_end_phase()
+    await self.player_end_phase()
+    await self.enemy_phase()
+    await self.post_enemy_scheduled_commands()
+    await self.round_end_phase()
 
-    self.upkeep_phase()
+    await self.upkeep_phase()
 
-  def end_encounter(self):
+  async def end_encounter(self):
 
     # progress rituals
     for ritual in self.player.rituals:
       ritual.progressor(self)
-      print(f"{ritual.name} progressed!")
-      input(ritual.render())
+      await ws_print(f"{ritual.name} progressed!", self.player.websocket)
+      await ws_input(ritual.render(), self.player.websocket)
 
     # If you have 3 excess energy of one color, turn it into a potion
     for color in energy_colors:
       while self.player.conditions[color] >= 3:
         self.player.inventory.append(deepcopy(minor_energy_potions_dict[color]))
         self.player.conditions[color] -= 3
-        input(f"Converted 3 {color} energy into a potion!")
+        await ws_input(f"Converted 3 {color} energy into a potion!", self.player.websocket)
 
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += es.experience
     self.player.experience += experience_gained
-    print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"))
+    await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 
     # reset player state
     for spell in self.player.spellbook.spells:

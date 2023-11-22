@@ -46,26 +46,6 @@ class Safehouse:
       self.level_up_heal()
     elif level_type == "inventory":
       self.level_up_inventory()
-  
-  def inventory_draft_phase(self, player):
-    if self.inventory_capacity <= 0:
-      return
-    print(player.render_inventory())
-    print(self.render())
-    while (cmd := input("take or store > ")) != "done":
-      cmd_tokens = cmd.split(" ")
-      if cmd_tokens[0] == "take" and len(player.inventory) < player.inventory_capacity:
-        taken = choose_obj(self.inventory, "Take which item from safehouse inventory? > ")
-        if taken:
-          player.inventory.append(taken)
-          self.inventory.remove(taken)
-      if cmd_tokens[0] == "store" and len(self.inventory) < self.inventory_capacity:
-        stored = choose_obj(player.inventory, "Store which item in safehouse inventory? > ")
-        if stored:
-          player.inventory.remove(stored)
-          self.inventory.append(stored)
-      print(player.render_inventory())
-      print(self.render())
 
   def build_phase(self, player):
     while True:

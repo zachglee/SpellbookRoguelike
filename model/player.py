@@ -8,7 +8,7 @@ from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import LibrarySpell, Spellbook
 from model.item import Item
-from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors
+from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, ws_print
 from sound_utils import play_sound
 from content.rituals import rituals
 from content.items import starting_weapons
@@ -80,11 +80,11 @@ class Player(CombatEntity):
     else:
       raise ValueError(colored("Not enough time!", "red"))
 
-  def memorize_spell(self):
-    print(self.render_library())
+  async def memorize_spell(self):
+    await ws_print(self.render_library(), self.websocket)
     choices = random.sample(self.archive, min(len(self.archive), 4))
-    print("---")
-    print(numbered_list(choices))
+    await ws_print("---", self.websocket)
+    await ws_print(numbered_list(choices), self.websocket)
     chosen_spell = deepcopy(choose_obj(choices, colored("Choose a spell to memorize > ", "cyan")))
 
     duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == chosen_spell.spell.rules_text]
@@ -128,19 +128,16 @@ class Player(CombatEntity):
     self.inventory.append(deepcopy(chosen_item))
     self.starting_inventory.append(deepcopy(chosen_item))
 
-  def check_level_up(self):
+  async def check_level_up(self):
     while self.experience >= self.next_exp_milestone:
       self.level += 1
       self.max_hp += 2
       self.hp += 2
-      print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"))
-      self.memorize_spell()
+      await ws_print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
+      await self.memorize_spell()
 
   def choose_personal_item(self):
     return Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True)
-
-  def choose_aspiration(self):
-    self.aspiration_statement = input(colored(f"What does {self.name} aspire to? > ", "magenta"))
 
   def prompt_personal_destination(self):
     region_idx, layer_idx, node_idx = self.personal_destination
@@ -233,11 +230,4 @@ class Player(CombatEntity):
 
   def render_state(self):
     return "\n".join([self.render_rituals(), self.render_inventory(), self.render_pursuing_enemysets(), self.render_library(), self.render()])
-
-  def inspect(self):
-    print(self.render_state())
-    proceed = choose_binary("Proceed with this character?")
-    return proceed
     
-
-

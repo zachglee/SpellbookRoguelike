@@ -1,7 +1,7 @@
 import random
 from termcolor import colored
 from model.spellbook import SpellbookPage, SpellbookSpell, LibrarySpell
-from utils import choose_obj, numbered_list, choose_idx, ws_print
+from utils import choose_obj, numbered_list, choose_idx, ws_input, ws_print
 from sound_utils import play_sound
 from generators import generate_library_spells
 
@@ -57,33 +57,3 @@ async def edit_page_from_inventory(player, page_number, page_capacity=3, websock
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
     play_sound("write-spell.mp3")
-
-def safehouse_library_draft(player, safehouse, copies=3, spell_pool=[]):
-  print(player.render_library())
-
-  # If no space left in library, exit
-  if len(player.library) >= player.library_capacity:
-    input(colored("You have no space left in your library...", "red"))
-    return
-
-  choices = safehouse.library
-  print("---\n" + numbered_list(choices))
-
-  # If no copies remain, replenish them and exit
-  if all([choice.copies_remaining <= 0 for choice in choices]):
-    for choice in choices:
-      choice.copies_remaining = choice.max_copies_remaining
-    input(colored("No copies remain... You spend your time here replenishing them.", "red"))
-    return
-  
-  copied_spell = choose_obj(choices, colored("copy a spell to your library > ", "blue"))
-  if copied_spell and copied_spell.copies_remaining > 0:
-    library_spell = LibrarySpell(copied_spell.spell, copies=copies)
-    library_spell.copies_remaining = copies
-    player.library.append(library_spell)
-    copied_spell.copies_remaining -= 1
-
-    print(f"Copied: {copied_spell.render()}")
-    play_sound("copy-spell.mp3")
-  else:
-    print("No spell copied.")

@@ -71,10 +71,10 @@ def aligned_line(line_items, column_width=30):
 
 # choosing
 
-def choose_str(choices: List[str], prompt):
+async def choose_str(choices: List[str], prompt, websocket: WebSocket):
   while True:
     try:
-      choice = input(str(choices) + " " + prompt)
+      choice = await ws_input(str(choices) + " " + prompt, websocket)
       if choice == "done":
         return None
       if choice in choices:
@@ -93,10 +93,10 @@ async def choose_obj(choices, prompt, websocket: WebSocket):
     except (ValueError, TypeError, IndexError) as e:
       await ws_print(str(e), websocket)
 
-def choose_idx(choices, prompt):
+async def choose_idx(choices, prompt, websocket: WebSocket):
   while True:
     try:
-      choice = input(prompt)
+      choice = await ws_input(prompt, websocket)
       if choice == "done":
         return None
       choice_obj = choices[int(choice) - 1]
@@ -104,10 +104,10 @@ def choose_idx(choices, prompt):
     except (ValueError, TypeError, IndexError) as e:
       print(e)
 
-def choose_binary(prompt, choices=["y", "n"]) -> bool:
+async def choose_binary(prompt, websocket: WebSocket, choices=["y", "n"]) -> bool:
   while True:
     try:
-      choice = input(f"{prompt} ({choices[0]}/{choices[1]}) > ")
+      choice = await ws_input(f"{prompt} ({choices[0]}/{choices[1]}) > ", websocket)
       if choice == choices[0]:
         return True
       elif choice == choices[1]:
@@ -115,14 +115,14 @@ def choose_binary(prompt, choices=["y", "n"]) -> bool:
     except (ValueError, TypeError, IndexError) as e:
       print(e)
 
-def get_spell(enc, target_string):
+async def get_spell(enc, target_string, websocket=None):
   if target_string == "r":
     spell_idx = random.choice(range(len(enc.player.spellbook.current_page.spells)))
   elif target_string in ["l", "last"]:
     return enc.last_spell_cast
   elif target_string == "_":
-    input_target_string = input(colored("Choose a spell > ", "cyan"))
-    return get_spell(enc, input_target_string)
+    input_target_string = await ws_input(colored("Choose a spell > ", "cyan"), websocket)
+    return await get_spell(enc, input_target_string, websocket=websocket)
   elif target_string.isnumeric() and int(target_string) > 0:
     spell_idx = int(target_string) - 1
   elif target_string.lstrip("-").isnumeric() and int(target_string) < 0:
@@ -137,7 +137,7 @@ TARGET_RESTRICTION_PREDICATES = {
   "entered": lambda ce, enc: ce.spawned_turn == enc.turn
 }
 
-def get_combat_entities(enc, target_string):
+async def get_combat_entities(enc, target_string, websocket=None):
   if target_string == "p":
     return [enc.player]
   elif target_string == "a":
@@ -168,12 +168,12 @@ def get_combat_entities(enc, target_string):
     restriction = target_string[1:]
     is_valid = TARGET_RESTRICTION_PREDICATES.get(restriction)
 
-    input_target_string = input(colored("Choose a target > ", "green"))
-    targets = get_combat_entities(enc, input_target_string)
+    input_target_string = await ws_input(colored("Choose a target > ", "green"), websocket)
+    targets = await get_combat_entities(enc, input_target_string, websocket=websocket)
     while is_valid is not None and not is_valid(targets[0], enc):
-      print(colored("Invalid target!", "red"))
-      input_target_string = input(colored("Choose a target > ", "green"))
-      target = get_combat_entities(enc, input_target_string)
+      await ws_print(colored("Invalid target!", "red"), websocket)
+      input_target_string = await ws_input(colored("Choose a target > ", "green"), websocket)
+      targets[0] = await get_combat_entities(enc, input_target_string, websocket=websocket)
     return targets
       
   
