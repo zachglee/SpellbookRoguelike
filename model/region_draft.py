@@ -1,3 +1,4 @@
+from copy import deepcopy
 import random
 from typing import List, Tuple
 from termcolor import colored
@@ -7,7 +8,7 @@ from model.spellbook import LibrarySpell, Spell
 from utils import choose_obj, numbered_list, wait_for_teammates, ws_print
 
 class RegionDraft:
-  def __init__(self, difficulty, factions, spell_pool, n_options=2, n_picks=3):
+  def __init__(self, difficulty, factions, spell_pool, n_options=3, n_picks=3):
     self.difficulty = difficulty
     self.factions = factions
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
@@ -44,7 +45,7 @@ class RegionDraft:
     if self.enemyset_pool_idx >= len(self.enemyset_pool):
       return None
 
-    enemyset = self.enemyset_pool[self.enemyset_pool_idx]
+    enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
 
     self.enemyset_pool_idx += 1
 
@@ -57,7 +58,7 @@ class RegionDraft:
     if self.spell_pool_idx >= len(self.spell_pool):
       return None
 
-    enemyset = self.enemyset_pool[self.enemyset_pool_idx]
+    enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
     spell = self.spell_pool[self.spell_pool_idx]
 
     self.enemyset_pool_idx += 1

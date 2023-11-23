@@ -81,7 +81,7 @@ async def choose_str(choices: List[str], prompt, websocket: WebSocket):
         return choice
       print("Invalid choice...")
     except (ValueError, TypeError, IndexError) as e:
-      print(e)
+      await ws_print(str(e), websocket)
 
 async def choose_obj(choices, prompt, websocket: WebSocket):
   while True:
@@ -102,7 +102,7 @@ async def choose_idx(choices, prompt, websocket: WebSocket):
       choice_obj = choices[int(choice) - 1]
       return int(choice) - 1
     except (ValueError, TypeError, IndexError) as e:
-      print(e)
+      await ws_print(str(e), websocket)
 
 async def choose_binary(prompt, websocket: WebSocket, choices=["y", "n"]) -> bool:
   while True:
@@ -113,7 +113,7 @@ async def choose_binary(prompt, websocket: WebSocket, choices=["y", "n"]) -> boo
       elif choice == choices[1]:
         return False
     except (ValueError, TypeError, IndexError) as e:
-      print(e)
+      await ws_print(str(e), websocket)
 
 async def get_spell(enc, target_string, websocket=None):
   if target_string == "r":

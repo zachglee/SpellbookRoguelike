@@ -43,8 +43,11 @@ class GameStateV2:
     with open("saves/map.pkl", "wb") as f:
       dill.dump(self.map, f)
     for player in party_members.values():
+      websocket_tmp = player.websocket
+      player.websocket = None # websocket can't be pickled, so temporarily remove it
       with open(f"saves/{player.name}.pkl", "wb") as f:
         dill.dump(player, f)
+      player.websocket = websocket_tmp
 
   # Generators
 
@@ -115,7 +118,7 @@ class GameStateV2:
       await encounter.render_combat(show_intents=self.show_intents)
       cmd = await ws_input("> ", encounter.player.websocket)
       if cmd == "done":
-        encounter.end_player_turn()
+        await encounter.end_player_turn()
         break
       await self.handle_command(cmd, encounter)
 
@@ -123,7 +126,7 @@ class GameStateV2:
     while not encounter.overcome:
       await self.run_encounter_round(encounter)
     await encounter.render_combat()
-    encounter.end_encounter()
+    await encounter.end_encounter()
     self.save()
 
   async def discovery_phase(self, player):
@@ -147,19 +150,17 @@ class GameStateV2:
     ws_print(player.render(), player.websocket)
     ws_input("Gained 30xp...", player.websocket)
     player.experience += 30
-    # ws_input("Press enter to continue...", player.websocket)
     await self.discovery_phase(player)
     player.wounds += 1
     
-    # self.map.inactive_characters[self.player.name] = self.player
-    self.end_run()
+    await self.end_run()
     self.save()
     raise GameOver()
 
-  def end_run(self):
+  async def end_run(self):
     self.map.end_run()
     self.player.archive_library_spells(copies_threshold=10)
-    self.player.check_level_up()
+    await self.player.check_level_up()
     self.save()
 
   async def choose_character(self, websocket):
@@ -208,8 +209,6 @@ class GameStateV2:
       encounter = self.generate_encounter(player, difficulty=2+region_draft.difficulty)
       await self.play_encounter(player, encounter)
 
-      return encounter
-
       # Persistent enemy sets
       persistent_enemyset = random.choice(encounter.enemy_sets)
       persistent_enemyset.level_up()
@@ -218,13 +217,9 @@ class GameStateV2:
       for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
         enemyset.level = 0
 
-      await self.discovery_phase(player, player.websocket)
+      await self.discovery_phase(player)
 
-    # Now need to play the final combat with your backlog enemies?
-    # NOTE: still untested
-    # encounter = self.generate_encounter(self.player, difficulty=4)
-    # self.play_encounter(encounter)
-    self.end_run()
+    await self.end_run()
 
 
 # helpers

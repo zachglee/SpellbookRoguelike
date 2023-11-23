@@ -448,7 +448,7 @@ class Encounter:
             target.conditions["durable"] = None
         play_sound(f"apply-{condition}.mp3", channel=1)
     except (KeyError, IndexError, ValueError, TypeError) as e:
-      await ws_print(e, self.player.websocket)
+      await ws_print(str(e), self.player.websocket)
     await self.resolve_events()
 
   # Phase handlers
@@ -527,7 +527,7 @@ class Encounter:
         else:
           self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
-    self.player_upkeep()
+    await self.player_upkeep()
     self.ritual_upkeep()
 
   async def player_end_phase(self):

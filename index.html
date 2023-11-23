@@ -73,11 +73,11 @@
         }
 
         function runCommand(term, command) {
-            if (command.length > 0) {
-                clearInput(command);
-                socket.send(command);
-                return;
-            }
+            // if (command.length > 0) {
+            clearInput(command);
+            socket.send(command);
+            return;
+            // }
         }
 
         init();
