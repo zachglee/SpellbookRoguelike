@@ -6,12 +6,10 @@ from termcolor import colored
 import time
 import random
 import math
-from abc import ABC, abstractmethod
 from copy import deepcopy
 from model.combat_entity import CombatEntity
 from model.event import Event
 from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
-from content.rituals import rituals
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
 from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
 from sound_utils import play_sound
@@ -68,11 +66,19 @@ class EnemySet:
       es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.25)
     self.level += 1
 
-  def render(self):
+  def render(self, show_rules_text=False):
     return_str = colored(f"{self.name}", "red")
     if self.level > 0:
       return_str += colored(f" (Lv{self.level})", "red")
-    return_str += colored(f" - {self.description}", "magenta")
+    if show_rules_text:
+      spawn_turns_str = "Spawn " + "".join([f"{es.turn}" for es in self.enemy_spawns])
+      reference_enemy = self.enemy_spawns[-1].enemy
+      hp_str = f"{reference_enemy.hp}/{reference_enemy.max_hp}hp"
+      intent_str = str(reference_enemy.action)
+      description_str = f"{spawn_turns_str} : {hp_str} : {intent_str}"
+    else:
+      description_str = self.description
+    return_str += colored(f" - {description_str}", "magenta")
     return return_str
 
   def __repr__(self):
@@ -222,14 +228,14 @@ class Encounter:
       enemy.dead = True
       self.events.append(Event(["enemy_death"], enemy, self, lambda s, t: self.move_to_grave(s)))
 
-  def run_event_triggers(self, event):
+  async def run_event_triggers(self, event):
     # run passive spell triggers
     passive_spells = [spell.spell for spell in self.player.spellbook.current_page.spells
                       if spell.spell.type == "Passive"]
     for passive_spell in passive_spells:
       if trigger_output := passive_spell.triggers_on(self, event):
         print(f"-------------- TRIGGERED! {passive_spell.description} --------------")
-        passive_spell.cast(self, trigger_output=trigger_output)
+        await passive_spell.cast(self, trigger_output=trigger_output)
 
     # run player triggers
     for event_trigger in self.player.event_triggers:
@@ -253,7 +259,7 @@ class Encounter:
         await ws_print(f"Resolving event {event}...", self.player.websocket)
       event.resolve()
       # run triggers based on this event
-      self.run_event_triggers(event)
+      await self.run_event_triggers(event)
 
       # Gather any more events
       self.run_state_triggers()
@@ -337,7 +343,7 @@ class Encounter:
         item = self.player.inventory[item_idx]
         if self.player.time >= item.time_cost:
           self.player.spend_time(cost=item.time_cost)
-          await item.use(self, websocket=self.player.websocket)
+          await item.use(self)
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           play_sound("inventory.mp3")
         else:
@@ -453,11 +459,9 @@ class Encounter:
 
   # Phase handlers
 
-  def ritual_upkeep(self):
+  async def ritual_upkeep(self):
     for ritual in self.rituals:
-      if ritual.encounter_trigger(self):
-        ritual.effect(self)
-        print(colored(f"{ritual.name} triggered on turn {self.turn}!", "yellow"))
+      await ritual.run_events(self)
     
   async def player_upkeep(self):
     prolific = self.player.conditions["prolific"]
@@ -479,14 +483,14 @@ class Encounter:
 
   async def init_with_player(self, player):
     self.player = player
-    self.player.conditions[self.ambient_energy] += 1
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
     if activable_rituals:
       await ws_print(numbered_list(activable_rituals), player.websocket)
       chosen_ritual = await choose_obj(activable_rituals, "Choose a ritual to activate: ", player.websocket)
       if chosen_ritual:
         self.rituals = [chosen_ritual]
-        chosen_ritual.progress -= chosen_ritual.required_progress
+        # chosen_ritual.progress -= chosen_ritual.required_progress
+        chosen_ritual.progress = 0
 
   async def upkeep_phase(self):
     # begin new round
@@ -528,7 +532,7 @@ class Encounter:
           self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     await self.player_upkeep()
-    self.ritual_upkeep()
+    await self.ritual_upkeep()
 
   async def player_end_phase(self):
     # self.resolve_events()
@@ -591,12 +595,6 @@ class Encounter:
     await self.upkeep_phase()
 
   async def end_encounter(self):
-
-    # progress rituals
-    for ritual in self.player.rituals:
-      ritual.progressor(self)
-      await ws_print(f"{ritual.name} progressed!", self.player.websocket)
-      await ws_input(ritual.render(), self.player.websocket)
 
     # If you have 3 excess energy of one color, turn it into a potion
     for color in energy_colors:

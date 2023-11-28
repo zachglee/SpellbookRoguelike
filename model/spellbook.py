@@ -39,7 +39,7 @@ class Spell(BaseModel):
     for target_placeholder in self.targets:
       if target_placeholder in ["_"]:
         # FIXME: Add error handling for invalid targets
-        target_ref = ws_input(f"Choose a target for {target_placeholder} > ", websocket=encounter.player.websocket)
+        target_ref = await ws_input(f"Choose a target for {target_placeholder} > ", websocket=encounter.player.websocket)
       else:
         target_ref = target_placeholder
       target_entities = await get_combat_entities(encounter, target_ref, websocket=encounter.player.websocket)
@@ -89,6 +89,9 @@ class Spell(BaseModel):
     return self.description[:length] + ("..." if len(self.description) > length else "")
 
   def __repr__(self):
+    return self.description
+  
+  def render(self, **kwargs):
     return self.description
 
 class LibrarySpell:

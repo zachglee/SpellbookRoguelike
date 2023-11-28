@@ -19,7 +19,7 @@ class GameOver(Exception):
   pass
 
 class GameStateV2:
-  def __init__(self, n_regions=4, websocket=None):
+  def __init__(self, n_regions=4):
     self.map = Map(n_regions=n_regions)
     self.current_region_idx = 0
     self.player = None
@@ -27,6 +27,7 @@ class GameStateV2:
     #
     self.show_intents = False
     self.run_length = None
+    self.started = False
 
     #
     # self.websocket = websocket
@@ -148,19 +149,19 @@ class GameStateV2:
     # death admin
     play_sound("player-death.mp3")
     ws_print(player.render(), player.websocket)
-    ws_input("Gained 30xp...", player.websocket)
+    await ws_input("Gained 30xp...", player.websocket)
     player.experience += 30
     await self.discovery_phase(player)
     player.wounds += 1
     
-    await self.end_run()
+    await self.end_run(player)
     self.save()
     raise GameOver()
 
-  async def end_run(self):
+  async def end_run(self, player):
     self.map.end_run()
-    self.player.archive_library_spells(copies_threshold=10)
-    await self.player.check_level_up()
+    player.archive_library_spells(copies_threshold=10)
+    await player.check_level_up()
     self.save()
 
   async def choose_character(self, websocket):
@@ -185,7 +186,7 @@ class GameStateV2:
   async def play_setup(self, map_file=None, player_id=None, websocket=None):
     self.choose_map(map_file)
     player = await self.choose_character(websocket)
-    self.player = player
+    # self.player = player
     party_members[player_id] = player
     player.id = player_id
     player.websocket = websocket
@@ -200,6 +201,7 @@ class GameStateV2:
 
   async def play(self, player_id, websocket=None, map_file=None):
     player = await self.play_setup(map_file=map_file, player_id=player_id, websocket=websocket)
+    self.started = True
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
@@ -212,8 +214,8 @@ class GameStateV2:
       # Persistent enemy sets
       persistent_enemyset = random.choice(encounter.enemy_sets)
       persistent_enemyset.level_up()
-      self.player.pursuing_enemysets.append(persistent_enemyset)
-      await ws_print(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"), websocket)
+      player.pursuing_enemysets.append(persistent_enemyset)
+      await ws_input(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"), websocket)
       for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
         enemyset.level = 0
 

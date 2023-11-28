@@ -48,14 +48,16 @@ def colorize(s):
     s = s.replace(target_str, colored(target_str, color))
   return s
 
-def flex_render(item):
+def flex_render(item, **kwargs):
   if isinstance(item, (tuple, list)):
-    return str(item)
+    return ", ".join(flex_render(i, **kwargs) for i in item)
+  elif hasattr(item, "render"):
+    return item.render(**kwargs)
   else:
-    return item.render()
+    return str(item)
 
-def numbered_list(l) -> str:
-  return "\n".join(f"{i + 1} - {flex_render(item)}" for i, item in enumerate(l))
+def numbered_list(l, **kwargs) -> str:
+  return "\n".join(f"{i + 1} - {flex_render(item, **kwargs)}" for i, item in enumerate(l))
 
 def aligned_line(line_items, column_width=30):
   padded_line_items = []
@@ -87,6 +89,8 @@ async def choose_obj(choices, prompt, websocket: WebSocket):
   while True:
     try:
       choice = await ws_input(prompt, websocket)
+      if choice[0] == "!": # Allow special commands, to be interpreted by caller
+        return choice[1:]
       if choice == "done":
         return None
       return choices[int(choice) - 1]
@@ -290,6 +294,5 @@ async def wait_for_teammates(my_id, choice_id, teammate_ids=None):
   await ws_print(f"Waiting for {teammate_ids} to be finished...", player.websocket)
   while (not all(party_members[teammate_id].done for teammate_id in teammate_ids)) and waiting_at[choice_id]:
     await asyncio.sleep(0.5)
-    print(f"------------ {all(party_members[teammate_id].done for teammate_id in teammate_ids)}")
   waiting_at[choice_id] = False
   player.done = False

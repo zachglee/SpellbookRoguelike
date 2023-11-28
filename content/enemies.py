@@ -46,7 +46,7 @@ enemies = {
   "Cloud of Daggers": Enemy.make(6, "Cloud of Daggers",
                             MultiAction([AttackAction(2), AttackAction(2), AttackAction(2),
                                         AttackSide(2), AttackSide(2), AttackSide(2)]),
-                            entry=AddConditionAction("durable", 2, "self"), exp=6),
+                            entry=AddConditionAction("durable", 3, "self"), exp=6),
   "Slumbering Giant": Enemy.make(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy.make(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
   "Midnight Courtier": Enemy.make(15, "Imperious Seelie", EnergyThresholdAction(
@@ -73,7 +73,7 @@ enemies = {
   "Vengeful Mine": Enemy.make(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(3), AttackAction(6)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 3, "self")),
   "Bomber Zealot": Enemy.make(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
   "Grizzled Shieldmage": Enemy.make(10, "Grizzled Shieldmage",
-                               NearFarAction(AttackAction(3),
+                               NearFarAction(AttackAction(2),
                                              MultiAction([AddConditionAction("shield", 5, "immediate"), AddConditionAction("retaliate", 1, "immediate")])),
                                entry=AddConditionAction("block", 10, "self")),
   "Incubated Fleshling": Enemy.make(6, "Incubated Fleshling", AttackAction(1)),
@@ -96,7 +96,7 @@ enemies = {
                           AddConditionAction("sharp", 1, "player"), AttackAction(6, lifesteal=True), 24),
                         entry=MultiAction([
                           SelfDamageAction(6),
-                          AddConditionAction("retaliate", 3, "self"),
+                          AddConditionAction("retaliate", 2, "self"),
                         ])),
   "Cocky Descender": Enemy.make(9, "Cocky Descender",
                                   HealthThresholdAction(
@@ -149,11 +149,11 @@ enemies = {
       AddConditionAction("slow", 2, "player"),
       AttackAction(6))),
   "Shadow of a Doubt": Enemy.make(20, "Shadow of a Doubt", BackstabAction(
-      AddConditionAction("vulnerable", 2, "player"),
-      AttackAction(6))),
-  "Necromancer Apprentice": Enemy.make(12, "Necromancer Apprentice",
+      AttackAction(6),
+      AddConditionAction("vulnerable", 2, "player"))),
+  "Necromancer Apprentice": Enemy.make(15, "Necromancer Apprentice",
       NearFarAction(
-        MultiAction([MoveAction(1), AttackAction(3), SelfDamageAction(3)]),
+        MultiAction([AddConditionAction("regen", 3, "self"), AttackAction(3)]),
         AddConditionAction("regen", 4, "immediate"),
       ),
       entry=AddConditionAction("undying", 1, "all_enemies")),
@@ -175,10 +175,10 @@ enemies = {
   "Inquisitive Eye": Enemy.make(4, "Inquisitive Eye", CallAction(None, 1)),
   "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1, windup_action=AddConditionAction("encase", 4, "player"))),
   "Grasping Hand": Enemy.make(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
-  "Collector of Bodies": Enemy.make(16, "Collector of Bodies", AddConditionAction("doom", 1, "player"),
+  "Cagemaster": Enemy.make(16, "Cagemaster", AddConditionAction("doom", 1, "player"),
                                entry=AddConditionAction("encase", 16, "player")),
-  "Collector of Magic": Enemy.make(20, "Collector of Magic", EnergyThresholdAction(AttackAction(10), NothingAction(), 1)),
-  "Collector of Still-lifes": Enemy.make(20, "Collector of Still-lifes", SpellcastThresholdAction(
+  "Specimen Collector": Enemy.make(20, "Specimen Collector", EnergyThresholdAction(AttackAction(10), NothingAction(), 1)),
+  "Magecatcher": Enemy.make(20, "Magecatcher", SpellcastThresholdAction(
       AttackAction(10), AddConditionAction("slow", 1, "player"), 1)),
   "Doom of Blades": Enemy.make(40, "Doom of Blades", MultiAction([AttackAll(15), AttackAction(15)])),
   "Doom of Plagues": Enemy.make(40, "Doom of Plagues", AddConditionAction("poison", 3, "player"),
@@ -245,18 +245,18 @@ doombringers = [
 
 the_collectors = [
   # The Collectors
-  EnemySet("Collector of Bodies", [
+  EnemySet("Cagemaster", [
     EnemySpawn(1, "b", enemies["Collector's Cage"]),
-    EnemySpawn(4, "f", enemies["Collector of Bodies"]),
-  ], faction="The Collectors"),
-  EnemySet("Collector of Magic", [
+    EnemySpawn(4, "f", enemies["Cagemaster"]),
+  ], faction="The Collectors", description="Encased in crystal cages, his victims wither away."),
+  EnemySet("Specimen Collector", [
     EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
-    EnemySpawn(4, "f", enemies["Collector of Magic"]),
-  ], faction="The Collectors"),
-  EnemySet("Collector of Still-lifes", [
+    EnemySpawn(4, "f", enemies["Specimen Collector"]),
+  ], faction="The Collectors", description="It sees magic like light."),
+  EnemySet("Magecatcher", [
     EnemySpawn(1, "b", enemies["Grasping Hand"]),
-    EnemySpawn(4, "f", enemies["Collector of Still-lifes"]),
-  ], faction="The Collectors"),
+    EnemySpawn(4, "f", enemies["Magecatcher"]),
+  ], faction="The Collectors", description="It smells spellcasting like blood."),
   EnemySet("Acquisitions Party", [
     EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
     EnemySpawn(1, "f", enemies["Inquisitive Eye"]),
@@ -264,7 +264,7 @@ the_collectors = [
     EnemySpawn(2, "f", enemies["Collector's Cage"]),
     EnemySpawn(3, "b", enemies["Grasping Hand"]),
     EnemySpawn(3, "f", enemies["Grasping Hand"])
-  ], faction="The Collectors")
+  ], faction="The Collectors", description="Minions of the Collectors.")
 ]
 
 undying_legion = [
@@ -513,7 +513,7 @@ shadow_realm = [
   # Shadow Realm
   EnemySet("Creeping Shadow", [
     EnemySpawn(1, "b", enemies["Creeping Shadow"])
-  ], faction="Shadow Realm", description="You could swear it's gotten bigger since the last time you looked... And closer."),
+  ], faction="Shadow Realm", description="You could swear it's gotten bigger since the last time you looked..."),
   EnemySet("Nightmare Remnant", [
     EnemySpawn(2, "b", enemies["Nightmare Remnant"]),
     EnemySpawn(2, "f", enemies["Nightmare Remnant"]),

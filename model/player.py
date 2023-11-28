@@ -10,7 +10,6 @@ from model.spellbook import LibrarySpell, Spellbook
 from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, ws_print
 from sound_utils import play_sound
-from content.rituals import rituals
 from content.items import starting_weapons
 from content.enemy_factions import all_special_items, all_basic_items
 from model.event import Event
@@ -82,7 +81,7 @@ class Player(CombatEntity):
 
   async def memorize_spell(self):
     await ws_print(self.render_library(), self.websocket)
-    choices = random.sample(self.archive, min(len(self.archive), 4))
+    choices = random.sample(self.archive, min(len(self.archive), 5))
     await ws_print("---", self.websocket)
     await ws_print(numbered_list(choices), self.websocket)
     chosen_spell = deepcopy(choose_obj(choices, colored("Choose a spell to memorize > ", "cyan")))
@@ -97,13 +96,6 @@ class Player(CombatEntity):
       chosen_spell.signature = True
       chosen_spell.max_copies_remaining = 1
       self.library.append(chosen_spell)
-
-  def learn_ritual(self):
-    random.shuffle(rituals)
-    ritual_choices = rituals[0:3]
-    print(numbered_list(ritual_choices))
-    chosen_ritual = choose_obj(ritual_choices, colored("Choose a ritual to learn > ", "cyan"))
-    self.rituals.append(deepcopy(chosen_ritual))
 
   def gain_starting_item(self):
     seen_basic_items = [item for item in self.seen_items
@@ -136,9 +128,6 @@ class Player(CombatEntity):
       await ws_print(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
       await self.memorize_spell()
 
-  def choose_personal_item(self):
-    return Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True)
-
   def prompt_personal_destination(self):
     region_idx, layer_idx, node_idx = self.personal_destination
     print(colored(f"Region {region_idx}, Node ({layer_idx}, {node_idx}) is of signifigance to you.", "magenta"))
@@ -150,7 +139,6 @@ class Player(CombatEntity):
 
   def init(self):
     self.pursuing_enemysets = []
-    personal_item = self.choose_personal_item()
 
     starting_spellbook = Spellbook(pages=[])
     self.library = [ls for ls in self.library if ls.signature]
@@ -164,14 +152,15 @@ class Player(CombatEntity):
       ritual.progress = 0
 
     inventory = deepcopy(self.starting_inventory)
-    inventory.append(personal_item)
+    inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),]
+                  # Item.make(f"Rusty Dagger", 2, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
-    self.material = 10
+    self.material = 0
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,

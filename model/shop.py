@@ -1,3 +1,4 @@
+from model.item import Item
 from sound_utils import play_sound
 from termcolor import colored
 from copy import deepcopy
@@ -31,9 +32,13 @@ class Shop:
       await ws_print(self.render(), player.websocket)
       await ws_print("\n", player.websocket)
       await ws_print(colored(f"You have {player.material}⛁", "yellow"), player.websocket)
+      # FIXME: we need some way to update the shop output if shop state has changed (teammate bought something)
+      # - Maybe we reimplement shop so that once a slot is emptied the rest of the list doesn't collapse.
       chosen_item = await choose_obj(self.shop_items, "Choose an item to buy > ", player.websocket)
       if chosen_item is None:
         break
+      elif chosen_item == "~":
+        continue
       if player.material >= chosen_item.cost:
         play_sound("inventory.mp3")
         player.material -= chosen_item.cost
@@ -42,4 +47,4 @@ class Shop:
         await ws_print(f"You bought {chosen_item.item.render()}", player.websocket)
       else:
         await ws_print("You cannot afford that item", player.websocket)
-      self.shop_items = [item for item in self.shop_items if item.stock > 0]
+      self.shop_items = [item if (item != "~" and item.stock > 0) else "~" for item in self.shop_items]

@@ -7,6 +7,7 @@ import uuid
 
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
+from utils import ws_input
 
 app = FastAPI()
 
@@ -44,7 +45,7 @@ html = """
 </html>
 """
 
-game_state = GameStateV2()
+runs = {}
 
 @app.get("/")
 async def get():
@@ -54,9 +55,16 @@ async def get():
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    game_state = GameStateV2(websocket=websocket)
+    run_id = await ws_input("run id > ", websocket)
+    if run_id not in runs:
+        runs[run_id] = GameStateV2()
+    game_state = runs[run_id]
+    if game_state.started == True:
+        await websocket.send_text(f"Run {run_id} already started! Cannot join.")
+        return
+
     player_id = uuid.uuid4().hex
-    print(f"----------- BEGINNING {player_id}!")
+    print(f"----------- BEGINNING {player_id} on run {run_id}!")
     ret = await game_state.play(player_id, websocket)
     print(ret)
 

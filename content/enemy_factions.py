@@ -1,8 +1,10 @@
 # from model.encounter import EnemySet, Enemy, EnemySpawn
+from content.rituals import turn_command_event_factory as ritual_event
 from model.item import Item
 from model.faction import Faction
 from content.enemies import *
 from content.command_generators import *
+from model.ritual import Ritual
 
 factions = [
   Faction("Freed Automata", freed_automata,
@@ -12,7 +14,10 @@ factions = [
     ],
     special_items=[
       Item.make("Rebellious Core", 5, "Gain 2 retaliate.", ["retaliate p 2"], rare=True)
-    ]
+    ],
+    # armor turn 1, then shield every turn.
+    ritual=Ritual("Automatic Armor", "Gain 1 armor on turn 1, gain 2 shield every turn after.", "Freed Automata", 8,
+                  [ritual_event([1], ["armor p 1"]), ritual_event(list(range(2, 10)), ["shield p 2"])]),
   ),
   Faction("Undying Legion", undying_legion,
     basic_items=[
@@ -22,6 +27,10 @@ factions = [
     special_items=[
       Item.make("Ambrosia of the Undying", 1, "Gain 2 undying.", ["undying p 2"], rare=True)
     ]
+    # encase turn 1, empower every turn after that
+    # TODO: Make the empower gain be while you have encase remaining
+    ritual=Ritual("Undying Legion", "Gain 10 encase on turn 1, gain 2 empower every turn after.", "Undying Legion", 8,
+                  [ritual_event([1], ["encase p 10"]), ritual_event(list(range(2, 10)), ["empower p 2"])]),
   ),
   Faction("The Collectors", the_collectors,
     basic_items=[
@@ -31,6 +40,7 @@ factions = [
     special_items=[
       Item.make("Conservator's Casket", 1, "Gain 20 encase", ["encase p 20"], rare=True)
     ]
+    # Encase and stun a specific enemy on specific turns
   ),
   Faction("Doombringers", doombringers,
     basic_items=[
@@ -40,6 +50,7 @@ factions = [
     special_items=[
       Item.make("Omen of Doom", 3, "Inflict doom 2.", ["doom _ 2"], rare=True)
     ]
+    # Start doom at the midgame.
   ),
   Faction("Sa'ik Collective", saik_collective,
     basic_items=[
@@ -49,6 +60,7 @@ factions = [
     special_items=[
       Item.make("Skydancer's Talon", 3, "Deal 2 damage to a single target twice.", ["repeat 2 damage _ 2"], rare=True)
     ],
+    # Evade and fleeting sharp on turns 1, 2, 3
   ),
   Faction("House of Imir", house_of_imir,
     basic_items=[
@@ -56,8 +68,9 @@ factions = [
       Item.make("Sacrifice Dagger", 2, "Suffer 2 and deal 10 damage to immediate", ["suffer p 2", "damage i 10"]),
     ],
     special_items=[
-      Item.make("Imir Blood Ward", 1, "Suffer 5 and banish an enemy for 2 turns.", ["suffer p 5", "banish _ 2"], rare=True)
+      Item.make("Imir Blood Ward", 1, "Suffer 4 and banish an enemy for 3 turns.", ["suffer p 4", "banish _ 3"], rare=True)
     ]
+    # Lifesteal immediate on a 2 turns, midcombat
   ),
   Faction("Mov's Horde", movs_horde,
     basic_items=[
@@ -67,6 +80,7 @@ factions = [
     special_items=[
       Item.make("Soul-Catcher Siphon", 1, "Gain regen equal to # of dead enemies.", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies
     ]
+    # 1 regen and retaliate, every turn.
   ),
   Faction("Company of Blades", company_of_blades,
     basic_items=[
@@ -76,6 +90,7 @@ factions = [
     special_items=[
       Item.make("Duelist's Blade", 3, "Deal 4 damage to immediate and block 4", ["damage i 4", "block p 4"], rare=True)
     ]
+    # 2 small attacks to immediate every other turn
   ),
   Faction("Giantkin", giantkin,
     basic_items=[
@@ -85,6 +100,7 @@ factions = [
     special_items=[
       Item.make("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"], rare=True)
     ],
+    # Massive attack to immediate on particular turn
   ),
   Faction("Fae Realm", fae_realm,
     basic_items=[
@@ -92,8 +108,9 @@ factions = [
       Item.make("Sleeper Darts", 2, "Inflict 1 stun and 3 poison.", ["stun _ 1", "poison _ 3"])
     ],
     special_items=[
-      Item.make("Fae Favor", 1, "Banish 1 all at end of round, then gain 3 regen.", ["delay 0 banish a 1", "delay 0 regen p 3"], rare=True)
+      Item.make("Fae Favor", 1, "Banish 1 all. Gain 4 regen.", ["banish a 1", "regen p 3"], rare=True)
     ]
+    # Regen and poison, alternating
   ),
   Faction("Kingdom of Amar", kingdom_of_amar,
     basic_items=[
@@ -103,6 +120,7 @@ factions = [
     special_items=[
       Item.make("Amarian Warsuit", 1, "Gain 1 armor, 2 prolific, and 3 sharp.", ["armor p 1", "prolific p 2", "sharp p 3"], rare=True)
     ]
+    # Armor and sharp, alternating
   ),
   Faction("Infernal Plane", infernal_plane,
     basic_items=[
@@ -112,6 +130,7 @@ factions = [
     special_items=[
       Item.make("Demon's Blood", 1, "burn 3 self, gain 6 searing presence, 6 retaliate", ["burn p 3", "searing p 6", "retaliate p 6"], rare=True)
     ]
+    # Burn in later rounds.
   ),
   Faction("Dominion of Drael", dominion_of_drael,
     basic_items=[
@@ -121,15 +140,17 @@ factions = [
     special_items=[
       Item.make("Draelish Bomb", 1, "At end of turn: deal 21 to all enemies, 7 damage to self", ["delay 0 damage a 21", "delay 0 damage p 7"], rare=True)
     ]
+    # Get block and empower, steady
   ),
   Faction("Spirits", spirits,
     basic_items=[
       Item.make("Spirit's Blessing", 1, "Gain 2 prolific.", ["prolific p 2"]),
-      Item.make("Spirit Snare", 2, "At end of next round, stun 3 immediate.", ["delay 1 stun i 3"]),
+      Item.make("Spirit Snare", 2, "At end of this round, stun 2 immediate.", ["delay 0 stun i 2"]),
     ],
     special_items=[
       Item.make("Unbridled Energy", 1, "Gain 2 energy of each color and prolific 2.", ["blue p 2", "red p 2", "gold p 2", "prolific p 2"], rare=True)
     ]
+    # Gain energy / inventive / prolific at 2 and 4
   ),
   Faction("Shadow Realm", shadow_realm,
     basic_items=[
@@ -139,6 +160,7 @@ factions = [
     special_items=[
       Item.make("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"], rare=True)
     ]
+    # vulnerable to all enemies?
   ),
   Faction("Ancient Horrors", ancient_horrors,
     basic_items=[
@@ -148,6 +170,7 @@ factions = [
     special_items=[
       Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ]
+    # ward and then very late game a ton of damage to everything
   )
 ]
 

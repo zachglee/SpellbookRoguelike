@@ -4,7 +4,6 @@ from model.shop import Shop, ShopItem
 from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
-from content.rituals import rituals
 from content.items import ancient_key
 from content.enemy_factions import factions
 
@@ -37,10 +36,6 @@ def generate_library_spells(size, spell_pool=spells, copies=3):
 def generate_spellbook_spells(size, spell_pool=spells):
   random.shuffle(spell_pool)
   return [SpellbookSpell(sp) for sp in spell_pool[:size]]
-
-def generate_rituals(size, ritual_pool=rituals):
-  random.shuffle(ritual_pool)
-  return [r for r in ritual_pool[:size]]
 
 def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)
