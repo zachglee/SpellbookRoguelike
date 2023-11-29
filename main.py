@@ -95,6 +95,9 @@ class GameStateV2:
         await ws_print(encounter.player.render_inventory(), encounter.player.websocket)
         play_sound("inventory.mp3")
         return
+      elif cmd in ["ritual", "rituals", "rit"]:
+        await ws_print(encounter.player.render_rituals(), encounter.player.websocket)
+        return
       elif cmd in ["intent", "intents", "int"]:
         self.show_intents = not self.show_intents
         return
@@ -121,7 +124,8 @@ class GameStateV2:
       if cmd == "done":
         await encounter.end_player_turn()
         break
-      await self.handle_command(cmd, encounter)
+      if cmd:
+        await self.handle_command(cmd, encounter)
 
   async def encounter_phase(self, encounter):
     while not encounter.overcome:

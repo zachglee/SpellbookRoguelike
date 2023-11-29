@@ -12,7 +12,7 @@ def turn_trigger_factory(turn_list):
 def command_effect_factory(commands):
   async def effect(encounter):
     for command in commands:
-      await encounter.handle_command.append(command)
+      await encounter.handle_command(command)
   return effect
 
 # ritual event factories

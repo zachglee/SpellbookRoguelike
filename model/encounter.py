@@ -257,13 +257,13 @@ class Encounter:
       self.player.seen_items.append(found_item)
 
   async def observe(self):
-    observed_factions = [e.faction for e in self.faced_enemy_queue]
+    observed_factions = set([e.faction for e in self.faced_enemy_queue])
     for faction in observed_factions:
       faction_obj = faction_dict[faction]
       if self.player.rituals_dict.get(faction) is None:
         self.player.rituals.append(faction_obj.ritual)
       self.player.rituals_dict[faction].progress += 1
-      await ws_input(colored(f"{faction_obj.ritual.name} advanced to {faction_obj.ritual.progress}/{faction_obj.ritual.required_progress}", "yellow"), self.player.websocket)
+      await ws_print(colored(f"{faction_obj.ritual.name} advanced to {faction_obj.ritual.progress}/{faction_obj.ritual.required_progress}!", "yellow"), self.player.websocket)
 
 
   async def handle_command(self, cmd):
@@ -430,7 +430,7 @@ class Encounter:
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
     if activable_rituals:
       await ws_print(numbered_list(activable_rituals), player.websocket)
-      chosen_ritual = await choose_obj(activable_rituals, "Choose a ritual to activate: ", player.websocket)
+      chosen_ritual = await choose_obj(colored(activable_rituals, "Choose a ritual to activate: ", "yellow"), player.websocket)
       if chosen_ritual:
         self.rituals = [chosen_ritual]
         # chosen_ritual.progress -= chosen_ritual.required_progress
