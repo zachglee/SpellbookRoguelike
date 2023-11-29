@@ -1,88 +1,19 @@
 from typing import Any, Dict, Literal, Optional
 from content.trigger_functions import trigger_player_defense_break
-from model.action import Action
 from model.triggers import EventTrigger
 from termcolor import colored
 import time
 import random
 import math
 from copy import deepcopy
-from model.combat_entity import CombatEntity
 from model.event import Event
+from model.enemy import EnemySpawn
 from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
+from content.enemy_factions import faction_dict
 from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
 from sound_utils import play_sound
 
-
-class Enemy(CombatEntity):
-
-  faction: Optional[str] = None
-  action: Action = NothingAction()
-  entry: Action = NothingAction()
-  spawned: bool = False
-  experience: Optional[int] = None
-  websocket: Any = None
-
-  class Config:
-    arbitrary_types_allowed = True
-
-  @classmethod
-  def make(cls, hp, name, action, entry=NothingAction(), exp=None):
-    exp = exp or math.ceil(hp / 2)
-    return cls(hp=hp, max_hp=hp, name=name, action=action, entry=entry, experience=exp)
-
-class EnemySpawn:
-  def __init__(self, turn, side: Literal["f", "b"], enemy, wave=1):
-    self.turn = turn
-    self.original_turn = turn # unaffected by ward
-    self.side = side
-    self.enemy = deepcopy(enemy)
-    self.wave = wave
-
-class EnemySet:
-  def __init__(self, name, enemy_spawns, faction="Unknown", exp=None, description=""):
-    self.name = name
-    self.enemy_spawns = enemy_spawns
-    self.experience = exp or 15
-    self.faction = faction
-    self.level = 0
-    self.description = description
-
-    self.pickable = True
-  
-  @property
-  def instantiated_enemy_spawns(self):
-    enemy_spawns = []
-    for es in self.enemy_spawns:
-      instantiated_enemy = deepcopy(es.enemy)
-      # instantiated_enemy.faction = self.faction
-      enemy_spawns.append(EnemySpawn(es.turn, es.side, instantiated_enemy))
-    return enemy_spawns
-
-  def level_up(self):
-    for es in self.enemy_spawns:
-      es.enemy.hp = math.ceil(es.enemy.hp * 1.25)
-      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.25)
-    self.level += 1
-
-  def render(self, show_rules_text=False):
-    return_str = colored(f"{self.name}", "red")
-    if self.level > 0:
-      return_str += colored(f" (Lv{self.level})", "red")
-    if show_rules_text:
-      spawn_turns_str = "Spawn " + "".join([f"{es.turn}" for es in self.enemy_spawns])
-      reference_enemy = self.enemy_spawns[-1].enemy
-      hp_str = f"{reference_enemy.hp}/{reference_enemy.max_hp}hp"
-      intent_str = str(reference_enemy.action)
-      description_str = f"{spawn_turns_str} : {hp_str} : {intent_str}"
-    else:
-      description_str = self.description
-    return_str += colored(f" - {description_str}", "magenta")
-    return return_str
-
-  def __repr__(self):
-    return self.render()
 
 class EnemyWave:
   def __init__(self, enemy_sets, delay=0):
@@ -325,6 +256,16 @@ class Encounter:
       self.player.inventory.append(found_item)
       self.player.seen_items.append(found_item)
 
+  async def observe(self):
+    observed_factions = [e.faction for e in self.faced_enemy_queue]
+    for faction in observed_factions:
+      faction_obj = faction_dict[faction]
+      if self.player.rituals_dict.get(faction) is None:
+        self.player.rituals[faction].append(faction_obj.ritual)
+      self.player.rituals_dict[faction].progress += 1
+      await ws_input(colored(f"{faction_obj.name} advanced to {faction_obj.progress}/{faction_obj.required_progress}", "yellow"), self.player.websocket)
+
+
   async def handle_command(self, cmd):
     await ws_print(f"Handling command '{cmd}' ...", self.player.websocket)
     cmd_tokens = cmd.split(" ")
@@ -351,6 +292,9 @@ class Encounter:
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
         await self.explore()
+      elif cmd in ["observe", "s"]:
+        self.player.spend_time()
+        await self.observe()
       elif cmd == "face?":
         self.player.switch_face(event=False)
       elif cmd == "face!":

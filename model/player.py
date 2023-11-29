@@ -72,6 +72,12 @@ class Player(CombatEntity):
   @property
   def level_progress_str(self):
     return f"{self.experience}/{self.next_exp_milestone}"
+  
+  @property
+  def rituals_dict(self):
+    """Returns a dictionary of faction names to ritual objects."""
+    return {ritual.faction: ritual for ritual in self.rituals if ritual.faction}
+    
 
   def spend_time(self, cost=1):
     if (self.time - cost) >= 0:
