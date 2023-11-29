@@ -1,6 +1,6 @@
 from copy import deepcopy
 from typing import List
-from model.encounter import EnemySet, Enemy, EnemySpawn
+from model.enemy import EnemySet, Enemy, EnemySpawn
 from content.enemy_actions import (
   AttackAction, AttackSide, AttackAll, EnergyThresholdAction, HealAction, SelfDamageAction, AttackImmediate,
   BackstabAction, NearFarAction, PackTacticsAction, MoveAction, CowardlyAction,

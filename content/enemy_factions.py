@@ -1,4 +1,4 @@
-# from model.encounter import EnemySet, Enemy, EnemySpawn
+
 from content.rituals import turn_command_event_factory as ritual_event
 from model.item import Item
 from model.faction import Faction

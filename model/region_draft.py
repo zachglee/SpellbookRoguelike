@@ -3,7 +3,7 @@ import random
 from typing import List, Tuple
 from termcolor import colored
 
-from model.encounter import EnemySet
+from model.enemy import EnemySet
 from model.spellbook import LibrarySpell, Spell
 from utils import choose_obj, numbered_list, wait_for_teammates, ws_print
 

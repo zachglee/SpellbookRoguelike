@@ -261,9 +261,9 @@ class Encounter:
     for faction in observed_factions:
       faction_obj = faction_dict[faction]
       if self.player.rituals_dict.get(faction) is None:
-        self.player.rituals[faction].append(faction_obj.ritual)
+        self.player.rituals.append(faction_obj.ritual)
       self.player.rituals_dict[faction].progress += 1
-      await ws_input(colored(f"{faction_obj.name} advanced to {faction_obj.progress}/{faction_obj.required_progress}", "yellow"), self.player.websocket)
+      await ws_input(colored(f"{faction_obj.ritual.name} advanced to {faction_obj.ritual.progress}/{faction_obj.ritual.required_progress}", "yellow"), self.player.websocket)
 
 
   async def handle_command(self, cmd):
@@ -292,7 +292,7 @@ class Encounter:
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
         await self.explore()
-      elif cmd in ["observe", "s"]:
+      elif cmd in ["observe", "o"]:
         self.player.spend_time()
         await self.observe()
       elif cmd == "face?":
