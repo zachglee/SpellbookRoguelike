@@ -79,23 +79,23 @@ enemies = {
   "Incubated Fleshling": Enemy.make(6, "Incubated Fleshling", AttackAction(1)),
   "Corrupting Spire": Enemy.make(1, "Corrupting Spire", NothingAction(), entry=MultiAction([
     AddConditionAction("stun", 1, "all_enemies"),
-    AddConditionAction("sharp", 5, "all_enemies"),
-    AddConditionAction("regen", 5, "all_enemies"),
-    AddConditionAction("block", 5, "all_enemies"),
+    AddConditionAction("sharp", 4, "all_enemies"),
+    AddConditionAction("regen", 4, "all_enemies"),
+    AddConditionAction("shield", 4, "all_enemies"),
   ])),
   "Lurking Scavenger": Enemy.make(12, "Lurking Scavenger", PackTacticsAction(AttackAction(5, lifesteal=True), AddConditionAction("regen", 2, "self"))),
-  "Artificer Princess": Enemy.make(10, "Artificer Princess",
+  "Artificer Princess": Enemy.make(12, "Artificer Princess",
                               NearFarAction(AttackAction(1),
                                             MultiAction([
                                               AddConditionAction("sharp", 2, "self"),
                                               AddConditionAction("armor", 2, "self"),
                                             ])),
                               entry=AddConditionAction("sharp", 2, "all_enemies")),
-  "Vampire Lord": Enemy.make(24, "Vampire Lord",
+  "Vampire Lord": Enemy.make(25, "Vampire Lord",
                         HealthThresholdAction(
-                          AddConditionAction("sharp", 1, "player"), AttackAction(6, lifesteal=True), 24),
+                          AddConditionAction("sharp", 1, "player"), AttackAction(7, lifesteal=True), 25),
                         entry=MultiAction([
-                          SelfDamageAction(6),
+                          SelfDamageAction(7),
                           AddConditionAction("retaliate", 2, "self"),
                         ])),
   "Cocky Descender": Enemy.make(9, "Cocky Descender",
@@ -173,7 +173,7 @@ enemies = {
   "Intrepid Bannerman": Enemy.make(15, "Intrepid Bannerman", AddConditionAction("empower", 4, "side"),
     entry=AddConditionAction("undying", 1, "self")),
   "Inquisitive Eye": Enemy.make(4, "Inquisitive Eye", CallAction(None, 1)),
-  "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1, windup_action=AddConditionAction("encase", 4, "player"))),
+  "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(MultiAction([AddConditionAction("doom", 1, "player"), AddConditionAction("encase", 4, "player")]), 1)),
   "Grasping Hand": Enemy.make(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
   "Cagemaster": Enemy.make(16, "Cagemaster", AddConditionAction("doom", 1, "player"),
                                entry=AddConditionAction("encase", 16, "player")),
@@ -218,338 +218,341 @@ enemies = {
   # enemies where damage is not the best option
 }
 
+def make_enemy(name):
+  return deepcopy(enemies[name])
+
 doombringers = [
   # Doombringers
   EnemySet("Doom of Blades", [
-    EnemySpawn(4, "b", enemies["Blade Forger"]),
-    EnemySpawn(6, "f", enemies["Doom of Blades"]),
-  ], faction="Doombringers", description="Death to all, both friend and foe. Sharpen your blades before it comes."),
+    EnemySpawn(4, "b", make_enemy("Blade Forger")),
+    EnemySpawn(6, "f", make_enemy("Doom of Blades")),
+  ], faction="Doombringers", description="Late-spawning enemy that attacks everyone."),
   EnemySet("Doom of Plagues", [
-    EnemySpawn(3, "b", enemies["Wandering Healer"]),
-    EnemySpawn(5, "f", enemies["Doom of Plagues"]),
-  ], faction="Doombringers", description="An inexorable sickness. Healing is necessary to survive."),
+    EnemySpawn(3, "b", make_enemy("Wandering Healer")),
+    EnemySpawn(5, "f", make_enemy("Doom of Plagues")),
+  ], faction="Doombringers", description="Late-spawning enemy that adds poison."),
   EnemySet("Doom of Waves", [
-    EnemySpawn(3, "b", enemies["Defiant Survivor"]),
-    EnemySpawn(4, "f", enemies["Wave of Doom"]),
-    EnemySpawn(5, "f", enemies["Wave of Doom"]),
-    EnemySpawn(6, "f", enemies["Wave of Doom"]),
-  ], faction="Doombringers", description="Three waves. They loom before they crash."),
+    EnemySpawn(3, "b", make_enemy("Defiant Survivor")),
+    EnemySpawn(4, "f", make_enemy("Wave of Doom")),
+    EnemySpawn(5, "f", make_enemy("Wave of Doom")),
+    EnemySpawn(6, "f", make_enemy("Wave of Doom")),
+  ], faction="Doombringers", description="3 late spawning enemies with slow attacks and retaliate."),
   EnemySet("Doom of Hordes", [
-    EnemySpawn(4, "b", enemies["Grizzled Armorer"]),
-    EnemySpawn(6, "f", enemies["Horde Beast"]),
-    EnemySpawn(6, "f", enemies["Horde Beast"]),
-    EnemySpawn(6, "b", enemies["Horde Beast"]),
-    EnemySpawn(6, "b", enemies["Horde Beast"]),
-  ], faction="Doombringers", description="Prepare your walls. The horde is coming.")
+    EnemySpawn(4, "b", make_enemy("Grizzled Armorer")),
+    EnemySpawn(6, "f", make_enemy("Horde Beast")),
+    EnemySpawn(6, "f", make_enemy("Horde Beast")),
+    EnemySpawn(6, "b", make_enemy("Horde Beast")),
+    EnemySpawn(6, "b", make_enemy("Horde Beast")),
+  ], faction="Doombringers", description="4 enemies that spawn all at once and have Overwhelm.")
 ]
 
 the_collectors = [
   # The Collectors
   EnemySet("Cagemaster", [
-    EnemySpawn(1, "b", enemies["Collector's Cage"]),
-    EnemySpawn(4, "f", enemies["Cagemaster"]),
-  ], faction="The Collectors", description="Encased in crystal cages, his victims wither away."),
+    EnemySpawn(1, "b", make_enemy("Collector's Cage")),
+    EnemySpawn(4, "f", make_enemy("Cagemaster")),
+  ], faction="The Collectors", description="Encases and inflicts doom on you."),
   EnemySet("Specimen Collector", [
-    EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
-    EnemySpawn(4, "f", enemies["Specimen Collector"]),
-  ], faction="The Collectors", description="It sees magic like light."),
+    EnemySpawn(1, "b", make_enemy("Inquisitive Eye")),
+    EnemySpawn(4, "f", make_enemy("Specimen Collector")),
+  ], faction="The Collectors", description="Attacks you if you have any energy."),
   EnemySet("Magecatcher", [
-    EnemySpawn(1, "b", enemies["Grasping Hand"]),
-    EnemySpawn(4, "f", enemies["Magecatcher"]),
-  ], faction="The Collectors", description="It smells spellcasting like blood."),
+    EnemySpawn(1, "b", make_enemy("Grasping Hand")),
+    EnemySpawn(4, "f", make_enemy("Magecatcher")),
+  ], faction="The Collectors", description="Attacks you if you cast a spell."),
   EnemySet("Acquisitions Party", [
-    EnemySpawn(1, "b", enemies["Inquisitive Eye"]),
-    EnemySpawn(1, "f", enemies["Inquisitive Eye"]),
-    EnemySpawn(2, "b", enemies["Collector's Cage"]),
-    EnemySpawn(2, "f", enemies["Collector's Cage"]),
-    EnemySpawn(3, "b", enemies["Grasping Hand"]),
-    EnemySpawn(3, "f", enemies["Grasping Hand"])
-  ], faction="The Collectors", description="Minions of the Collectors.")
+    EnemySpawn(1, "b", make_enemy("Inquisitive Eye")),
+    EnemySpawn(1, "f", make_enemy("Inquisitive Eye")),
+    EnemySpawn(2, "b", make_enemy("Collector's Cage")),
+    EnemySpawn(2, "f", make_enemy("Collector's Cage")),
+    EnemySpawn(3, "b", make_enemy("Grasping Hand")),
+    EnemySpawn(3, "f", make_enemy("Grasping Hand"))
+  ], faction="The Collectors", description="6 small minions that call enemies, slow you, and encase you.")
 ]
 
 undying_legion = [
   # Undying Legion
   EnemySet("Relentless Legionnaire", [
-    EnemySpawn(2, "f", enemies["Relentless Legionnaire"]),
-    EnemySpawn(3, "b", enemies["Relentless Legionnaire"]),
-    EnemySpawn(4, "f", enemies["Relentless Legionnaire"])
-  ], faction="Undying Legion", description="In life and in death, they march on."),
+    EnemySpawn(2, "f", make_enemy("Relentless Legionnaire")),
+    EnemySpawn(3, "b", make_enemy("Relentless Legionnaire")),
+    EnemySpawn(4, "f", make_enemy("Relentless Legionnaire"))
+  ], faction="Undying Legion", description="3 enemies start with empower and undying."),
   EnemySet("Eternal Berserker", [
-    EnemySpawn(1, "f", enemies["Eternal Berserker"]),
-  ], faction="Undying Legion", description="He has died a thousand times, and will die a thousand more."),
+    EnemySpawn(1, "f", make_enemy("Eternal Berserker")),
+  ], faction="Undying Legion", description="One enemy with lots of undying and regen"),
   EnemySet("Risen Warrior", [
-    EnemySpawn(1, "b", enemies["Risen Warrior"])
-  ], faction="Undying Legion", description="It claws at its sarcogphagus. How long before it escapes?"),
+    EnemySpawn(1, "b", make_enemy("Risen Warrior"))
+  ], faction="Undying Legion", description="Starts encased, has heavy attacks."),
   EnemySet("Intrepid Bannerman", [
-    EnemySpawn(3, "f", enemies["Intrepid Bannerman"]),
-    EnemySpawn(4, "f", enemies["Conscript"])
-  ], faction="Undying Legion", description="The Banners of the Legion inspire a fervor that transcends death.")
+    EnemySpawn(3, "f", make_enemy("Intrepid Bannerman")),
+    EnemySpawn(4, "f", make_enemy("Conscript"))
+  ], faction="Undying Legion", description="Empowers enemies on its side.")
 ]
 
 freed_automata = [
   # Freed Automata
   EnemySet("Assault Golem", [
-    EnemySpawn(2, "f", enemies["Assault Golem"])
-  ], faction="Freed Automata", description="An industrial golem, factoryless and wandering. Attack at your own peril."),
+    EnemySpawn(2, "f", make_enemy("Assault Golem"))
+  ], faction="Freed Automata", description="Hits back hard if you attack it."),
   EnemySet("Aegis Orb", [
-    EnemySpawn(1, "f", enemies["Aegis Orb"])
-  ], faction="Freed Automata", description="A floating chrome orb. It pulses with silver light."),
+    EnemySpawn(1, "f", make_enemy("Aegis Orb"))
+  ], faction="Freed Automata", description="Gives all enemies armor and retaliate."),
   EnemySet("Defective Shieldbot", [
-    EnemySpawn(1, "f", enemies["Defective Shieldbot"])
-  ], faction="Freed Automata", description="A shield generator, damaged and dangerously defective as it decays."),
+    EnemySpawn(1, "f", make_enemy("Defective Shieldbot"))
+  ], faction="Freed Automata", description="Starts with a large decaying shield."),
   EnemySet("Plated Warmech", [
-    EnemySpawn(3, "f", enemies["Plated Warmech"])
-  ], faction="Freed Automata", description="It was built to march through armies unscathed."),
+    EnemySpawn(3, "f", make_enemy("Plated Warmech"))
+  ], faction="Freed Automata", description="Very heavily armored."),
 ]
 
 saik_collective = [
   # Sa'ik Collective
   EnemySet("Harpy Harriers", [
-    EnemySpawn(1, "b", enemies["Harpy Harrier"]),
-    EnemySpawn(2, "f", enemies["Harpy Harrier"]),
-    EnemySpawn(3, "b", enemies["Harpy Harrier"])
-  ], faction="Sa'ik Collective", description="A flock of harpies, swooping and diving. Don't turn your back."),
+    EnemySpawn(1, "b", make_enemy("Harpy Harrier")),
+    EnemySpawn(2, "f", make_enemy("Harpy Harrier")),
+    EnemySpawn(3, "b", make_enemy("Harpy Harrier"))
+  ], faction="Sa'ik Collective", description="Trio, they deal more damage from behind."),
   EnemySet("Evasive Skydancer", [
-    EnemySpawn(2, "f", enemies["Evasive Skydancer"])
-  ], faction="Sa'ik Collective", description="She weaves through the air, waiting to strike."),
+    EnemySpawn(2, "f", make_enemy("Evasive Skydancer"))
+  ], faction="Sa'ik Collective", description="When attacked, doesn't attack, but gains sharp instead."),
   EnemySet("Sa'ik Descenders", [
-    EnemySpawn(3, "f", enemies["Cocky Descender"]),
-    EnemySpawn(3, "b", enemies["Cocky Descender"]),
-  ], faction="Sa'ik Collective", description="They're not used to prey that fights back."),
+    EnemySpawn(3, "f", make_enemy("Cocky Descender")),
+    EnemySpawn(3, "b", make_enemy("Cocky Descender")),
+  ], faction="Sa'ik Collective", description="High damage while at full health."),
   EnemySet("Screeching Fury", [
-    EnemySpawn(3, "b", enemies["Screeching Fury"]),
-  ], faction="Sa'ik Collective", description="Raise her ire at your own peril."),
+    EnemySpawn(3, "b", make_enemy("Screeching Fury")),
+  ], faction="Sa'ik Collective", description="High damage while not at full health."),
 ]
 
 house_of_imir = [
   # House of Imir
   EnemySet("Ravenous Hounds", [
-    EnemySpawn(2, "f", enemies["Ravenous Hound"]),
-    EnemySpawn(3, "b", enemies["Ravenous Hound"]),
-    EnemySpawn(4, "f", enemies["Ravenous Hound"])
-  ], faction="House of Imir", description="They surround and tear apart their quarries."),
+    EnemySpawn(2, "f", make_enemy("Ravenous Hound")),
+    EnemySpawn(3, "b", make_enemy("Ravenous Hound")),
+    EnemySpawn(4, "f", make_enemy("Ravenous Hound"))
+  ], faction="House of Imir", description="Trio, they deal more damage if you're surrounded."),
   EnemySet("Wanton Vampire", [
-    EnemySpawn(3, "b", enemies["Bat"]),
-    EnemySpawn(4, "f", enemies["Vampire"])
-  ], faction="House of Imir", description="It thrives on the lifeblood of others."),
+    EnemySpawn(3, "b", make_enemy("Bat")),
+    EnemySpawn(4, "f", make_enemy("Vampire"))
+  ], faction="House of Imir", description="Has a strong lifesteal attack."),
   EnemySet("Lurking Scavengers", [
-    EnemySpawn(1, "b", enemies["Lurking Scavenger"]),
-    EnemySpawn(3, "b", enemies["Lurking Scavenger"]),
-    EnemySpawn(5, "b", enemies["Lurking Scavenger"]),
-  ], faction="House of Imir", description="Alone they scavenge. Together they hunt."),
+    EnemySpawn(1, "b", make_enemy("Lurking Scavenger")),
+    EnemySpawn(3, "b", make_enemy("Lurking Scavenger")),
+    EnemySpawn(5, "b", make_enemy("Lurking Scavenger")),
+  ], faction="House of Imir", description="Trio, if you're surrounded they lifesteal attack, otherwise they regen."),
   EnemySet("Vampire Lord", [
-    EnemySpawn(3, "f", enemies["Vampire Lord"]),
-  ], faction="House of Imir", description="Blood hunted is standard fare. Blood freely offered is a delicacy."),
+    EnemySpawn(3, "f", make_enemy("Vampire Lord")),
+  ], faction="House of Imir", description="Starts damaged, can lifesteal. If you let him heal to full, he'll help you."),
 ]
 
 movs_horde = [
   # Mov's Horde
   EnemySet("Zombie Mob", [
-    EnemySpawn(3, "f", enemies["Zombie"]),
-    EnemySpawn(4, "f", enemies["Zombie"]),
-    EnemySpawn(5, "f", enemies["Zombie"])
-  ], faction="Mov's Horde", description="Don't let them get close."),
+    EnemySpawn(3, "f", make_enemy("Zombie")),
+    EnemySpawn(4, "f", make_enemy("Zombie")),
+    EnemySpawn(5, "f", make_enemy("Zombie"))
+  ], faction="Mov's Horde", description="Trio, first in line attacks you."),
   EnemySet("Decaying Corpse", [
-    EnemySpawn(1, "f", enemies["Decaying Corpse"])
-  ], faction="Mov's Horde", description="It falls apart as it rushes towards you."),
+    EnemySpawn(1, "f", make_enemy("Decaying Corpse"))
+  ], faction="Mov's Horde", description="Early spawn, strong attacks, but starts poisoned."),
   EnemySet("Skittering Swarm", [
-    EnemySpawn(1, "f", enemies["Skitterer"]),
-    EnemySpawn(2, "f", enemies["Skitterer"]),
-    EnemySpawn(3, "b", enemies["Skitterer"]),
-    EnemySpawn(4, "b", enemies["Skitterer"]),
-    EnemySpawn(5, "f", enemies["Skitterer"]),
-    EnemySpawn(5, "b", enemies["Skitterer"]),
-    EnemySpawn(6, "f", enemies["Skitterer"]),
-    EnemySpawn(6, "b", enemies["Skitterer"]),
-  ], faction="Mov's Horde", description="A nuisance, until they gather that is..."),
+    EnemySpawn(1, "f", make_enemy("Skitterer")),
+    EnemySpawn(2, "f", make_enemy("Skitterer")),
+    EnemySpawn(3, "b", make_enemy("Skitterer")),
+    EnemySpawn(4, "b", make_enemy("Skitterer")),
+    EnemySpawn(5, "f", make_enemy("Skitterer")),
+    EnemySpawn(5, "b", make_enemy("Skitterer")),
+    EnemySpawn(6, "f", make_enemy("Skitterer")),
+    EnemySpawn(6, "b", make_enemy("Skitterer")),
+  ], faction="Mov's Horde", description="Swarm of low hp enemies. Attacks get stronger when many enemies present."),
   EnemySet("Necromancer Apprentice", [
-    EnemySpawn(4, "f", enemies["Necromancer Apprentice"]),
-  ], faction="Mov's Horde", description="She trains under Mov herself, and learns the secrets of undeath."),
+    EnemySpawn(4, "f", make_enemy("Necromancer Apprentice")),
+  ], faction="Mov's Horde", description="Gives enemies undying and regen."),
 ]
 
 company_of_blades = [
   # Company of Blades
   EnemySet("Bandit Ambush", [
-    EnemySpawn(2, "f", enemies["Bandit"]),
-    EnemySpawn(2, "b", enemies["Bandit"])
-  ], faction="Company of Blades", description="Their courage is... variable."),
+    EnemySpawn(2, "f", make_enemy("Bandit")),
+    EnemySpawn(2, "b", make_enemy("Bandit"))
+  ], faction="Company of Blades", description="Duo, they attack as long as there is a same or higher max hp enemy."),
   EnemySet("Hunter and Hawk", [
-    EnemySpawn(3, "b", enemies["Hawk"]),
-    EnemySpawn(4, "f", enemies["Hunter"])
-  ], faction="Company of Blades", description="Her arrows from a distance spell death."),
+    EnemySpawn(3, "b", make_enemy("Hawk")),
+    EnemySpawn(4, "f", make_enemy("Hunter"))
+  ], faction="Company of Blades", description="Hawk inflicts vulnerable, hunter has heavy attacks from backline."),
   EnemySet("Insistent Duelist", [
-    EnemySpawn(2, "f", enemies["Insistent Duelist"])
-  ], faction="Company of Blades", description="He seeks a challenge and will not be denied."),
+    EnemySpawn(2, "f", make_enemy("Insistent Duelist"))
+  ], faction="Company of Blades", description="Only attacks if he's alone on his side, otherwise powers up."),
   EnemySet("Crossbow Deadeyes", [
-    EnemySpawn(2, "b", enemies["Crossbow Deadeye"]),
-    EnemySpawn(4, "f", enemies["Crossbow Deadeye"]),
-    EnemySpawn(6, "b", enemies["Crossbow Deadeye"]),
-  ], faction="Company of Blades", description="Load, aim, fire, kill."),
+    EnemySpawn(2, "b", make_enemy("Crossbow Deadeye")),
+    EnemySpawn(4, "f", make_enemy("Crossbow Deadeye")),
+    EnemySpawn(6, "b", make_enemy("Crossbow Deadeye")),
+  ], faction="Company of Blades", description="Trio, slow but heavy attacks."),
 ]
 
 giantkin = [
   # Giantkin
   EnemySet("Charging Ogre", [
-    EnemySpawn(4, "f", enemies["Charging Ogre"])
-  ], faction="Giantkin", description="An ogre. Pray your defenses are ready when you come face to face with it."),
+    EnemySpawn(4, "f", make_enemy("Charging Ogre"))
+  ], faction="Giantkin", description="Charges to front and powers up, once in front does heavy attacks."),
   EnemySet("Injured Troll", [
-    EnemySpawn(2, "f", enemies["Injured Troll"])
-  ], faction="Giantkin", description="A troll can heal from even the most grevious wounds."),
+    EnemySpawn(2, "f", make_enemy("Injured Troll"))
+  ], faction="Giantkin", description="Starts damaged but with heavy regen."),
   EnemySet("Slumbering Giant", [
-    EnemySpawn(1, "f", enemies["Slumbering Giant"]),
-  ], faction="Giantkin", description="Shields will be meager comfort once it wakes."),
+    EnemySpawn(1, "f", make_enemy("Slumbering Giant")),
+  ], faction="Giantkin", description="High hp and massive attacks, but starts stunned."),
   EnemySet("The Executioner", [
-    EnemySpawn(4, "b", enemies["Herald of Doom"]),
-    EnemySpawn(6, "f", enemies["The Executioner"]),
-  ], faction="Giantkin", description="He wields a massive axe. One swing will turn you into a trophy on its belt."),
+    EnemySpawn(4, "b", make_enemy("Herald of Doom")),
+    EnemySpawn(6, "f", make_enemy("The Executioner")),
+  ], faction="Giantkin", description="Late spawning enemy with slow massive attacks."),
 ]
 
 fae_realm = [
   # Fae Realm
   EnemySet("Faerie Assassins", [
-    EnemySpawn(2, "b", enemies["Faerie Assassin"]),
-    EnemySpawn(4, "b", enemies["Faerie Assassin"]),
-    EnemySpawn(6, "b", enemies["Faerie Assassin"]),
-  ], faction="Fae Realm", description="They flit through the twilight, most dangerous when unseen."),
+    EnemySpawn(2, "b", make_enemy("Faerie Assassin")),
+    EnemySpawn(4, "b", make_enemy("Faerie Assassin")),
+    EnemySpawn(6, "b", make_enemy("Faerie Assassin")),
+  ], faction="Fae Realm", description="Trio, poison you from behind, otherwise small attacks."),
   EnemySet("Midnight Court", [
-      EnemySpawn(2, "f", enemies["Midnight Courtier"]),
-      EnemySpawn(3, "b", enemies["Midnight Courtier"]),
-  ], faction="Fae Realm", description="A lack of magic is looked upon... unfavorably."),
+      EnemySpawn(2, "f", make_enemy("Midnight Courtier")),
+      EnemySpawn(3, "b", make_enemy("Midnight Courtier")),
+  ], faction="Fae Realm", description="Duo, poison you if you have no energy, otherwise gain retaliate."),
   EnemySet("Fickle Witch-Queen", [
-      EnemySpawn(2, "f", enemies["Fickle Witch-Queen"])
-  ], faction="Fae Realm", description="Cruel tests of resolve are her entertainment."),
+      EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))
+  ], faction="Fae Realm", description="Poisons you on entry. If you leave her be, she'll cure and heal you."),
   EnemySet("Tithetaker", [
-      EnemySpawn(1, "b", enemies["Generous Sprite"]),
-      EnemySpawn(5, "f", enemies["Tithetaker"])
-  ], faction="Fae Realm", description="Have you prepared a worthy offering?"),
+      EnemySpawn(1, "b", make_enemy("Generous Sprite")),
+      EnemySpawn(5, "f", make_enemy("Tithetaker"))
+  ], faction="Fae Realm", description="Spawns late, does heavy attacks unless you have lots of energy."),
 ]
 
 kingdom_of_amar = [
   # Kingdom of Amar
   EnemySet("Knifehand", [
-    EnemySpawn(5, "f", enemies["Knifehand"])
-  ], faction="Kingdom of Amar", description="It unleashes an onslaught of strikes in combat."),
+    EnemySpawn(5, "f", make_enemy("Knifehand"))
+  ], faction="Kingdom of Amar", description="Spawns late, does a triple attack."),
   EnemySet("Stoneguard Patrol", [
-    EnemySpawn(3, "f", enemies["Stoneguard"]),
-    EnemySpawn(3, "f", enemies["Stoneguard"]),
-    EnemySpawn(5, "b", enemies["Stoneguard"]),
-    EnemySpawn(5, "b", enemies["Stoneguard"]),
-  ], faction="Kingdom of Amar", description="Cheap but sturdy, they march two by two."),
+    EnemySpawn(3, "f", make_enemy("Stoneguard")),
+    EnemySpawn(3, "f", make_enemy("Stoneguard")),
+    EnemySpawn(5, "b", make_enemy("Stoneguard")),
+    EnemySpawn(5, "b", make_enemy("Stoneguard")),
+  ], faction="Kingdom of Amar", description="4 small enemies that start with armor."),
   EnemySet("Cloud of Daggers", [
-    EnemySpawn(3, "f", enemies["Cloud of Daggers"]),
-    EnemySpawn(3, "b", enemies["Cloud of Daggers"]),
-  ], faction="Kingdom of Amar", description="It cuts everything to ribbons."),
+    EnemySpawn(3, "f", make_enemy("Cloud of Daggers")),
+    EnemySpawn(3, "b", make_enemy("Cloud of Daggers")),
+  ], faction="Kingdom of Amar", description="Duo, multiple small attacks to everything."),
   EnemySet("Princess' Entourage", [
-    EnemySpawn(2, "f", enemies["Stoneguard"]),
-    EnemySpawn(2, "f", enemies["Stoneguard"]),
-    EnemySpawn(5, "f", enemies["Artificer Princess"]),
-  ], faction="Kingdom of Amar", description="She is a boon to any army with blades."),
+    EnemySpawn(2, "f", make_enemy("Stoneguard")),
+    EnemySpawn(2, "f", make_enemy("Stoneguard")),
+    EnemySpawn(5, "f", make_enemy("Artificer Princess")),
+  ], faction="Kingdom of Amar", description="2 minions, 1 leader, she gives sharp to all."),
 ]
 
 infernal_plane = [
   # Infernal Plane
   EnemySet("Blazing Eye", [
-    EnemySpawn(3, "f", enemies["Blazing Eye"])
-  ], faction="Infernal Plane", description="It sears the flesh to even look upon it."),
+    EnemySpawn(3, "f", make_enemy("Blazing Eye"))
+  ], faction="Infernal Plane", description="Inflicts heavy burn if you're facing it."),
   EnemySet("Conniving Impfiends", [
-    EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
-    EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
-    EnemySpawn(4, "b", enemies["Conniving Impfiend"]),
-  ], faction="Infernal Plane", description="Together, they plot and scheme."),
+    EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
+    EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
+    EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
+  ], faction="Infernal Plane", description="Trio, if you're Overwhelmed, they burn you, otherwise just attack."),
   EnemySet("Cult of the Inferno", [
-    EnemySpawn(1, "b", enemies["Cultist"]),
-    EnemySpawn(2, "b", enemies["Cultist"]),
-    EnemySpawn(3, "b", enemies["Cultist"]),
-    EnemySpawn(11, "f", enemies["Demon of the Inferno"]),
-  ], faction="Infernal Plane", description="Do not let them summon their master. None have survived him."),
+    EnemySpawn(1, "b", make_enemy("Cultist")),
+    EnemySpawn(2, "b", make_enemy("Cultist")),
+    EnemySpawn(3, "b", make_enemy("Cultist")),
+    EnemySpawn(11, "f", make_enemy("Demon of the Inferno")),
+  ], faction="Infernal Plane", description="Trio of minions call the demon. If it spawns, you're probably dead."),
   EnemySet("Witch-Burner Devil", [
-      EnemySpawn(2, "f", enemies["Witch-Burner Devil"])
-  ], faction="Infernal Plane", description="It can smell magic like blood in the water."),
+      EnemySpawn(2, "f", make_enemy("Witch-Burner Devil"))
+  ], faction="Infernal Plane", description="If you have energy, inflicts heavy burn."),
 ]
 
 dominion_of_drael = [
   # Dominion of Drael
   EnemySet("Zealous Battlemages", [
-    EnemySpawn(1, "f", enemies["Zealous Battlemage"]),
-    EnemySpawn(2, "f", enemies["Zealous Battlemage"]),
-  ], faction="Dominion of Drael", description="'Strike first. Strike hard. Strike once.' --Draelish proverb"),
+    EnemySpawn(1, "f", make_enemy("Zealous Battlemage")),
+    EnemySpawn(2, "f", make_enemy("Zealous Battlemage")),
+  ], faction="Dominion of Drael", description="Duo, start with heavy block and empower."),
   EnemySet("Draelish Patrol", [
-    EnemySpawn(2, "f", enemies["Conscript"]),
-    EnemySpawn(3, "f", enemies["Conscript"]),
-    EnemySpawn(4, "f", enemies["Conscript"]),
-    EnemySpawn(5, "f", enemies["Draelish Captain"])
-  ], faction="Dominion of Drael", description="Discipline remains while the captain stands."),
+    EnemySpawn(2, "f", make_enemy("Conscript")),
+    EnemySpawn(3, "f", make_enemy("Conscript")),
+    EnemySpawn(4, "f", make_enemy("Conscript")),
+    EnemySpawn(5, "f", make_enemy("Draelish Captain"))
+  ], faction="Dominion of Drael", description="Trio of minions, one leader that gives block and empower."),
   EnemySet("Draelish Bombsquad", [
-    EnemySpawn(2, "f", enemies["Bomber Zealot"]),
-    EnemySpawn(4, "b", enemies["Bomber Zealot"]),
-  ], faction="Dominion of Drael", description="Blind zeal and bombs are a dangerous thing."),
+    EnemySpawn(2, "f", make_enemy("Bomber Zealot")),
+    EnemySpawn(4, "b", make_enemy("Bomber Zealot")),
+  ], faction="Dominion of Drael", description="Duo, explode after one turn, damaging everything."),
   EnemySet("Shieldmage Squad", [
-    EnemySpawn(3, "f", enemies["Grizzled Shieldmage"]),
-    EnemySpawn(4, "f", enemies["Grizzled Shieldmage"]),
-    EnemySpawn(5, "f", enemies["Grizzled Shieldmage"]),
-  ], faction="Dominion of Drael", description="A single squad can turn the tide of battle with a good frontline."),
+    EnemySpawn(3, "f", make_enemy("Grizzled Shieldmage")),
+    EnemySpawn(4, "f", make_enemy("Grizzled Shieldmage")),
+    EnemySpawn(5, "f", make_enemy("Grizzled Shieldmage")),
+  ], faction="Dominion of Drael", description="Trio, give shield and retaliate to those in front."),
 ]
 
 spirits = [
   # Spirits
   EnemySet("Lightning Elemental", [
-    EnemySpawn(1, "f", enemies["Lightning Elemental"])
-  ], faction="Spirits", description="There is danger and power in its touch."),
+    EnemySpawn(1, "f", make_enemy("Lightning Elemental"))
+  ], faction="Spirits", description="Strong attacks, but they give you gold energy and empower."),
   EnemySet("Frost Elemental", [
-    EnemySpawn(2, "f", enemies["Frost Elemental"])
-  ], faction="Spirits", description="Body parts of previous victims are frozen within."),
+    EnemySpawn(2, "f", make_enemy("Frost Elemental"))
+  ], faction="Spirits", description="Inflicts slow, but gives you blue energy."),
   EnemySet("Fire Elemental", [
-    EnemySpawn(3, "f", enemies["Fire Elemental"])
-  ], faction="Spirits", description="Many have tried to harness it. Most burned."),
+    EnemySpawn(3, "f", make_enemy("Fire Elemental"))
+  ], faction="Spirits", description="Inflicts burn, but gives you red energy."),
   EnemySet("Font of Magic", [
-      EnemySpawn(4, "f", enemies["Blue Spirit-Hunter"]),
-      EnemySpawn(4, "f", enemies["Red Spirit-Hunter"]),
-      EnemySpawn(4, "f", enemies["Gold Spirit-Hunter"]),
-      EnemySpawn(5, "b", enemies["Font of Magic"])
-  ], faction="Spirits", description="You are not the only one who seeks it."),
+      EnemySpawn(4, "f", make_enemy("Blue Spirit-Hunter")),
+      EnemySpawn(4, "f", make_enemy("Red Spirit-Hunter")),
+      EnemySpawn(4, "f", make_enemy("Gold Spirit-Hunter")),
+      EnemySpawn(5, "b", make_enemy("Font of Magic"))
+  ], faction="Spirits", description="Trio of minions who attack you if you have energy of their color."),
 ]
 
 shadow_realm = [
   # Shadow Realm
   EnemySet("Creeping Shadow", [
-    EnemySpawn(1, "b", enemies["Creeping Shadow"])
-  ], faction="Shadow Realm", description="You could swear it's gotten bigger since the last time you looked..."),
+    EnemySpawn(1, "b", make_enemy("Creeping Shadow"))
+  ], faction="Shadow Realm", description="Grows stronger while you face away. Attacks when you face towards."),
   EnemySet("Nightmare Remnant", [
-    EnemySpawn(2, "b", enemies["Nightmare Remnant"]),
-    EnemySpawn(2, "f", enemies["Nightmare Remnant"]),
-    EnemySpawn(3, "b", enemies["Nightmare Remnant"]),
-    EnemySpawn(3, "f", enemies["Nightmare Remnant"]),
-    EnemySpawn(4, "b", enemies["Nightmare Remnant"]),
-    EnemySpawn(4, "f", enemies["Nightmare Remnant"]),
-  ], faction="Shadow Realm", description="They can't hurt you... can they?"),
+    EnemySpawn(2, "b", make_enemy("Nightmare Remnant")),
+    EnemySpawn(2, "f", make_enemy("Nightmare Remnant")),
+    EnemySpawn(3, "b", make_enemy("Nightmare Remnant")),
+    EnemySpawn(3, "f", make_enemy("Nightmare Remnant")),
+    EnemySpawn(4, "b", make_enemy("Nightmare Remnant")),
+    EnemySpawn(4, "f", make_enemy("Nightmare Remnant")),
+  ], faction="Shadow Realm", description="Disappear when you face them. Attack when you face away."),
   EnemySet("Dreamstalker", [
-    EnemySpawn(3, "b", enemies["Dreamstalker"])
-  ], faction="Shadow Realm", description="It takes root in your mind, and eats at your will."),
+    EnemySpawn(3, "b", make_enemy("Dreamstalker"))
+  ], faction="Shadow Realm", description="Slows you while you face away, otherwise attacks."),
   EnemySet("Shadow of a Doubt", [
-    EnemySpawn(4, "b", enemies["Shadow of a Doubt"])
-  ], faction="Shadow Realm", description="It whispers the inevitability of your demise. You cannot help but listen."),
+    EnemySpawn(4, "b", make_enemy("Shadow of a Doubt"))
+  ], faction="Shadow Realm", description="Inflicts vulnerable while you face towards, otherwise attacks."),
 ]
 
 ancient_horrors = [
   # Ancient Horrors
   EnemySet("Vengeful Minefield", [
-    EnemySpawn(1, "f", enemies["Vengeful Mine"]),
-    EnemySpawn(2, "b", enemies["Vengeful Mine"]),
-    EnemySpawn(3, "f", enemies["Vengeful Mine"]),
-    EnemySpawn(4, "b", enemies["Vengeful Mine"]),
-  ], faction="Ancient Horrors", description="Do not touch them. The slightest nudge will set them off."),
+    EnemySpawn(1, "f", make_enemy("Vengeful Mine")),
+    EnemySpawn(2, "b", make_enemy("Vengeful Mine")),
+    EnemySpawn(3, "f", make_enemy("Vengeful Mine")),
+    EnemySpawn(4, "b", make_enemy("Vengeful Mine")),
+  ], faction="Ancient Horrors", description="Small enemies with retaliate. Explode when many are present."),
   EnemySet("Corrupting Spire", [
-    EnemySpawn(2, "b", enemies["Incubated Fleshling"]),
-    EnemySpawn(3, "b", enemies["Incubated Fleshling"]),
-    EnemySpawn(4, "b", enemies["Incubated Fleshling"]),
-    EnemySpawn(5, "b", enemies["Corrupting Spire"]),
-  ], faction="Ancient Horrors", description="It twists all to its unknowable purpose."),
+    EnemySpawn(2, "b", make_enemy("Incubated Fleshling")),
+    EnemySpawn(3, "b", make_enemy("Incubated Fleshling")),
+    EnemySpawn(4, "b", make_enemy("Incubated Fleshling")),
+    EnemySpawn(5, "b", make_enemy("Corrupting Spire")),
+  ], faction="Ancient Horrors", description="Trio of minions. All get empowered by the spire."),
   EnemySet("Mindless Maw", [
-    EnemySpawn(4, "f", enemies["Mindless Maw"]),
-  ], faction="Ancient Horrors", description="It devours anything in its path."),
+    EnemySpawn(4, "f", make_enemy("Mindless Maw")),
+  ], faction="Ancient Horrors", description="Attacks whatever's in front of it and gets stronger every time."),
   EnemySet("The Vulture", [
-    EnemySpawn(6, "b", enemies["The Vulture"])
-  ], faction="Ancient Horrors", description="It's coming spells doom for all, and it draws its power from death."),
+    EnemySpawn(6, "b", make_enemy("The Vulture"))
+  ], faction="Ancient Horrors", description="Consumes all enemies on entry, to strengthen itself."),
 ]
 
 factions = [

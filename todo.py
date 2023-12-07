@@ -83,3 +83,12 @@
 # - The other progression can be money to upgrade your spellbook with bigger page capacity and more pages?
 #   This can only be done at cities.
 # - The only time pressure will be that the story of the world is progressing as more runs pass, so you want to use your time wisely.
+
+# Playtest with Nicole:
+# - exploring / discovery aspect is nice
+# - lifesteal has a bug
+# - healing hard to come by
+# - rez downed members
+# - item drop rate should be higher
+# - drafting focus was more on the spells than the enemies
+# - option to try to steal from the shop???

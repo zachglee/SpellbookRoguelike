@@ -25,9 +25,12 @@ def generate_spell_pools(n_pools=1):
     spell_pools.append(spell_pool)
   return spell_pools
 
-def generate_faction_sets(n_sets=1, set_size=3, overlap=0):
-  random.shuffle(factions)
-  return [factions[(i*set_size)-(i*overlap):((i+1)*set_size)-(i*overlap)] for i in range(n_sets)]
+def generate_faction_sets(n_sets=1, set_size=3, overlap=0, faction_pool=factions):
+  random.shuffle(faction_pool)
+  pool_size = len(faction_pool)
+  return [factions[((i * set_size) - (i * overlap)) % pool_size:
+                   (((i+1) * set_size) - (i * overlap)) % pool_size]
+                   for i in range(n_sets)]
 
 def generate_library_spells(size, spell_pool=spells, copies=3):
   sampled_spells = random.sample(spell_pool, size)

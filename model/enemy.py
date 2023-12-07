@@ -29,7 +29,7 @@ class EnemySpawn:
     self.turn = turn
     self.original_turn = turn # unaffected by ward
     self.side = side
-    self.enemy = deepcopy(enemy)
+    self.enemy = enemy
     self.wave = wave
 
 class EnemySet:
@@ -42,6 +42,7 @@ class EnemySet:
     self.description = description
 
     self.pickable = True
+    self.obscured = False
   
   @property
   def instantiated_enemy_spawns(self):
@@ -54,11 +55,14 @@ class EnemySet:
 
   def level_up(self):
     for es in self.enemy_spawns:
-      es.enemy.hp = math.ceil(es.enemy.hp * 1.25)
-      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.25)
+      es.enemy.hp = math.ceil(es.enemy.hp * 1.33)
+      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.33)
     self.level += 1
 
   def render(self, show_rules_text=False):
+    if self.obscured:
+      return colored(f"???", "red")
+
     return_str = colored(f"{self.name}", "red")
     if self.level > 0:
       return_str += colored(f" (Lv{self.level})", "red")

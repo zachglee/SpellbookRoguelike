@@ -11,12 +11,12 @@ class EventTrigger:
   def finished(self):
     return self.turns_remaining == 0 or self.triggers_remaining == 0
 
-  def execute(self, encounter, event, trigger_output=None):
+  async def execute(self, encounter, event, trigger_output=None):
     if isinstance(self.executor, list):
       # main execution
       for cmd in self.executor:
         processed_command = cmd.replace("^", str(trigger_output))
-        encounter.handle_command(processed_command)
+        await encounter.handle_command(processed_command)
     else:
       self.executor(encounter, event, trigger_output=trigger_output)
   

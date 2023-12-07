@@ -54,7 +54,7 @@ class GameStateV2:
 
   async def generate_new_character(self, spell_pool, websocket=None):
     await ws_print("Starting a new character...", websocket)
-    signature_spell_options = generate_library_spells(2, spell_pool=spell_pool)
+    signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
     await ws_print(numbered_list(signature_spell_options), websocket)
     chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
@@ -70,6 +70,8 @@ class GameStateV2:
     # generate the encounter
     random.shuffle(player.pursuing_enemysets)
     encounter_enemysets = player.pursuing_enemysets[0:difficulty]
+    for enemyset in encounter_enemysets:
+      enemyset.obscured = False
     player.pursuing_enemysets = player.pursuing_enemysets[difficulty:] 
     encounter = Encounter([EnemyWave(encounter_enemysets)], player,
                           basic_items=self.current_region.basic_items,
@@ -145,10 +147,6 @@ class GameStateV2:
       player.hp = 3
       player.conditions["undying"] -= 1
       return
-    # player drops all their items in current region
-    # for item in self.player.inventory:
-    #   item.belonged_to = self.player.name
-    # self.map.current_region.dropped_items += self.player.inventory
     player.inventory = []
     # death admin
     play_sound("player-death.mp3")
@@ -165,7 +163,7 @@ class GameStateV2:
   async def end_run(self, player):
     self.map.end_run()
     player.archive_library_spells(copies_threshold=10)
-    await player.check_level_up()
+    await player.memorize()
     self.save()
 
   async def choose_character(self, websocket):
@@ -210,9 +208,10 @@ class GameStateV2:
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
 
+      await ws_input(colored(f"You will fight {region_draft.difficulty} enemy sets next combat!", "red"), websocket)
       await region_draft.play(player)
       await region_shop.play(player)
-      encounter = self.generate_encounter(player, difficulty=2+region_draft.difficulty)
+      encounter = self.generate_encounter(player, difficulty=region_draft.difficulty)
       await self.play_encounter(player, encounter)
 
       # Persistent enemy sets
@@ -225,7 +224,7 @@ class GameStateV2:
 
       await self.discovery_phase(player)
 
-    await self.end_run()
+    await self.end_run(player)
 
 
 # helpers

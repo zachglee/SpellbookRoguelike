@@ -37,6 +37,9 @@ async def ws_print(s, websocket: WebSocket):
     s = s.replace("\n", "\n\r")
     await websocket.send_text(f"{s}\n\r")
 
+def faf_print(s, websocket: WebSocket):
+  asyncio.create_task(ws_print(s, websocket))
+
 # rendering
 
 def without_ansi_escapes(s):

@@ -6,18 +6,19 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
+RITUAL_PROGRESS = 6
+
 factions = [
   Faction("Freed Automata", freed_automata,
     basic_items=[
-      Item.make("Heavy Plating", 3, "Gain 1 armor. (takes 2 actions)", ["armor p 1"], time_cost=2),
+      Item.make("Heavy Plating", 1, "Gain 3 armor. (takes 4 actions)", ["armor p 1"], time_cost=4),
       Item.make("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
       Item.make("Rebellious Core", 5, "Gain 2 retaliate.", ["retaliate p 2"], rare=True)
     ],
-    # armor turn 1, then shield every turn.
-    ritual=Ritual("Automatic Armor", "Gain 1 armor on turn 1, gain 2 shield every turn after.", "Freed Automata", 8,
-                  [ritual_event([1], ["armor p 1"]), ritual_event(list(range(2, 10)), ["shield p 2"])]),
+    ritual=Ritual("Automatic Armor", "Gain 1 armor on turn 1. Gain 1 shield every turn.", "Freed Automata", RITUAL_PROGRESS,
+                  [ritual_event([1], ["armor p 1"]), ritual_event(list(range(1, 10)), ["shield p 1"])]),
   ),
   Faction("Undying Legion", undying_legion,
     basic_items=[
@@ -25,12 +26,10 @@ factions = [
       Item.make("Embalming Wraps", 2, "Gain 4 encase and 4 empower", ["encase p 4", "empower p 4"])
     ],
     special_items=[
-      Item.make("Ambrosia of the Undying", 1, "Gain 2 undying.", ["undying p 2"], rare=True)
+      Item.make("Ambrosia of the Undying", 2, "Gain 1 undying.", ["undying p 1"], rare=True)
     ],
-    # encase turn 1, empower every turn after that
-    # TODO: Make the empower gain be while you have encase remaining
-    ritual=Ritual("Ritual of Mummification", "Gain 10 encase on turn 1, gain 2 empower every turn after.", "Undying Legion", 8,
-                  [ritual_event([1], ["encase p 10"]), ritual_event(list(range(2, 10)), ["empower p 2"])]),
+    ritual=Ritual("Ritual of Mummification", "Gain 8 encase on turn 1. Gain 1 empower every turn.", "Undying Legion", RITUAL_PROGRESS,
+                  [ritual_event([1], ["encase p 8"]), ritual_event(list(range(1, 10)), ["empower p 1"])]),
   ),
   Faction("The Collectors", the_collectors,
     basic_items=[
@@ -40,21 +39,19 @@ factions = [
     special_items=[
       Item.make("Conservator's Casket", 1, "Gain 20 encase", ["encase p 20"], rare=True)
     ],
-    # Encase and stun a specific enemy on specific turns
-    ritual=Ritual("Arcane Entrapment", "Encase 12 an enemy on turn 1, stun 1 an enemy every turn after.", "The Collectors", 8,
+    ritual=Ritual("Arcane Entrapment", "Encase 6 and stun 1 an enemy on turns 2 and 4.", "The Collectors", RITUAL_PROGRESS,
                   [ritual_event([2, 4], ["encase _ 6", "stun _ 1"])]),
   ),
   Faction("Doombringers", doombringers,
     basic_items=[
-      Item.make("Underdog's Defiance", 1, "Gain 1 sharp and 1 armor.", ["sharp p 1", "armor p 1"]),
+      Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor, 1 searing presence.", ["sharp p 1", "armor p 1", "searing p 1"]),
       Item.make("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
     ],
     special_items=[
-      Item.make("Omen of Doom", 3, "Inflict doom 2.", ["doom _ 2"], rare=True)
+      Item.make("Omen of Doom", 2, "Inflict doom 4.", ["doom _ 4"], rare=True)
     ],
-    # Start doom at the midgame.
-    ritual=Ritual("Cursed Footsteps", "Inflict 1 doom twice on turns 1, 2, 3.", "Doombringers", 8,
-                  [ritual_event([1, 2, 3], ["doom _ 1", "doom _ 1"])]),
+    ritual=Ritual("Cursed Footsteps", "Inflict 2 doom on turns 1, 2, 3.", "Doombringers", RITUAL_PROGRESS,
+                  [ritual_event([1, 2, 3], ["doom _ 2"])]),
   ),
   Faction("Sa'ik Collective", saik_collective,
     basic_items=[
@@ -65,7 +62,7 @@ factions = [
       Item.make("Skydancer's Talon", 3, "Deal 2 damage to a single target twice.", ["repeat 2 damage _ 2"], rare=True)
     ],
     # Evade and fleeting sharp on turns 1, 2, 3
-    ritual=Ritual("Skydancer's Prowess", "For first 3 turns, gain 1 evade and 3 fleeting sharp.", "Sa'ik Collective", 8,
+    ritual=Ritual("Skydancer's Prowess", "For first 3 turns, gain 1 evade and 3 fleeting sharp.", "Sa'ik Collective", RITUAL_PROGRESS,
                   [ritual_event([1, 2, 3], ["evade p 1", "sharp p 3", "delay 0 sharp p -3"])]),
   ),
   Faction("House of Imir", house_of_imir,
@@ -76,9 +73,8 @@ factions = [
     special_items=[
       Item.make("Imir Blood Ward", 1, "Suffer 4 and banish an enemy for 3 turns.", ["suffer p 4", "banish _ 3"], rare=True)
     ],
-    # Lifesteal immediate on a 2 turns, midcombat
-    ritual=Ritual("Vampiric Pact", "Lifesteal 3 from immediate twice on turns 4.", "House of Imir", 8,
-                  [ritual_event([4], ["lifesteal i 3", "lifesteal i 3"])]),
+    ritual=Ritual("Vampiric Pact", "Lifesteal 3 on turns 3 and 4.", "House of Imir", RITUAL_PROGRESS,
+                  [ritual_event([3, 4], ["lifesteal _ 3"])]),
   ),
   Faction("Mov's Horde", movs_horde,
     basic_items=[
@@ -88,8 +84,7 @@ factions = [
     special_items=[
       Item.make("Soul-Catcher Siphon", 1, "Gain regen equal to # of dead enemies.", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies
     ],
-    # 1 regen and retaliate, every turn.
-    ritual=Ritual("Aura of Undeath", "Gain 1 regen and 1 retaliate every turn.", "Mov's Horde", 8,
+    ritual=Ritual("Aura of Undeath", "Gain 1 regen and 1 retaliate every turn.", "Mov's Horde", RITUAL_PROGRESS,
                   [ritual_event(list(range(1, 10)), ["regen p 1", "retaliate p 1"])]),
   ),
   Faction("Company of Blades", company_of_blades,
@@ -100,8 +95,7 @@ factions = [
     special_items=[
       Item.make("Duelist's Blade", 3, "Deal 4 damage to immediate and block 4", ["damage i 4", "block p 4"], rare=True)
     ],
-    # 2 small attacks to immediate every other turn
-    ritual=Ritual("Unseen Bolts", "Deal 4 damage on turns 2, 4, 6", "Company of Blades", 8,
+    ritual=Ritual("Unseen Bolts", "Deal 4 damage on turns 2, 4, 6", "Company of Blades", RITUAL_PROGRESS,
                   [ritual_event([2, 4, 6], ["damage _ 4"])]),
   ),
   Faction("Giantkin", giantkin,
@@ -112,8 +106,7 @@ factions = [
     special_items=[
       Item.make("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"], rare=True)
     ],
-    # Massive attack to immediate on particular turn
-    ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", 8,
+    ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", RITUAL_PROGRESS,
                   [ritual_event([3, 6], ["damage i 10"])]),
   ),
   Faction("Fae Realm", fae_realm,
@@ -124,21 +117,19 @@ factions = [
     special_items=[
       Item.make("Fae Favor", 1, "Banish 1 all. Gain 4 regen.", ["banish a 1", "regen p 3"], rare=True)
     ],
-    # Regen and poison, alternating
-    ritual=Ritual("Fae Fortunes", "Gain 2 regen or poison an enemy 2, alternating for turns 1-6.", "Fae Realm", 8,
+    ritual=Ritual("Fae Fortunes", "Gain 2 regen or poison an enemy 2, alternating for turns 1-6.", "Fae Realm", RITUAL_PROGRESS,
                   [ritual_event([1, 3, 5], ["regen p 2"]), ritual_event([2, 4, 6], ["poison _ 2"])])
   ),
   Faction("Kingdom of Amar", kingdom_of_amar,
     basic_items=[
       Item.make("Knifewing Set", 2, "Deal 1 damage to immediate thrice.", ["repeat 3 damage i 1"]),
-      Item.make("Animate Armor", 2, "Gain 1 armor.", ["armor p 1"]),
+      Item.make("Animate Armor", 3, "Gain 1 fleeting armor.", ["armor p 1", "delay 0 armor p -1"]),
     ],
     special_items=[
       Item.make("Amarian Warsuit", 1, "Gain 1 armor, 2 prolific, and 3 sharp.", ["armor p 1", "prolific p 2", "sharp p 3"], rare=True)
     ],
-    # Armor and sharp, alternating, starting turn 3
-    ritual=Ritual("Artificer's Ingenuity", "Gain 1 armor or 3 sharp, alternating for turns 3-8.", "Kingdom of Amar", 8,
-                  [ritual_event([3, 5, 7], ["armor p 1"]), ritual_event([4, 6, 8], ["sharp p 3"])])
+    ritual=Ritual("Artificer's Ingenuity", "Gain 1 armor or 2 sharp, alternating for turns 3-8.", "Kingdom of Amar", RITUAL_PROGRESS,
+                  [ritual_event([3, 5, 7], ["armor p 1"]), ritual_event([4, 6, 8], ["sharp p 2"])])
   ),
   Faction("Infernal Plane", infernal_plane,
     basic_items=[
@@ -148,8 +139,7 @@ factions = [
     special_items=[
       Item.make("Demon's Blood", 1, "burn 3 self, gain 6 searing presence, 6 retaliate", ["burn p 3", "searing p 6", "retaliate p 6"], rare=True)
     ],
-    # Burn in later rounds.
-    ritual=Ritual("Imminent Inferno", "Burn 4 all.", "Infernal Plane", 8,
+    ritual=Ritual("Imminent Inferno", "Burn 4 all.", "Infernal Plane", RITUAL_PROGRESS,
                   [ritual_event([4, 5, 6], ["burn a 4"])])
   ),
   Faction("Dominion of Drael", dominion_of_drael,
@@ -158,11 +148,10 @@ factions = [
       Item.make("Shieldmage's Gauntlets", 2, "Gain 3 shield and 2 retaliate.", ["shield p 3", "retaliate p 2"]),
     ],
     special_items=[
-      Item.make("Draelish Bomb", 1, "At end of turn: deal 21 to all enemies, 7 damage to self", ["delay 0 damage a 21", "delay 0 damage p 7"], rare=True)
+      Item.make("Draelish Bomb", 1, "Deal 15 to all enemies, 5 damage to self", ["damage a 15", "damage p 5"], rare=True)
     ],
-    # Get block and empower, steady
-    ritual=Ritual("Draelish Warchant", "Gain 4 block and 4 empower on turns 1, 3, 5.", "Dominion of Drael", 8,
-                  [ritual_event([1, 3, 5], ["block p 4", "empower p 4"])])
+    ritual=Ritual("Draelish Warchant", "Gain 3 block and 3 empower on turns 1, 3, 5.", "Dominion of Drael", RITUAL_PROGRESS,
+                  [ritual_event([1, 3, 5], ["block p 3", "empower p 3"])])
   ),
   Faction("Spirits", spirits,
     basic_items=[
@@ -172,20 +161,18 @@ factions = [
     special_items=[
       Item.make("Unbridled Energy", 1, "Gain 2 energy of each color and prolific 2.", ["blue p 2", "red p 2", "gold p 2", "prolific p 2"], rare=True)
     ],
-    # Gain 1 inventive and prolific at 2, 4, 6
-    ritual=Ritual("Glimpse the Beyond", "Gain 1 inventive and 1 prolific on turns 2, 4, 6.", "Spirits", 8,
+    ritual=Ritual("Glimpse the Beyond", "Gain 1 inventive and 1 prolific on turns 2, 4, 6.", "Spirits", RITUAL_PROGRESS,
                   [ritual_event([2, 4, 6], ["inventive p 1", "prolific p 1"])])
   ),
   Faction("Shadow Realm", shadow_realm,
     basic_items=[
-      Item.make("Brave Face", 2, "Face, then block 5.", ["face", "block p 5"]),
+      Item.make("Brave Face", 2, "Face, then block 5.", ["face!", "block p 5"]),
       Item.make("Mirror Blade", 1, "Deal 6 damage immediately behind.", ["damage bi 6"])
     ],
     special_items=[
       Item.make("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"], rare=True)
     ],
-    # vulnerable to all enemies?
-    ritual=Ritual("Menacing Shadows", "Every turn, all enemies gain 1 vulnerable.", "Shadow Realm", 8,
+    ritual=Ritual("Menacing Shadows", "Every turn, all enemies gain 1 vulnerable.", "Shadow Realm", RITUAL_PROGRESS,
                   [ritual_event(list(range(1, 11)), ["vulnerable a 1"])])
   ),
   Faction("Ancient Horrors", ancient_horrors,
@@ -196,9 +183,8 @@ factions = [
     special_items=[
       Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ],
-    # ward 1 then on turn 6, 10 damage to random 6 times
-    ritual=Ritual("Call the Unspeakable", "Gain 1 ward on turn 1, then deal 10 damage to random 6 times on turn 6.", "Ancient Horrors", 8,
-                  [ritual_event([1], ["ward p 1"]), ritual_event([6], ["repeat 6 damage r 10"])])
+    ritual=Ritual("Call the Unspeakable", "Gain 2 ward on turn 1, then deal 6 damage to random 6 times on turn 6.", "Ancient Horrors", RITUAL_PROGRESS,
+                  [ritual_event([1], ["ward p 2"]), ritual_event([7], ["repeat 6 damage r 6"])])
   )
 ]
 

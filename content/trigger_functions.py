@@ -27,6 +27,9 @@ def passive_lose_hp(encounter, event):
   # event.metadata is the amount of hp lost
   return event.has_tag("lose_hp") and event.metadata["damage"] > 0 and event.metadata["target"].is_player()
 
+def passive_at_half_health(encounter, event):
+  return event.has_tag("begin_turn") and encounter.player.hp <= encounter.player.max_hp / 2
+
 def passive_attacked_for_no_damage(encounter, event):
   if event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player():
     return event.metadata["attacker"].get_target_string(encounter)

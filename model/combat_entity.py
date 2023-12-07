@@ -1,10 +1,11 @@
+import asyncio
 from typing import Any, List
 from pydantic import validator, BaseModel
 import math
 from collections import defaultdict
 from termcolor import colored
 from model.event import Event
-from utils import energy_color_map, energy_pip_symbol, ws_input
+from utils import energy_color_map, energy_pip_symbol, faf_print, ws_input
 from sound_utils import play_sound
 
 class CombatEntity(BaseModel):
@@ -117,7 +118,7 @@ class CombatEntity(BaseModel):
 
   def attack(self, target, damage, lifesteal=False):
     if target is None:
-      print(f"{self.name} attacks nothing.")
+      faf_print(f"{self.name} attacks nothing.", self.websocket)
       return 0
 
     damage_to_kill = (target.conditions["block"] +
@@ -139,11 +140,11 @@ class CombatEntity(BaseModel):
       damage_to_encase = min(self.conditions["encase"], damage)
       self.conditions["encase"] -= damage_to_encase
       final_damage -= damage_to_encase
-      print(f"{self.name} attacks it encasement for {damage_to_encase} damage!")
+      faf_print(f"{self.name} attacks it encasement for {damage_to_encase} damage!", self.websocket)
     
     if target.conditions["evade"] > 0:
       play_sound("attack-evaded.mp3", channel=1)
-      print(f"{self.name} attacks {target.name} but they evade!")
+      faf_print(f"{self.name} attacks {target.name} but they evade!", self.websocket)
       target.conditions["evade"] -= 1
       final_damage = 0
 
@@ -152,11 +153,10 @@ class CombatEntity(BaseModel):
     damage_dealt = target.assign_damage(final_damage, source=self, increment_damage_survived=False)
     if lifesteal:
       self.heal(min(damage_dealt, potential_lifesteal))
-    print(f"{self.name} attacks {target.name} for {damage_dealt} damage!")
+    # NOTE: this is a little too noisy
+    # faf_print(f"{self.name} attacks {target.name} for {damage_dealt} damage!", self.websocket)
     self.events.append(Event(["attack"], metadata={"damage_assigned": final_damage, "damage_dealt": damage_dealt, "target": target, "attacker": self}))
-    print(f"------- BEFORE INCREMENT {target.name} Damage survived: {target.damage_survived_this_turn}")
     target.damage_survived_this_turn += final_damage
-    print(f"--------- {target.name} Damage survived: {target.damage_survived_this_turn}")
 
     # play the proper sound
     if damage_dealt == 0:
@@ -217,10 +217,11 @@ class CombatEntity(BaseModel):
                                  "target": self
                                }))
 
-  async def heal(self, healing):
+  def heal(self, healing):
     self.hp = min(self.hp + healing, self.max_hp)
     if self.websocket:
-        await ws_input(f"{self.name} heals {healing} hp!", self.websocket)
+        # asyncio.create_task(ws_input(f"{self.name} heals {healing} hp!", self.websocket))
+        faf_print(f"{self.name} heals {healing} hp!", self.websocket)
 
   # Game phase handlers and game logic
 
@@ -239,7 +240,8 @@ class CombatEntity(BaseModel):
     if self.conditions["regen"] > 0:
       self.heal(self.conditions["regen"])
       self.conditions["regen"] -= 1
-    # TODO: Tick searing presence
+    
+    self.conditions["shield"] = max(self.conditions["shield"], 0)
 
   def end_round(self):
     self.damage_survived_this_turn = 0

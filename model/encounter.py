@@ -171,7 +171,7 @@ class Encounter:
     # run player triggers
     for event_trigger in self.player.event_triggers:
       if trigger_output := event_trigger.triggers_on(self, event):
-        event_trigger.execute(self, event, trigger_output=trigger_output)
+        await event_trigger.execute(self, event, trigger_output=trigger_output)
       
   def gather_events_from_combat_entities(self):
     # gather any new events that were triggered
@@ -233,31 +233,31 @@ class Encounter:
     play_sound("explore.mp3")
     self.player.explored += 1
     self.player.experience += 1
-    self.player.gain_material(1)
+    await self.player.gain_material(1)
     r = random.random()
     found_item = None
-    if r < 0.01:
+    if r < 0.02:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(self.special_items))
       await ws_input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"), self.player.websocket)
-    elif r < 0.05:
+    elif r < 0.08:
       found_item = deepcopy(random.choice(self.basic_items))
       await ws_input(colored("Something useful glints in the torchlight...", "green"), self.player.websocket)
-    elif r < 0.10:
+    elif r < 0.16:
       play_sound("explore-find.mp3")
       found_item = deepcopy(random.choice(minor_energy_potions))
       await ws_input(colored("Something useful glints in the torchlight...", "green"), self.player.websocket)
     else:
       found_item = None
       await ws_print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"), self.player.websocket)
-    
     if found_item:
       await ws_print(f"Found: {found_item.render()}", self.player.websocket)
       self.player.inventory.append(found_item)
       self.player.seen_items.append(found_item)
 
   async def observe(self):
-    observed_factions = set([e.faction for e in self.faced_enemy_queue])
+    observed_factions = [e.faction for e in self.faced_enemy_queue]
+    observed_factions = observed_factions[0:1] # just take immediate for now
     for faction in observed_factions:
       faction_obj = faction_dict[faction]
       if self.player.rituals_dict.get(faction) is None:
@@ -312,7 +312,7 @@ class Encounter:
         self.player.spellbook.switch_page()
         self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
-        target = await get_spell(self, cmd_tokens[1], self.player.websockets)
+        target = await get_spell(self, cmd_tokens[1], self.player.websocket)
         target.recharge()
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
@@ -428,13 +428,14 @@ class Encounter:
   async def init_with_player(self, player):
     self.player = player
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
-    if activable_rituals:
+    while activable_rituals:
       await ws_print(numbered_list(activable_rituals), player.websocket)
-      chosen_ritual = await choose_obj(colored(activable_rituals, "Choose a ritual to activate: ", "yellow"), player.websocket)
+      chosen_ritual = await choose_obj(activable_rituals, colored("Choose a ritual to activate: ", "yellow"), player.websocket)
       if chosen_ritual:
         self.rituals = [chosen_ritual]
         # chosen_ritual.progress -= chosen_ritual.required_progress
-        chosen_ritual.progress = 0
+      else:
+        break
 
   async def upkeep_phase(self):
     # begin new round
@@ -563,6 +564,12 @@ class Encounter:
     self.player.damage_survived_this_turn = 0
     self.player.damage_taken_this_turn = 0
     self.player.events = []
+    for ritual in self.player.rituals:
+      if ritual.progress < ritual.required_progress:
+        ritual.progress = 0
+      else:
+        await ws_print(colored(f"{ritual.name} completed!", "yellow"), self.player.websocket)
+    await self.player.check_level_up()
 
 
   # Rendering

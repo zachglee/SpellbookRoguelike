@@ -17,7 +17,8 @@ def if_facing_none(commands):
 
 def if_kill(target, commands):
   def on_kill_generator(encounter, targets_dict):
-    if targets_dict[target][1].hp <= 0:
+    target_entity = targets_dict[target][1]
+    if target_entity and target_entity.hp <= 0:
       return commands
     else:
       return []
