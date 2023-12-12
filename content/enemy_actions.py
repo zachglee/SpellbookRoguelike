@@ -234,7 +234,7 @@ class HealthThresholdAction(Action):
     self.threshold = threshold
 
   def act(self, actor, enc) -> List[Event]:
-    if self.threshold < 1 and (actor.hp / actor.max_hp) >= self.threshold:
+    if self.threshold <= 1 and (actor.hp / actor.max_hp) >= self.threshold:
       # if threshold is less than 1 it's a proportion of max hp
       return self.meet_threshold_action.act(actor, enc)
     elif actor.hp >= self.threshold:

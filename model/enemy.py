@@ -43,6 +43,7 @@ class EnemySet:
 
     self.pickable = True
     self.obscured = False
+    self.persistent = False
   
   @property
   def instantiated_enemy_spawns(self):
@@ -55,17 +56,22 @@ class EnemySet:
 
   def level_up(self):
     for es in self.enemy_spawns:
-      es.enemy.hp = math.ceil(es.enemy.hp * 1.33)
-      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.33)
+      es.enemy.hp = math.ceil(es.enemy.hp * 1.5)
+      es.enemy.max_hp = math.ceil(es.enemy.max_hp * 1.5)
     self.level += 1
 
   def render(self, show_rules_text=False):
     if self.obscured:
-      return colored(f"???", "red")
+      return_str = colored(f"???", "red")
+      if self.persistent:
+        return_str += colored(f" (Persistent)", "red")
+      return return_str
 
     return_str = colored(f"{self.name}", "red")
     if self.level > 0:
       return_str += colored(f" (Lv{self.level})", "red")
+    if self.persistent:
+      return_str += colored(f" (Persistent)", "red")
     if show_rules_text:
       spawn_turns_str = "Spawn " + "".join([f"{es.turn}" for es in self.enemy_spawns])
       reference_enemy = self.enemy_spawns[-1].enemy

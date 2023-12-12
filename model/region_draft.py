@@ -65,8 +65,11 @@ class RegionDraft:
 
     if random.random() < 0.33:
       enemyset.obscured = True
-      material += 3
-      print(f"------------- OBSCURED {enemyset}")
+      material += 2
+    if random.random() < 0.12:
+      enemyset.persistent = True
+      enemyset.level_up()
+      material += 2
 
     self.enemyset_pool_idx += 1
     self.spell_pool_idx += 1
@@ -107,7 +110,7 @@ class RegionDraft:
       await ws_print("\n", player.websocket)
       await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
       pick_options = self.draft_picks[i]
-      player.seen_spells += [pick_option.spell for pick_option in pick_options]
+      player.seen_spells += [pick_option for pick_option in pick_options]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
       if pick_option.spell:
         chosen_library_spell = LibrarySpell(pick_option.spell, copies=2)

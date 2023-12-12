@@ -2,7 +2,7 @@ from model.item import Item
 from sound_utils import play_sound
 from termcolor import colored
 from copy import deepcopy
-from utils import choose_obj, numbered_list, ws_print
+from utils import choose_obj, numbered_list, ws_input, ws_print
 
 
 class ShopItem:
@@ -39,12 +39,13 @@ class Shop:
         break
       elif chosen_item == "~":
         continue
-      if player.material >= chosen_item.cost:
+
+      if player.material >= chosen_item.cost and len(player.inventory) < player.inventory_capacity:
         play_sound("inventory.mp3")
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
         chosen_item.stock -= 1
         await ws_print(f"You bought {chosen_item.item.render()}", player.websocket)
       else:
-        await ws_print("You cannot afford that item", player.websocket)
+        await ws_input(colored("You cannot afford that item, or don't have space.", "red"), player.websocket)
       self.shop_items = [item if (item != "~" and item.stock > 0) else "~" for item in self.shop_items]

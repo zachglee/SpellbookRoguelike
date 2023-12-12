@@ -187,7 +187,8 @@ class Encounter:
       if event.blocking:
         await ws_input(f"Resolving event {event}...", self.player.websocket)
       else:
-        await ws_print(f"Resolving event {event}...", self.player.websocket)
+        # await ws_print(f"Resolving event {event}...", self.player.websocket)
+        print(f"Resolving event {event}...")
       event.resolve()
       # run triggers based on this event
       await self.run_event_triggers(event)
@@ -256,6 +257,7 @@ class Encounter:
       self.player.seen_items.append(found_item)
 
   async def observe(self):
+    self.player.experience += 1
     observed_factions = [e.faction for e in self.faced_enemy_queue]
     observed_factions = observed_factions[0:1] # just take immediate for now
     for faction in observed_factions:
@@ -428,14 +430,16 @@ class Encounter:
   async def init_with_player(self, player):
     self.player = player
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
-    while activable_rituals:
-      await ws_print(numbered_list(activable_rituals), player.websocket)
-      chosen_ritual = await choose_obj(activable_rituals, colored("Choose a ritual to activate: ", "yellow"), player.websocket)
-      if chosen_ritual:
-        self.rituals = [chosen_ritual]
-        # chosen_ritual.progress -= chosen_ritual.required_progress
-      else:
-        break
+    self.rituals = activable_rituals
+    # while activable_rituals:
+    #   await ws_print(numbered_list(activable_rituals), player.websocket)
+    #   chosen_ritual = await choose_obj(activable_rituals, colored("Choose a ritual to activate: ", "yellow"), player.websocket)
+    #   if chosen_ritual:
+    #     self.rituals = [chosen_ritual]
+    #     # NOTE: trying out permanently having a ritual once you get it.
+    #     # chosen_ritual.progress -= chosen_ritual.required_progress
+    #   else:
+    #     break
 
   async def upkeep_phase(self):
     # begin new round
@@ -477,6 +481,7 @@ class Encounter:
           self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
     await self.player_upkeep()
+    await self.render_combat()
     await self.ritual_upkeep()
 
   async def player_end_phase(self):
@@ -565,10 +570,12 @@ class Encounter:
     self.player.damage_taken_this_turn = 0
     self.player.events = []
     for ritual in self.player.rituals:
-      if ritual.progress < ritual.required_progress:
-        ritual.progress = 0
-      else:
+      if random.random() < (ritual.progress / ritual.required_progress):
         await ws_print(colored(f"{ritual.name} completed!", "yellow"), self.player.websocket)
+        ritual.progress = ritual.required_progress
+      else:
+        await ws_print(colored(f"{ritual.name} failed!", "red"), self.player.websocket)
+        ritual.progress = 0
     await self.player.check_level_up()
 
 

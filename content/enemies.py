@@ -93,7 +93,7 @@ enemies = {
                               entry=AddConditionAction("sharp", 2, "all_enemies")),
   "Vampire Lord": Enemy.make(25, "Vampire Lord",
                         HealthThresholdAction(
-                          AddConditionAction("sharp", 1, "player"), AttackAction(7, lifesteal=True), 25),
+                          AddConditionAction("sharp", 1, "player"), AttackAction(7, lifesteal=True), 1),
                         entry=MultiAction([
                           SelfDamageAction(7),
                           AddConditionAction("retaliate", 2, "self"),
@@ -101,20 +101,20 @@ enemies = {
   "Cocky Descender": Enemy.make(9, "Cocky Descender",
                                   HealthThresholdAction(
                                     MultiAction([AttackAction(4), AttackAction(4)]),
-                                    AttackAction(2), 9)),
+                                    AttackAction(2), 1)),
   "Fickle Witch-Queen": Enemy.make(12, "Fickle Witch-Queen",
                            CautiousAction(NothingAction(), WindupAction(MultiAction([
                                SetConditionAction("poison", 0, "player"),
                                AddConditionAction("regen", 4, "player")
                                ]), 2)),
                            entry=AddConditionAction("poison", 3, "player")),
-  "Screeching Fury": Enemy.make(18, "Screeching Fury",
+  "Screeching Fury": Enemy.make(20, "Screeching Fury",
                            HealthThresholdAction(AttackAction(2),
                                                  MultiAction([
                                                      AttackAction(4),
                                                      AttackAction(4),
                                                      AddConditionAction("sharp", 1, "self")]
-                                                 ), 18)),
+                                                 ), 1)),
   "Witch-Burner Devil": Enemy.make(20, "Witch-Burner Devil",
                               EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(1), 1)),
   "Tithetaker": Enemy.make(25, "Tithetaker",
@@ -138,8 +138,8 @@ enemies = {
   "Gold Spirit-Hunter": Enemy.make(12, "Gold Spirit-Hunter", EnergyThresholdAction(
       AttackAction(6),
       NothingAction(), 1, colors=["gold"])),
-  "Font of Magic": Enemy.make(16, "Font of Magic",
-                         MultiAction([
+  "Font of Magic": Enemy.make(10, "Font of Magic", NothingAction(),
+                         entry=MultiAction([
                             AddConditionAction("red", 1, "player"),
                             AddConditionAction("gold", 1, "player"),
                             AddConditionAction("blue", 1, "player"),
@@ -181,15 +181,15 @@ enemies = {
   "Magecatcher": Enemy.make(20, "Magecatcher", SpellcastThresholdAction(
       AttackAction(10), AddConditionAction("slow", 1, "player"), 1)),
   "Doom of Blades": Enemy.make(40, "Doom of Blades", MultiAction([AttackAll(15), AttackAction(15)])),
-  "Doom of Plagues": Enemy.make(40, "Doom of Plagues", AddConditionAction("poison", 3, "player"),
-                           entry=AddConditionAction("poison", 6, "player")),
+  "Doom of Plagues": Enemy.make(40, "Doom of Plagues", AddConditionAction("poison", 2, "player"),
+                           entry=AddConditionAction("poison", 5, "player")),
   "Wave of Doom": Enemy.make(15, "Wave of Doom", WindupAction(AttackAction(8), 1),
                          entry=AddConditionAction("retaliate", 1, "self")),
   "Horde Beast": Enemy.make(10, "Horde Beast", OverwhelmAction(AttackAction(8), AttackAction(4), 4)),
   "Blade Forger": Enemy.make(8, "Blade Forger", SideOverwhelmAction(
       NothingAction(), AddConditionAction("sharp", 2, "player"), 2)),
   "Wandering Healer": Enemy.make(8, "Wandering Healer", CautiousAction(NothingAction(),
-      AddConditionAction("regen", 2, "player")), entry=AddConditionAction("regen", 3, "player")),
+      AddConditionAction("regen", 2, "player")), entry=AddConditionAction("regen", 2, "player")),
   "Defiant Survivor": Enemy.make(8, "Defiant Survivor", CautiousAction(
       NothingAction(), AddConditionAction("searing", 3, "player"))),
   "Grizzled Armorer": Enemy.make(8, "Grizzled Armorer", SideOverwhelmAction(
@@ -284,8 +284,8 @@ undying_legion = [
     EnemySpawn(1, "b", make_enemy("Risen Warrior"))
   ], faction="Undying Legion", description="Starts encased, has heavy attacks."),
   EnemySet("Intrepid Bannerman", [
-    EnemySpawn(3, "f", make_enemy("Intrepid Bannerman")),
-    EnemySpawn(4, "f", make_enemy("Conscript"))
+    EnemySpawn(3, "f", make_enemy("Conscript")),
+    EnemySpawn(4, "f", make_enemy("Intrepid Bannerman"))
   ], faction="Undying Legion", description="Empowers enemies on its side.")
 ]
 

@@ -3,27 +3,22 @@
 # - implement actual Condition class so that I can do fleeting
 # - refactor enemy actions so that I can compose targets with effects easier
 # - enemy that steals or strips your conditions?
+# - spells that windup?
+# - enemies like the hunter that spawn just meat shields?
+# - spells w uses for more energy?
 
+# - enemy that turns you around
+# - enemies that swap places in they queue
+# - enemies that jump to a different side?
+# - confusion condition effect? (take damage per action?)
+# - enemies that give you energy when they die
+# - enemies that just give you stuff when they die in general?
+# - Give information about what's in the queue
 
 
 # This is a good soundtrack! https://www.youtube.com/watch?v=dJ_RDaIQ61Y&t=259s
 
 # -------------------------------------------------
-
-# Multiplayer design?
-# - Maybe I should do this first?
-# - To start with just have a single player manage two characters. You just play their combats in order.
-# - To facilitate this I probably need a Team class that has a list of players?
-# - Need to do a playtest of this
-# To implement this:
-# - When you run the client, you choose a character, and you also join a party/run by id
-# - You can only make choices for your own character, so in the region-draft, you would pick your pick
-#   and your partner would have to pick the other one. For now, if they pick the same one the server just gives an error.
-# - To execute the pick, the server does the modifications to your run state in memory, and then saves it to the database,
-#   then returns you the run state, maybe as a python object over the wire? Then your client renders it and can prompt
-#   you for input and the loop repeats.
-# - I think I should prove out this model for a single player first, make a flow diagram for how the server and client
-#   interact.
 
 # New map design:
 # - So I need to refactor regiondraft and regionshop into one thing -- a region?
@@ -34,16 +29,6 @@
 # 
 # - Once I have that I might be ready to move to building the remote state database?
 # - First we get single player working with a data store. Probably nosql?
-
-# SHowvik + Sooji playtest:
-# - enemy that turns you around
-# - enemies that swap places in they queue
-# - enemies that jump to a different side?
-# - confusion condition effect? (take damage per action?)
-# - enemies that give you energy when they die
-# - enemies that just give you stuff when they die in general?
-# - Give information about what's in the queue
-# - Make demon a little more beatable
 
 # Amtrak to Philly Playtest
 # - TODO: render when purusing enemies have gotten stronger from persistence

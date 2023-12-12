@@ -37,8 +37,8 @@ red_take_damage = [
 ]
 
 red_big_attack = [
-  [Spell(rules_text="If at or below half health at turn start, gain 1 red, 1 sharp, and deal 1 damage to random.", color="red", type="Passive",
-         triggers_on=passive_at_half_health, raw_commands=["red p 1", "sharp p 1", "damage r 1"]),
+  [Spell(rules_text="If at or below half health at turn start, gain 1 red, 2 sharp, and deal 1 damage to random.", color="red", type="Passive",
+         triggers_on=passive_at_half_health, raw_commands=["red p 1", "sharp p 2", "damage r 1"]),
   Spell(rules_text="If you're at or below half health, +1 red.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
   # TODO: Fix this -- it's bugged and does 1 less energy than it should I think because the conversion is not instant?
@@ -47,8 +47,8 @@ red_big_attack = [
   # TODO: implement the 3+ energy part
   Spell(rules_text="Deal 12 damage. If you have 3 or more energy, recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 12"])],
   #
-  [Spell(rules_text="If at or below half health at turn start, gain 2 regen.", color="red", type="Passive",
-         triggers_on=passive_at_half_health, raw_commands=["regen p 2"]),
+  [Spell(rules_text="If at or below half health at turn start, gain 3 regen.", color="red", type="Passive",
+         triggers_on=passive_at_half_health, raw_commands=["regen p 3"]),
   Spell(rules_text="If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
         generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], else_commands=["regen p 1"], above=True)),
   Spell(rules_text="Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
@@ -60,7 +60,7 @@ red_hit_big_enemy = [
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["burn ^ 5"]),
   Spell(rules_text="Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
   Spell(rules_text="Apply 1 poison. Apply extra 1 poison for every 4 hp the target has.", color="red", type="Converter", conversion_color="blue",
-        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 5, ["poison _ 1", "poison _ *"])), # NOTE: Purple
+        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 4, ["poison _ 1", "poison _ *"])), # NOTE: Purple
   Spell(rules_text="Target loses half its remaining health.", color="red", type="Consumer",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["suffer _ *"]))],
   #

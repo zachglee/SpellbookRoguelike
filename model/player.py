@@ -32,7 +32,7 @@ class Player(CombatEntity):
   starting_inventory: list[Item] = []
   material: int = 0
 
-  inventory_capacity: int = 10
+  inventory_capacity: int = 12
   library_capacity: int = 10
 
   level: int = 0
@@ -103,45 +103,22 @@ class Player(CombatEntity):
     choices = random.sample(self.archive, min(len(self.archive), 6))
     await ws_print("---", self.websocket)
     await ws_print(numbered_list(choices), self.websocket)
-    chosen_spell = deepcopy(choose_obj(choices, colored("Choose an archived spell to memorize > ", "cyan")))
+    chosen_spell = deepcopy(choose_obj(choices, colored("Choose an archived spell to memorize > ", "cyan"), self.websocket))
     self.memorize_spell(chosen_spell)
 
   async def memorize_seen_spell(self):
     await ws_print(self.render_library(), self.websocket)
-    choices = random.sample(self.seen_spells, min(len(self.archive), 6))
+    choices = random.sample(self.seen_spells, min(len(self.seen_spells), 9))
     await ws_print("---", self.websocket)
     await ws_print(numbered_list(choices), self.websocket)
-    chosen_spell = deepcopy(choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan")))
+    chosen_spell = deepcopy(await choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan"), self.websocket))
     self.memorize_spell(chosen_spell)
-
-  def gain_starting_item(self):
-    seen_basic_items = [item for item in self.seen_items
-                        if not item.rare and item.name not in ["Red Potion", "Blue Potion", "Gold Potion"]]
-    random.shuffle(seen_basic_items)
-    starting_item_choices = seen_basic_items[0:3]
-    if len(starting_item_choices) == 0:
-      starting_item_choices = [random.choice(all_basic_items)]
-    print(numbered_list(starting_item_choices))
-    chosen_item = choose_obj(starting_item_choices, colored("Choose another starting item > ", "cyan"))
-    chosen_item.charges = chosen_item.max_charges
-    self.starting_item_pool.append(deepcopy(chosen_item))
-
-  def gain_signature_item(self):
-    seen_rare_items = [item for item in self.seen_items if item.rare]
-    random.shuffle(seen_rare_items)
-    signature_item_choices = seen_rare_items[0:3]
-    if len(signature_item_choices) == 0:
-      signature_item_choices = [random.choice(all_special_items)]
-    print(numbered_list(signature_item_choices))
-    chosen_item = choose_obj(signature_item_choices, colored("Choose a signature item > ", "cyan"))
-    self.inventory.append(deepcopy(chosen_item))
-    self.starting_inventory.append(deepcopy(chosen_item))
 
   async def level_up(self):
     self.level += 1
     self.max_hp += 1
     self.hp += 1
-    if self.level > 0 and self.level % 3 == 0:
+    if self.level > 0 and self.level % 2 == 0:
       self.memorizations_pending += 1
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
@@ -150,8 +127,8 @@ class Player(CombatEntity):
       await self.level_up()
 
   async def memorize(self):
-    if self.memorizations_pending > 0:
-      await self.memorize_archived_spell()
+    while self.memorizations_pending > 0:
+      # await self.memorize_archived_spell()
       await self.memorize_seen_spell()
       self.memorizations_pending -= 1
 
@@ -180,7 +157,7 @@ class Player(CombatEntity):
 
     inventory = deepcopy(self.starting_inventory)
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
-                  Item.make(f"Rusty Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
+                  Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
@@ -230,7 +207,7 @@ class Player(CombatEntity):
   
   def render_inventory(self):
     material_str = colored(f"{self.material}⛁", "yellow")
-    render_str = f"-------- INVENTORY {material_str} --------\n"
+    render_str = f"-------- INVENTORY ({len(self.inventory)}/{self.inventory_capacity}) {material_str} --------\n"
     render_str += numbered_list(self.inventory)
     return render_str
   

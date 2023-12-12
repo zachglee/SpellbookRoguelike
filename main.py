@@ -114,7 +114,7 @@ class GameStateV2:
         await help_reference(subject, websocket=encounter.player.websocket)
         return
     except (KeyError, IndexError, ValueError, TypeError) as e:
-      await ws_print(e, encounter.player.websocket)
+      await ws_print(str(e), encounter.player.websocket)
 
     # If not a UI command, see if it can be handled as an encounter command
     await encounter.handle_command(cmd)
@@ -215,11 +215,12 @@ class GameStateV2:
       await self.play_encounter(player, encounter)
 
       # Persistent enemy sets
-      persistent_enemyset = random.choice(encounter.enemy_sets)
-      persistent_enemyset.level_up()
-      player.pursuing_enemysets.append(persistent_enemyset)
-      await ws_input(colored(f"{persistent_enemyset.name} still follows you, stronger...", "red"), websocket)
-      for enemyset in [es for es in encounter.enemy_sets if es is not persistent_enemyset]:
+      stronger_enemyset = random.choice(encounter.enemy_sets)
+      stronger_enemyset.level_up()
+      player.pursuing_enemysets.append(stronger_enemyset)
+      await ws_input(colored(f"{stronger_enemyset.name} still follows you, stronger...", "red"), websocket)
+      persistent_enemysets = [stronger_enemyset] + [es for es in player.pursuing_enemysets if es.persistent]
+      for enemyset in [es for es in encounter.enemy_sets if es not in persistent_enemysets]:
         enemyset.level = 0
 
       await self.discovery_phase(player)
