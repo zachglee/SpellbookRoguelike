@@ -19,6 +19,10 @@ class Ritual:
     self.progress = 0
     self.required_progress = required_progress
 
+    self.level = 0
+    self.experience = 0
+    self.next_level_xp = 50
+
     self.ritual_events: List[RitualEvent] = ritual_events
 
   @property

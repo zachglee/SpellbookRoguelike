@@ -32,8 +32,10 @@ red_take_damage = [
   [Spell(rules_text="When you lose hp, inflict 3 burn on all enemies.", color="red", type="Passive",
          triggers_on=passive_lose_hp, raw_commands=["burn a 3"]),
   Spell(rules_text="gain 2 regen and 2 burn.", color="red", type="Producer", raw_commands=["regen p 2", "burn p 2"]),
-  Spell(rules_text="Gain 2 regen. Inflict 3 burn.", color="red", type="Converter", conversion_color="gold", raw_commands=["regen p 2", "burn _ 3"]),  # NOTE: Purple
-  Spell(rules_text="Inflict 3 burn. Tick all burn and gain life equal to damage dealt in this way.", color="red", type="Consumer", raw_commands=["burn _ 3"])], 
+  Spell(rules_text="Gain 1 regen per enemy. Inflict 1 burn on all. ", color="red", type="Converter", conversion_color="gold",
+        generate_commands_pre=for_enemies(["regen p *"]), raw_commands=["burn a 1"]),
+  Spell(rules_text="Inflict 3 burn. Gain regen equal to target's burn.", color="red", type="Consumer",
+        targets=["_"], raw_commands=["burn _ 3"], generate_commands_post=for_burn("_", ["regen p *"]))], 
 ]
 
 red_big_attack = [
@@ -88,8 +90,8 @@ red_first_3_turns = [
   Spell(rules_text="If this has 0 or less charges, gain dig deep 2.", color="red", type="Producer",
         generate_commands_post=if_spell_charges(0, ["dig p 2"], above=False)),
   Spell(rules_text="Call 2. Gain 15 empower.", color="red", type="Converter", conversion_color="gold", raw_commands=["call 2", "empower p 15"]),
-  Spell(rules_text="Regen 1. If this has 0 or less charges, deal 12 damage to random twice.", color="red", type="Consumer",
-        raw_commands=["regen p 1"], generate_commands_post=if_spell_charges(0, ["damage r 12", "damage r 12"], above=False))]
+  Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 10 damage to random thrice.", color="red", type="Consumer",
+        raw_commands=["regen p 1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
 ]
 
 red_random_target = [

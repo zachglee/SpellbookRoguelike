@@ -266,7 +266,7 @@ class Encounter:
     for faction in observed_factions:
       faction_obj = faction_dict[faction]
       if self.player.rituals_dict.get(faction) is None:
-        self.player.rituals.append(faction_obj.ritual)
+        self.player.rituals.append(deepcopy(faction_obj.ritual))
       self.player.rituals_dict[faction].progress += 1
       await ws_print(colored(f"{faction_obj.ritual.name} advanced to {faction_obj.ritual.progress}/{faction_obj.ritual.required_progress}!", "yellow"), self.player.websocket)
 
@@ -434,15 +434,6 @@ class Encounter:
     self.player = player
     activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
     self.rituals = activable_rituals
-    # while activable_rituals:
-    #   await ws_print(numbered_list(activable_rituals), player.websocket)
-    #   chosen_ritual = await choose_obj(activable_rituals, colored("Choose a ritual to activate: ", "yellow"), player.websocket)
-    #   if chosen_ritual:
-    #     self.rituals = [chosen_ritual]
-    #     # NOTE: trying out permanently having a ritual once you get it.
-    #     # chosen_ritual.progress -= chosen_ritual.required_progress
-    #   else:
-    #     break
 
   async def upkeep_phase(self):
     # begin new round
@@ -558,7 +549,7 @@ class Encounter:
 
     experience_gained = 0
     for es in self.enemy_sets:
-      experience_gained += es.experience
+      experience_gained += (es.experience + 5 * es.level)
       await self.player.gain_secrets(es.faction, 5 * es.level)
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)

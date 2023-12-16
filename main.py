@@ -44,11 +44,7 @@ class GameStateV2:
     with open(f"saves/maps/{self.map.name}.pkl", "wb") as f:
       dill.dump(self.map, f)
     for player in party_members.values():
-      websocket_tmp = player.websocket
-      player.websocket = None # websocket can't be pickled, so temporarily remove it
-      with open(f"saves/characters/{player.name}.pkl", "wb") as f:
-        dill.dump(player, f)
-      player.websocket = websocket_tmp
+      player.save()
 
   # Generators
 
@@ -84,7 +80,7 @@ class GameStateV2:
     cmd_tokens = cmd.split(" ")
     try:
       if cmd == "die":
-        self.player_death()
+        await self.player_death(encounter.player)
         return
       elif cmd == "debug":
         targets = await get_combat_entities(self, cmd_tokens[1], websocket=encounter.player.websocket)
@@ -151,7 +147,7 @@ class GameStateV2:
     player.material = 0
     # death admin
     play_sound("player-death.mp3")
-    ws_print(player.render(), player.websocket)
+    await ws_print(player.render(), player.websocket)
     await ws_input("Gained 30xp...", player.websocket)
     player.experience += 30
     await self.discovery_phase(player)
@@ -159,7 +155,7 @@ class GameStateV2:
     player.stranded = True
     
     await self.end_run(player)
-    self.map.region_stranded_characters.append(player)
+    random.choice(self.map.region_drafts).stranded_characters.append(player)
     self.save()
     raise GameOver()
 
@@ -167,9 +163,18 @@ class GameStateV2:
     self.map.end_run()
     player.archive_library_spells(copies_threshold=10)
     await player.memorize()
+    await player.learn_rituals()
+    player.websocket = None
     self.save()
 
   async def choose_character(self, websocket):
+    available_characters = []
+    for fname in os.listdir("saves/characters"):
+      with open(f"saves/characters/{fname}", "rb") as f:
+        character = dill.load(f)
+        if not character.stranded:
+          available_characters.append(character)
+    await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
       player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
@@ -185,7 +190,7 @@ class GameStateV2:
     await ws_print(numbered_list(existing_map_names), websocket)
     map_choice = await ws_input("Choose a map for your run (A new name will create a new map) > ", websocket)
     if map_choice in existing_map_names:
-      with open(f"{map_choice}.pkl", "rb") as f:
+      with open(f"saves/maps/{map_choice}.pkl", "rb") as f:
         map = dill.load(f)
     else:
       map = Map(name=map_choice)

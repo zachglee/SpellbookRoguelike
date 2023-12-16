@@ -28,6 +28,7 @@ class RegionDraft:
     self.factions = factions
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
     self.spell_pool = spell_pool
+    self.stranded_characters: List[Player] = []
     self.n_options = n_options
     self.n_picks = n_picks
 
@@ -72,8 +73,12 @@ class RegionDraft:
       for i in range(random.choice([1, 1, 1, 2, 2, 3])):
         enemyset.level_up()
         material += 2
-    # TODO: This is where we'd have a chance to find stranded characters
-    character = None
+    if self.stranded_characters and random.random() < 0.6:
+      character = random.choice(self.stranded_characters)
+      enemyset.level_up()
+      spell = character.signature_spell.spell
+    else:
+      character = None
 
     self.enemyset_pool_idx += 1
     self.spell_pool_idx += 1
@@ -114,11 +119,12 @@ class RegionDraft:
       await ws_print("\n", player.websocket)
       await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
       pick_options = self.draft_picks[i]
-      player.seen_spells += [pick_option for pick_option in pick_options]
+      player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
       if pick_option.character:
         pick_option.character.stranded = False
-        # FIXME: remove the character from the stranded list?
+        self.stranded_characters.remove(pick_option.character)
+        pick_option.character.save()
       if pick_option.spell:
         chosen_library_spell = LibrarySpell(pick_option.spell, copies=2)
         player.library.append(chosen_library_spell)
