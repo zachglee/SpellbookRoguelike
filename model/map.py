@@ -6,7 +6,8 @@ from content.enemy_factions import factions
 from pydantic import BaseModel
 
 class Map:
-  def __init__(self, n_regions=4):
+  def __init__(self, name, n_regions=4):
+    self.name = name
     self.region_drafts = []
 
     spell_pools = generate_spell_pools(n_pools=n_regions)

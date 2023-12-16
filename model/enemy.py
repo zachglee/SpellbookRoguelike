@@ -37,7 +37,7 @@ class EnemySet:
     self.name = name
     self.enemy_spawns = enemy_spawns
     self.experience = exp or 15
-    self.faction = faction
+    self.faction: str = faction
     self.level = 0
     self.description = description
 
@@ -65,6 +65,8 @@ class EnemySet:
       return_str = colored(f"???", "red")
       if self.persistent:
         return_str += colored(f" (Persistent)", "red")
+      if self.level > 0:
+        return_str += colored(f" (Lv{self.level})", "red")
       return return_str
 
     return_str = colored(f"{self.name}", "red")

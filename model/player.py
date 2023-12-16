@@ -10,8 +10,6 @@ from model.spellbook import LibrarySpell, Spellbook
 from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, ws_input, ws_print
 from sound_utils import play_sound
-from content.items import starting_weapons
-from content.enemy_factions import all_special_items, all_basic_items
 from model.event import Event
 
 class Player(CombatEntity):
@@ -31,6 +29,7 @@ class Player(CombatEntity):
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
   material: int = 0
+  secrets_dict: dict[str, int] = defaultdict(int)
 
   inventory_capacity: int = 12
   library_capacity: int = 10
@@ -43,6 +42,7 @@ class Player(CombatEntity):
   memorizations_pending: int = 0
   personal_item: Item = None
   request: str = None
+  stranded: bool = False
 
   done: bool = False
   id: Optional[str] = None
@@ -140,6 +140,10 @@ class Player(CombatEntity):
   async def gain_material(self, amount):
     self.material += amount
     await ws_print(colored(f"You gained {amount} material! Now you have {self.material}.", "yellow"), self.websocket)
+
+  async def gain_secrets(self, faction, amount):
+    self.secrets_dict[faction] += amount
+    await ws_print(colored(f"You discovered {amount} secrets of faction {faction}. Now you have {self.secrets_dict[faction]}.", "magenta"), self.websocket)
 
   def init(self):
     self.pursuing_enemysets = []

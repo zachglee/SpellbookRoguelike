@@ -1,6 +1,7 @@
 from copy import deepcopy
 import random
-from typing import List, Tuple
+from typing import List, Optional, Tuple
+from model.player import Player
 from termcolor import colored
 
 from model.enemy import EnemySet
@@ -8,10 +9,11 @@ from model.spellbook import LibrarySpell, Spell
 from utils import choose_obj, numbered_list, wait_for_teammates, ws_print
 
 class DraftPickOption:
-  def __init__(self, enemyset, spell, material):
+  def __init__(self, enemyset, spell, material, character=None):
     self.enemyset = enemyset
     self.spell = spell
     self.material = material
+    self.character: Optional[Player] = character
     self.pickable = True
   
   def render(self, show_rules_text=False):
@@ -66,15 +68,17 @@ class RegionDraft:
     if random.random() < 0.33:
       enemyset.obscured = True
       material += 2
-    if random.random() < 0.12:
-      enemyset.persistent = True
-      enemyset.level_up()
-      material += 2
+    if random.random() < 0.15:
+      for i in range(random.choice([1, 1, 1, 2, 2, 3])):
+        enemyset.level_up()
+        material += 2
+    # TODO: This is where we'd have a chance to find stranded characters
+    character = None
 
     self.enemyset_pool_idx += 1
     self.spell_pool_idx += 1
 
-    return DraftPickOption(enemyset, spell, material)
+    return DraftPickOption(enemyset, spell, material, character=character)
   
   def generate_draft_pick_options(self, n_options):
     picks = []
@@ -112,6 +116,9 @@ class RegionDraft:
       pick_options = self.draft_picks[i]
       player.seen_spells += [pick_option for pick_option in pick_options]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
+      if pick_option.character:
+        pick_option.character.stranded = False
+        # FIXME: remove the character from the stranded list?
       if pick_option.spell:
         chosen_library_spell = LibrarySpell(pick_option.spell, copies=2)
         player.library.append(chosen_library_spell)

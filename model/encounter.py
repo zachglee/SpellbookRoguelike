@@ -260,6 +260,9 @@ class Encounter:
     self.player.experience += 1
     observed_factions = [e.faction for e in self.faced_enemy_queue]
     observed_factions = observed_factions[0:1] # just take immediate for now
+    if not observed_factions:
+      return
+    await self.player.gain_secrets(observed_factions[0], 1)
     for faction in observed_factions:
       faction_obj = faction_dict[faction]
       if self.player.rituals_dict.get(faction) is None:
@@ -556,6 +559,7 @@ class Encounter:
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += es.experience
+      await self.player.gain_secrets(es.faction, 5 * es.level)
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 

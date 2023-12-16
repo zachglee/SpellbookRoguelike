@@ -17,10 +17,10 @@ def generate_spell_pools(n_pools=1):
   random.shuffle(blue_pages)
   random.shuffle(gold_pages)
   spell_pools = []
-  for i in range(n_pools):
-    red_spell_pool = sum(red_pages[i * 2:(i + 1) * 2], [])
-    blue_spell_pool = sum(blue_pages[i * 2:(i + 1) * 2], [])
-    gold_spell_pool = sum(gold_pages[i * 2:(i + 1) * 2], [])
+  for i in range(0, n_pools):
+    red_spell_pool = sum(red_pages[i:i + 2], [])
+    blue_spell_pool = sum(blue_pages[i:i + 2], [])
+    gold_spell_pool = sum(gold_pages[i:i + 2], [])
     spell_pool = red_spell_pool + blue_spell_pool + gold_spell_pool
     spell_pools.append(spell_pool)
   return spell_pools

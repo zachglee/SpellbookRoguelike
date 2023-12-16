@@ -20,7 +20,7 @@ class GameOver(Exception):
 
 class GameStateV2:
   def __init__(self, n_regions=4):
-    self.map = Map(n_regions=n_regions)
+    self.map = None
     self.current_region_idx = 0
     self.player = None
 
@@ -41,12 +41,12 @@ class GameStateV2:
   # Admin
 
   def save(self):
-    with open("saves/map.pkl", "wb") as f:
+    with open(f"saves/maps/{self.map.name}.pkl", "wb") as f:
       dill.dump(self.map, f)
     for player in party_members.values():
       websocket_tmp = player.websocket
       player.websocket = None # websocket can't be pickled, so temporarily remove it
-      with open(f"saves/{player.name}.pkl", "wb") as f:
+      with open(f"saves/characters/{player.name}.pkl", "wb") as f:
         dill.dump(player, f)
       player.websocket = websocket_tmp
 
@@ -148,6 +148,7 @@ class GameStateV2:
       player.conditions["undying"] -= 1
       return
     player.inventory = []
+    player.material = 0
     # death admin
     play_sound("player-death.mp3")
     ws_print(player.render(), player.websocket)
@@ -155,8 +156,10 @@ class GameStateV2:
     player.experience += 30
     await self.discovery_phase(player)
     player.wounds += 1
+    player.stranded = True
     
     await self.end_run(player)
+    self.map.region_stranded_characters.append(player)
     self.save()
     raise GameOver()
 
@@ -171,29 +174,34 @@ class GameStateV2:
     if character_choice == "new":
       player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
     else:
-      character_file = f"saves/{character_choice}.pkl"
+      character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
         player = dill.load(f)
     player.init()
     return player
   
-  def choose_map(self, map_file):
-    if map_file and os.path.exists(map_file):
-      with open(map_file, "rb") as f:
-        self.map = dill.load(f)
+  async def choose_map(self, websocket):
+    existing_map_names = [fname.split(".")[0] for fname in os.listdir("saves/maps")]
+    await ws_print(numbered_list(existing_map_names), websocket)
+    map_choice = await ws_input("Choose a map for your run (A new name will create a new map) > ", websocket)
+    if map_choice in existing_map_names:
+      with open(f"{map_choice}.pkl", "rb") as f:
+        map = dill.load(f)
     else:
-      self.map = Map()
-    self.map.init()
+      map = Map(name=map_choice)
+    map.init()
+    return map
 
-  async def play_setup(self, map_file=None, player_id=None, websocket=None):
-    self.choose_map(map_file)
+  async def play_setup(self, player_id=None, websocket=None):
+    map = await self.choose_map(websocket)
+    self.map = map
     player = await self.choose_character(websocket)
     # self.player = player
     party_members[player_id] = player
     player.id = player_id
     player.websocket = websocket
     self.run_length = 4
-    return player
+    return player, map
 
   async def play_encounter(self, player, encounter):
     await encounter.init_with_player(player)
@@ -201,8 +209,8 @@ class GameStateV2:
     player.archive_library_spells()
     await self.encounter_phase(encounter)
 
-  async def play(self, player_id, websocket=None, map_file=None):
-    player = await self.play_setup(map_file=map_file, player_id=player_id, websocket=websocket)
+  async def play(self, player_id, websocket=None):
+    player, map = await self.play_setup(player_id=player_id, websocket=websocket)
     self.started = True
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
@@ -216,10 +224,11 @@ class GameStateV2:
 
       # Persistent enemy sets
       stronger_enemyset = random.choice(encounter.enemy_sets)
-      stronger_enemyset.level_up()
-      player.pursuing_enemysets.append(stronger_enemyset)
-      await ws_input(colored(f"{stronger_enemyset.name} still follows you, stronger...", "red"), websocket)
-      persistent_enemysets = [stronger_enemyset] + [es for es in player.pursuing_enemysets if es.persistent]
+      persistent_enemysets = [stronger_enemyset] + [es for es in encounter.enemy_sets if es.persistent]
+      player.pursuing_enemysets += persistent_enemysets
+      for enemyset in persistent_enemysets:
+        enemyset.level_up()
+        await ws_input(colored(f"{enemyset.name} still follows you, stronger...", "red"), websocket)
       for enemyset in [es for es in encounter.enemy_sets if es not in persistent_enemysets]:
         enemyset.level = 0
 
@@ -229,11 +238,6 @@ class GameStateV2:
 
 
 # helpers
-
-# main
-# game_state = GameStateV2()
-# game_state.play()
-# game_state.play(map_file="saves/map.pkl")
 
 
 
