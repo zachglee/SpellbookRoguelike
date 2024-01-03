@@ -133,4 +133,25 @@ class RegionDraft:
       player.pursuing_enemysets.append(pick_option.enemyset)
       
       await wait_for_teammates(player.id, f"regiondraft{i}")
+
+
+# Experimental for now...
+class BossRegionDraft:
+  def __init__(self, difficulty, enemy_sets):
+    self.difficulty = difficulty
+    self.enemy_sets = enemy_sets
+    for _ in range(9):
+      random.choice(self.enemy_sets).level_up()
+
+  def init(self):
+    pass
+
+  async def play(self, player):
+    # level up enemies
+    prepared_enemy_sets = []
+    for enemy_set in self.enemy_sets:
+      prepared_enemy_set = deepcopy(enemy_set)
+      prepared_enemy_set.obscured = True
+      prepared_enemy_sets.append(prepared_enemy_set)
+    player.pursuing_enemysets += prepared_enemy_sets
     

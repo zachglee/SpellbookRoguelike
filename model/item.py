@@ -14,6 +14,7 @@ class Item(BaseModel):
   time_cost: int = 1
   material_cost: Optional[int] = None
   rare: bool = False
+  craftable: bool = True
   personal: bool = False
   belonged_to: Optional[str] = None
 
@@ -22,11 +23,11 @@ class Item(BaseModel):
 
   @classmethod
   def make(cls, name, charges, description, use_commands,
-           generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, rare=False, personal=False):
+           generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, rare=False, personal=False, craftable=True):
     """Literally just exists to make so we can pass one arg for charges and max charges."""
     return cls(name=name, charges=charges, max_charges=charges, description=description, use_commands=use_commands,
                generate_commands_pre=generate_commands_pre, time_cost=time_cost, material_cost=material_cost,
-               rare=rare, personal=personal)
+               rare=rare, personal=personal, craftable=craftable)
     
 
   async def use(self, encounter):

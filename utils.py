@@ -59,8 +59,9 @@ def flex_render(item, **kwargs):
   else:
     return str(item)
 
-def numbered_list(l, **kwargs) -> str:
-  return "\n".join(f"{i + 1} - {flex_render(item, **kwargs)}" for i, item in enumerate(l))
+def numbered_list(l, use_headers=False, **kwargs) -> str:
+  separator = ":\n" if use_headers else " - "
+  return "\n".join(f"{i + 1}{separator}{flex_render(item, **kwargs)}" for i, item in enumerate(l))
 
 def aligned_line(line_items, column_width=30):
   padded_line_items = []

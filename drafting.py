@@ -1,7 +1,8 @@
+from copy import deepcopy
 import random
 from termcolor import colored
 from model.spellbook import SpellbookPage, SpellbookSpell, LibrarySpell
-from utils import choose_obj, numbered_list, choose_idx, ws_input, ws_print
+from utils import choose_obj, choose_str, numbered_list, choose_idx, ws_input, ws_print
 from sound_utils import play_sound
 from generators import generate_library_spells
 
@@ -25,34 +26,41 @@ def draft_player_library(player, spell_pool, randoms=1, picks=2, options_per_pic
     if choice:
       player.library.append(choice)
 
-def destination_draft(player, destination_node):
-  play_sound("build-spellbook.mp3")
-  first_spell = SpellbookSpell(destination_node.safehouse.library[0].spell)
-  second_spell = SpellbookSpell(destination_node.safehouse.library[1].spell)
-  player.spellbook.pages = [SpellbookPage([first_spell]), SpellbookPage([second_spell])]
-  for i in range(destination_node.num_pages):
-    edit_page_from_inventory(player, i+1, page_capacity=destination_node.page_capacity)
-
 async def encounter_draft(player, num_pages=2, page_capacity=3):
   play_sound("build-spellbook.mp3")
   player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
   for i in range(num_pages):
-    await edit_page_from_inventory(player, i+1, page_capacity=page_capacity, websocket=player.websocket)
+    await add_page(player, i+1, page_capacity=3)
 
-async def edit_page_from_inventory(player, page_number, page_capacity=3, websocket=None):
+async def add_page(player, page_number, page_capacity=3):
+  mode = await choose_str(["new", "archive"], "Create new page or use page from archive? > ", player.websocket)
+  if mode is None:
+    return SpellbookPage([])
+  if mode == "new":
+    await edit_page_from_library(player, page_number, page_capacity=page_capacity)
+  elif mode == "archive":
+    # print all archived pages
+    available_archived_pages = [page for page in player.archived_pages if not page.spent]
+    await ws_print(numbered_list(available_archived_pages, use_headers=True), player.websocket)
+    from_archive_page = await choose_obj(available_archived_pages, "Which page do you want to use? > ", player.websocket)
+    from_archive_page.spent = True
+    player.spellbook.pages[page_number - 1] = deepcopy(from_archive_page)
+
+
+async def edit_page_from_library(player, page_number, page_capacity=3) -> SpellbookPage:
   active_page = player.spellbook.pages[page_number - 1]
   while len(active_page.spells) < page_capacity:
-    await render_spell_draft(player, editing_page_idx=page_number-1, websocket=websocket)
+    await render_spell_draft(player, editing_page_idx=page_number-1, websocket=player.websocket)
     capacity_str = f"({len(active_page.spells) + 1} of {page_capacity})"
     if len(active_page.spells) + 1 == page_capacity:
       capacity_str = colored(capacity_str, "red")
     else:
       capacity_str = colored(capacity_str, "green")
-    library_spell = await choose_obj(player.library, f"add spell to page {page_number} {capacity_str} > ", websocket)
+    library_spell = await choose_obj(player.library, f"add spell to page {page_number} {capacity_str} > ", player.websocket)
     if library_spell is None:
       break
     if library_spell.copies_remaining <= 0:
-      await ws_print(colored("This spell is out of copies.", "red"), websocket)
+      await ws_print(colored("This spell is out of copies.", "red"), player.websocket)
       continue
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1

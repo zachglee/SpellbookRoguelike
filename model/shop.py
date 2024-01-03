@@ -44,6 +44,7 @@ class Shop:
         play_sound("inventory.mp3")
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
+        player.seen_items.append(deepcopy(chosen_item.item))
         chosen_item.stock -= 1
         await ws_print(f"You bought {chosen_item.item.render()}", player.websocket)
       else:

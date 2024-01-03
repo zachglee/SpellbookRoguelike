@@ -100,7 +100,7 @@ factions = [
   ),
   Faction("Giantkin", giantkin,
     basic_items=[
-      Item.make("Giant's Club", 3, "Deal 10 damage to immediate.", ["damage i 10"], time_cost=3),
+      Item.make("Giant's Club", 2, "Deal 12 damage to immediate. Costs 3 time.", ["damage i 10"], time_cost=3),
       Item.make("Potion of Strength", 3, "Gain 3 empower.", ["empower p 3"])
     ],
     special_items=[
@@ -192,3 +192,4 @@ all_special_items = sum([faction.special_items for faction in factions], [])
 all_basic_items = sum([faction.basic_items for faction in factions], [])
 
 faction_dict = {faction.name: faction for faction in factions}
+faction_rituals_dict = {faction.name: faction.ritual for faction in factions}

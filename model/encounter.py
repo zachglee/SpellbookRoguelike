@@ -559,6 +559,11 @@ class Encounter:
       spell.charges = 2
       spell.exhausted = False
     self.player.spellbook.current_page_idx = 0
+    # Save one page to archive
+    await ws_print(self.player.spellbook.render(), self.player.websocket)
+    chosen_page = await choose_obj(self.player.spellbook.pages, colored("Choose page to archive > ", "cyan"), self.player.websocket)
+    self.player.archived_pages.append(deepcopy(chosen_page))
+
     self.player.facing = "front"
     self.player.clear_conditions()
     self.player.damage_survived_this_turn = 0

@@ -15,15 +15,18 @@ class Ritual:
   def __init__(self, name, description, faction, required_progress, ritual_events):
     self.name = name
     self.description = description
-    self.faction = faction
+    self.faction: str = faction
     self.progress = 0
     self.required_progress = required_progress
 
     self.level = 0
     self.experience = 0
-    self.next_level_xp = 50
 
     self.ritual_events: List[RitualEvent] = ritual_events
+
+  @property
+  def next_level_xp(self):
+    return 20 - (2 * self.level)
 
   @property
   def activable(self):
@@ -36,4 +39,4 @@ class Ritual:
         await ritual_event.effect(encounter)
 
   def render(self):
-    return colorize(f"({self.progress}/{self.required_progress}) {self.name} - {self.description}")
+    return colorize(f"[{self.experience}/{self.next_level_xp}] ({self.progress}/{self.required_progress}) {self.name} (Lv. {self.level}) - {self.description}")

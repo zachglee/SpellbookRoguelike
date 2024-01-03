@@ -100,7 +100,7 @@ class LibrarySpell:
     self.signature = signature
     self.copies_remaining = copies
     self.max_copies_remaining = copies
-    self.in_archive = in_archive
+    self.in_archive = in_archive # TODO: deprecate this if I'm not archving spells anymore
   
   def render(self):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
@@ -157,14 +157,13 @@ class SpellbookSpell:
 class SpellbookPage:
   def __init__(self, spells):
     self.spells = spells
-    self.copy_count = 0
-    self.notes = None
+    self.spent = False
 
   def render(self):
     return numbered_list(self.spells)
 
 class Spellbook:
-  def __init__(self, pages):
+  def __init__(self, pages: SpellbookPage):
     self.pages = pages
     self.current_page_idx = 0
 
@@ -174,10 +173,6 @@ class Spellbook:
     for page in self.pages:
       spells += page.spells
     return spells
-
-  @property
-  def all_pages(self):
-    return self.pages
 
   @property
   def current_page(self):

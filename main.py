@@ -1,16 +1,16 @@
 import random
 import dill
 import os
-from drafting import destination_draft, encounter_draft
+from drafting import encounter_draft
 from model.encounter import Encounter, EnemyWave
-from model.map import Map
+from model.map import BossMap, Map
 from model.player import Player
 from model.spellbook import LibrarySpell
 from sound_utils import play_sound
 from termcolor import colored
 from generators import generate_faction_sets, generate_library_spells, generate_shop, generate_spell_pools
 from model.region_draft import RegionDraft
-from content.items import minor_energy_potions, health_potions
+from content.enemy_factions import factions
 from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
 STARTING_EXPLORED = 1
@@ -26,7 +26,7 @@ class GameStateV2:
 
     #
     self.show_intents = False
-    self.run_length = None
+    self.run_length = n_regions
     self.started = False
 
     #
@@ -144,7 +144,7 @@ class GameStateV2:
       player.conditions["undying"] -= 1
       return
     player.inventory = []
-    player.material = 0
+    # player.material = 0
     # death admin
     play_sound("player-death.mp3")
     await ws_print(player.render(), player.websocket)
@@ -152,17 +152,16 @@ class GameStateV2:
     player.experience += 30
     await self.discovery_phase(player)
     player.wounds += 1
-    player.stranded = True
+    # player.stranded = True
     
     await self.end_run(player)
-    random.choice(self.map.region_drafts).stranded_characters.append(player)
+    # random.choice(self.map.region_drafts).stranded_characters.append(player)
     self.save()
     raise GameOver()
 
   async def end_run(self, player):
     self.map.end_run()
-    player.archive_library_spells(copies_threshold=10)
-    await player.memorize()
+    # await player.memorize() # NOTE: This is being replaced by saving pages after combats
     await player.learn_rituals()
     player.websocket = None
     self.save()
@@ -193,14 +192,18 @@ class GameStateV2:
       with open(f"saves/maps/{map_choice}.pkl", "rb") as f:
         map = dill.load(f)
     else:
-      map = Map(name=map_choice)
-    map.init()
+      if map_choice == "Boss":
+        boss_enemy_set_pool = sum([f.enemy_sets for f in random.sample(factions, 3)], [])
+        map = BossMap(name=map_choice, enemy_set_pool=boss_enemy_set_pool)
+      else:
+        map = Map(name=map_choice, n_regions=self.run_length)
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
     map = await self.choose_map(websocket)
     self.map = map
     player = await self.choose_character(websocket)
+    map.init(player)
     # self.player = player
     party_members[player_id] = player
     player.id = player_id
@@ -211,7 +214,6 @@ class GameStateV2:
   async def play_encounter(self, player, encounter):
     await encounter.init_with_player(player)
     await encounter_draft(player, num_pages=2, page_capacity=3)
-    player.archive_library_spells()
     await self.encounter_phase(encounter)
 
   async def play(self, player_id, websocket=None):

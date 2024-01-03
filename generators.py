@@ -40,23 +40,39 @@ def generate_spellbook_spells(size, spell_pool=spells):
   random.shuffle(spell_pool)
   return [SpellbookSpell(sp) for sp in spell_pool[:size]]
 
+def generate_shop_item(item):
+  if item.material_cost:
+    stock = 1
+    cost = item.material_cost
+  elif item.rare:
+    stock = 1
+    cost = 15
+  elif item.name in ["Gold Potion", "Red Potion", "Blue Potion"]:
+    stock = 2
+    cost = 3
+  elif not item.rare:
+    stock = 1
+    cost = 6
+  return ShopItem(item, cost=cost, stock=stock)
+
 def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)
   shop_items = []
   for item in item_pool[:n_items]:
-    if item.material_cost:
-      stock = 1
-      cost = item.material_cost
-    elif item.rare:
-      stock = 1
-      cost = 15
-    elif item.name in ["Gold Potion", "Red Potion", "Blue Potion"]:
-      stock = 2
-      cost = 3
-    elif not item.rare:
-      stock = 1
-      cost = 6
-    shop_items.append(ShopItem(item, cost=cost, stock=stock))
+    shop_items.append(generate_shop_item(item))
   if key:
     shop_items.append(ShopItem(ancient_key, cost=36, stock=1))
   return Shop(shop_items)
+
+def generate_crafting_shop(n_items, player) -> Shop:
+  item_pool = [item for item in player.seen_items if item.craftable]
+  random.shuffle(item_pool)
+  shop_items_dict = {}
+  for item in item_pool[:n_items]:
+    if shop_items_dict.get(item.name):
+      shop_items_dict[item.name].stock += 1
+    else:
+      shop_item = generate_shop_item(item)
+      shop_item.cost = shop_item.cost * 2
+      shop_items_dict[item.name] = shop_item
+  return Shop(list(shop_items_dict.values()))

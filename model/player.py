@@ -7,11 +7,12 @@ import dill
 from copy import deepcopy
 from collections import defaultdict
 from model.combat_entity import CombatEntity
-from model.spellbook import LibrarySpell, Spell, Spellbook
+from model.spellbook import LibrarySpell, Spell, Spellbook, SpellbookPage
 from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, ws_input, ws_print
 from sound_utils import play_sound
 from model.event import Event
+from content.enemy_factions import faction_rituals_dict
 
 class Player(CombatEntity):
 
@@ -21,12 +22,13 @@ class Player(CombatEntity):
   rituals: list[Ritual] = []
   time: int = 4
   facing: str = "front"
-  explored: int = 1
+  explored: int = 0
 
   # Meta state
   signature_spell: LibrarySpell
   library: list[LibrarySpell]
-  archive: list[LibrarySpell] = []
+  archived_pages: list[SpellbookPage] = []
+  archive: list[LibrarySpell] = [] # TODO remove
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
   material: int = 0
@@ -43,8 +45,7 @@ class Player(CombatEntity):
   seen_items: list[Item] = []
   pursuing_enemysets: list[list[str]] = []
 
-  memorizations_pending: int = 0
-  ritual_learnings_pending: int = 0
+  memorizations_pending: int = 0 # TODO: remove this
   personal_item: Item = None
 
   done: bool = False
@@ -107,17 +108,10 @@ class Player(CombatEntity):
       new_library_spell = LibrarySpell(spell, copies=1, signature=True)
       self.library.append(new_library_spell)
 
-  # async def memorize_archived_spell(self):
-  #   await ws_print(self.render_library(), self.websocket)
-  #   choices = random.sample(self.archive, min(len(self.archive), 6))
-  #   await ws_print("---", self.websocket)
-  #   await ws_print(numbered_list(choices), self.websocket)
-  #   chosen_spell = deepcopy(choose_obj(choices, colored("Choose an archived spell to memorize > ", "cyan"), self.websocket))
-  #   self.memorize_spell(chosen_spell)
-
   async def memorize_seen_spell(self):
     await ws_print(self.render_library(), self.websocket)
-    choices = random.sample(self.seen_spells, min(len(self.seen_spells), 9))
+    memorization_spell_pool = self.seen_spells + [ls.spell for ls in self.archive]
+    choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 9))
     await ws_print("---", self.websocket)
     await ws_print(numbered_list(choices), self.websocket)
     chosen_spell = deepcopy(await choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan"), self.websocket))
@@ -129,8 +123,6 @@ class Player(CombatEntity):
     self.hp += 1
     if self.level > 0 and self.level % 2 == 0:
       self.memorizations_pending += 1
-    if self.level > 0 and self.level % 3 == 0:
-      self.ritual_learnings_pending += 1
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
   async def check_level_up(self):
@@ -138,23 +130,21 @@ class Player(CombatEntity):
       await self.level_up()
 
   async def learn_rituals(self):
-    while self.ritual_learnings_pending > 0:
+    while True:
       await ws_print(str(self.secrets_dict), self.websocket)
       await ws_print(self.render_rituals(), self.websocket)
-      faction = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
-      if faction is None:
+      ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
+      if ritual is None:
         break
 
-      ritual = self.rituals_dict[faction]
       xp_needed = ritual.next_level_xp - ritual.experience
-      contributed_xp = min(self.secrets_dict[faction], xp_needed)
+      contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
       ritual.experience += contributed_xp
-      self.secrets_dict[faction] -= contributed_xp
+      self.secrets_dict[ritual.faction] -= contributed_xp
       if ritual.experience >= ritual.next_level_xp:
         ritual.experience = 0
         ritual.level += 1
-        await ws_print(colored(f"You've gained a deeper understanding of {faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
-        self.ritual_learnings_pending -= 1
+        await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
 
   async def memorize(self):
     while self.memorizations_pending > 0:
@@ -172,6 +162,8 @@ class Player(CombatEntity):
 
   async def gain_secrets(self, faction, amount):
     self.secrets_dict[faction] += amount
+    if faction not in self.rituals_dict:
+      self.rituals.append(faction_rituals_dict[faction])
     await ws_print(colored(f"You discovered {amount} secrets of faction {faction}. Now you have {self.secrets_dict[faction]}.", "magenta"), self.websocket)
 
   def init(self):
