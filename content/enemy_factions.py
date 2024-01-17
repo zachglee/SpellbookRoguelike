@@ -6,7 +6,7 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 10
+RITUAL_PROGRESS = 12
 
 factions = [
   Faction("Freed Automata", freed_automata,
@@ -184,7 +184,7 @@ factions = [
       Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ],
     ritual=Ritual("Call the Unspeakable", "Gain 2 ward on turn 1, then deal 6 damage to random 6 times on turn 6.", "Ancient Horrors", RITUAL_PROGRESS,
-                  [ritual_event([1], ["ward p 2"]), ritual_event([7], ["repeat 6 damage r 6"])])
+                  [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])])
   )
 ]
 

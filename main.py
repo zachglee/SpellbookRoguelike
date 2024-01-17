@@ -9,7 +9,7 @@ from model.spellbook import LibrarySpell
 from sound_utils import play_sound
 from termcolor import colored
 from generators import generate_faction_sets, generate_library_spells, generate_shop, generate_spell_pools
-from model.region_draft import RegionDraft
+from model.region_draft import BossRegionDraft, RegionDraft
 from content.enemy_factions import factions
 from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
@@ -62,7 +62,7 @@ class GameStateV2:
                     signature_spell=chosen_spell)
     return player
   
-  def generate_encounter(self, player, difficulty=3):
+  def generate_encounter(self, player, difficulty=3, boss=False):
     # generate the encounter
     random.shuffle(player.pursuing_enemysets)
     encounter_enemysets = player.pursuing_enemysets[0:difficulty]
@@ -71,7 +71,8 @@ class GameStateV2:
     player.pursuing_enemysets = player.pursuing_enemysets[difficulty:] 
     encounter = Encounter([EnemyWave(encounter_enemysets)], player,
                           basic_items=self.current_region.basic_items,
-                          special_items=self.current_region.special_items)
+                          special_items=self.current_region.special_items,
+                          boss=boss)
     return encounter
 
   # Game Phases
@@ -148,8 +149,8 @@ class GameStateV2:
     # death admin
     play_sound("player-death.mp3")
     await ws_print(player.render(), player.websocket)
-    await ws_input("Gained 30xp...", player.websocket)
-    player.experience += 30
+    await ws_input("Gained 100xp...", player.websocket)
+    player.experience += 100
     await self.discovery_phase(player)
     player.wounds += 1
     # player.stranded = True
@@ -161,7 +162,7 @@ class GameStateV2:
 
   async def end_run(self, player):
     self.map.end_run()
-    # await player.memorize() # NOTE: This is being replaced by saving pages after combats
+    await player.memorize()
     await player.learn_rituals()
     player.websocket = None
     self.save()
@@ -211,9 +212,9 @@ class GameStateV2:
     self.run_length = 4
     return player, map
 
-  async def play_encounter(self, player, encounter):
+  async def play_encounter(self, player, encounter, num_pages=2, page_capacity=3):
     await encounter.init_with_player(player)
-    await encounter_draft(player, num_pages=2, page_capacity=3)
+    await encounter_draft(player, num_pages=num_pages, page_capacity=page_capacity)
     await self.encounter_phase(encounter)
 
   async def play(self, player_id, websocket=None):
@@ -226,8 +227,10 @@ class GameStateV2:
       await ws_input(colored(f"You will fight {region_draft.difficulty} enemy sets next combat!", "red"), websocket)
       await region_draft.play(player)
       await region_shop.play(player)
-      encounter = self.generate_encounter(player, difficulty=region_draft.difficulty)
-      await self.play_encounter(player, encounter)
+      is_boss_encounter = isinstance(region_draft, BossRegionDraft)
+      encounter = self.generate_encounter(player, difficulty=region_draft.difficulty,
+                                          boss=is_boss_encounter)
+      await self.play_encounter(player, encounter, num_pages=3 if is_boss_encounter else 2)
 
       # Persistent enemy sets
       stronger_enemyset = random.choice(encounter.enemy_sets)

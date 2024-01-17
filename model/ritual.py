@@ -26,7 +26,7 @@ class Ritual:
 
   @property
   def next_level_xp(self):
-    return 20 - (2 * self.level)
+    return 13 - (1 * self.level)
 
   @property
   def activable(self):
@@ -39,4 +39,6 @@ class Ritual:
         await ritual_event.effect(encounter)
 
   def render(self):
-    return colorize(f"[{self.experience}/{self.next_level_xp}] ({self.progress}/{self.required_progress}) {self.name} (Lv. {self.level}) - {self.description}")
+    progress_str = colored(f"({self.progress}/{self.required_progress})", "yellow")
+    experience_str = colored(f"[{self.experience}/{self.next_level_xp}]", "magenta")
+    return colorize(f"{experience_str} {progress_str} {self.name} (Lv. {self.level}) - {self.description}")

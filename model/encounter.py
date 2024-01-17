@@ -253,8 +253,8 @@ class Encounter:
       await ws_print(colored(f"Something lies within these passages... (explored {self.player.explored})", "blue"), self.player.websocket)
     if found_item:
       await ws_print(f"Found: {found_item.render()}", self.player.websocket)
-      self.player.inventory.append(found_item)
-      self.player.seen_items.append(found_item)
+      self.player.inventory.append(deepcopy(found_item))
+      self.player.seen_items.append(deepcopy(found_item))
 
   async def observe(self):
     self.player.experience += 1
@@ -550,7 +550,7 @@ class Encounter:
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += (es.experience + 5 * es.level)
-      await self.player.gain_secrets(es.faction, 5 * es.level)
+      await self.player.gain_secrets(es.faction, 3 * (es.level + 1))
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 
@@ -560,9 +560,12 @@ class Encounter:
       spell.exhausted = False
     self.player.spellbook.current_page_idx = 0
     # Save one page to archive
-    await ws_print(self.player.spellbook.render(), self.player.websocket)
-    chosen_page = await choose_obj(self.player.spellbook.pages, colored("Choose page to archive > ", "cyan"), self.player.websocket)
-    self.player.archived_pages.append(deepcopy(chosen_page))
+    if self.player.remaining_blank_archive_pages > 0:
+      await ws_print(self.player.spellbook.render(), self.player.websocket)
+      chosen_page = await choose_obj(self.player.spellbook.pages, colored("Choose page to archive > ", "cyan"), self.player.websocket)
+      if chosen_page:
+        self.player.archived_pages.append(deepcopy(chosen_page))
+        self.player.remaining_blank_archive_pages -= 1
 
     self.player.facing = "front"
     self.player.clear_conditions()

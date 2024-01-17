@@ -7,6 +7,7 @@ from termcolor import colored
 from model.enemy import EnemySet
 from model.spellbook import LibrarySpell, Spell
 from utils import choose_obj, numbered_list, wait_for_teammates, ws_print
+from content.enemy_factions import faction_dict
 
 class DraftPickOption:
   def __init__(self, enemyset, spell, material, character=None):
@@ -17,20 +18,22 @@ class DraftPickOption:
     self.pickable = True
   
   def render(self, show_rules_text=False):
-    enemyset_str = self.enemyset.render(show_rules_text=show_rules_text)
-    spell_str = self.spell.render()
+    enemyset_str = self.enemyset.render(show_rules_text=show_rules_text) if self.enemyset else ""
+    spell_str = self.spell.render() if self.spell else ""
     material_str = colored(f"{self.material}⛁", "yellow")
     return f"{material_str} | {enemyset_str} | {spell_str}"
 
 class RegionDraft:
-  def __init__(self, difficulty, factions, spell_pool, n_options=3, n_picks=3):
+  def __init__(self, difficulty, factions, spell_pool, n_options=3, n_spell_picks=3, n_enemy_picks=3, skip_reward=6):
     self.difficulty = difficulty
     self.factions = factions
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
     self.spell_pool = spell_pool
     self.stranded_characters: List[Player] = []
     self.n_options = n_options
-    self.n_picks = n_picks
+    self.n_spell_picks = n_spell_picks
+    self.n_enemy_picks = n_enemy_picks
+    self.skip_reward = skip_reward
 
     self.enemyset_pool_idx = 0
     self.spell_pool_idx = 0
@@ -47,55 +50,71 @@ class RegionDraft:
   def special_items(self):
     return sum([faction.special_items for faction in self.factions], [])
 
+  @property
+  def n_picks(self):
+    return self.n_spell_picks + self.n_enemy_picks
+
   def init(self):
     self.enemyset_pool_idx = 0
     self.spell_pool_idx = 0
     random.shuffle(self.enemyset_pool)
     random.shuffle(self.spell_pool)
     self.draft_picks = []
-    for i in range(self.n_picks):
-      self.draft_picks.append(self.generate_draft_pick_options(self.n_options))
+    spell_draft_pick_options = [self.generate_draft_pick_options(self.n_options, type="spell") for _ in range(self.n_spell_picks)]
+    enemy_draft_pick_options = [self.generate_draft_pick_options(self.n_options, type="enemy") for _ in range(self.n_enemy_picks)]
+    
+    for i in range(max(self.n_spell_picks, self.n_enemy_picks)):
+      if spell_draft_pick_options:
+        self.draft_picks.append(spell_draft_pick_options.pop(0))
+      if enemy_draft_pick_options:
+        self.draft_picks.append(enemy_draft_pick_options.pop(0))
 
-  def generate_draft_pick_option(self) -> DraftPickOption:
-    if self.enemyset_pool_idx >= len(self.enemyset_pool):
+    # for i in range(self.n_picks):
+    #   self.draft_picks.append(self.generate_draft_pick_options(self.n_options))
+
+  def generate_draft_pick_option(self, type="spell") -> DraftPickOption:
+    if type == "enemy" and self.enemyset_pool_idx >= len(self.enemyset_pool):
       return None
-    if self.spell_pool_idx >= len(self.spell_pool):
+    if type == "spell" and self.spell_pool_idx >= len(self.spell_pool):
       return None
 
-    enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
-    spell = self.spell_pool[self.spell_pool_idx]
-    material = random.randint(1, 6)
+    spell = None
+    enemyset = None
+    character = None
+    material = random.randint(0, 4)
 
-    if random.random() < 0.33:
-      enemyset.obscured = True
-      material += 2
-    if random.random() < 0.15:
-      for i in range(random.choice([1, 1, 1, 2, 2, 3])):
-        enemyset.level_up()
+    if type == "enemy":
+      enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
+      if random.random() < 0.33:
+        enemyset.obscured = True
         material += 2
-    if self.stranded_characters and random.random() < 0.6:
-      character = random.choice(self.stranded_characters)
-      enemyset.level_up()
-      spell = character.signature_spell.spell
-    else:
-      character = None
+      if random.random() < 0.15:
+        for i in range(random.choice([1, 1, 1, 2, 2, 3])):
+          enemyset.level_up()
+          material += 2
+      if self.stranded_characters and random.random() < 0.6:
+        character = random.choice(self.stranded_characters)
+        enemyset.level_up()
+        spell = character.signature_spell.spell
+      self.enemyset_pool_idx += 1
 
-    self.enemyset_pool_idx += 1
-    self.spell_pool_idx += 1
+    if type == "spell":
+      self.spell_pool_idx += 1
+      spell = self.spell_pool[self.spell_pool_idx]
 
     return DraftPickOption(enemyset, spell, material, character=character)
   
-  def generate_draft_pick_options(self, n_options):
+  def generate_draft_pick_options(self, n_options, type="spell") -> List[DraftPickOption]:
     picks = []
     for i in range(n_options):
-      pick = self.generate_draft_pick_option()
+      pick = self.generate_draft_pick_option(type=type)
 
       if pick is None:
         break
       picks.append(pick)
     return picks
   
-  async def draft_pick(self, pick_options: List[Tuple[EnemySet, Spell, int]], websocket=None):
+  async def draft_pick(self, pick_options: List[DraftPickOption], websocket=None):
     show_rules_text = False
     choice = None
     while choice is None or isinstance(choice, str) or (not choice.pickable):
@@ -103,9 +122,14 @@ class RegionDraft:
       await ws_print(numbered_list(pick_options, show_rules_text=show_rules_text), websocket)
       # choose pick
       choice = await choose_obj(pick_options, "pick one > ", websocket)
+      if choice is None:
+        if all(po.enemyset is None for po in pick_options): # You can only skip if this is not an enemy pick
+          return DraftPickOption(None, None, self.skip_reward)
+        else:
+          continue
+
       if choice == "rules":
         show_rules_text = not show_rules_text
-        print(f"--------------------- NOW RULES ARE {show_rules_text} ---------------------")
         continue
       if not choice.pickable:
         await ws_print(colored("That option has already been picked.", "red"), websocket)
@@ -117,7 +141,8 @@ class RegionDraft:
     for i in range(self.n_picks):
       await ws_print(player.render_state(), player.websocket)
       await ws_print("\n", player.websocket)
-      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
+      skip_reward_str = colored(f"{self.skip_reward}⛁", "yellow")
+      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ({skip_reward_str} for skipping) ~~~", player.websocket)
       pick_options = self.draft_picks[i]
       player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
@@ -130,7 +155,8 @@ class RegionDraft:
         player.library.append(chosen_library_spell)
       if pick_option.material:
         player.material += pick_option.material
-      player.pursuing_enemysets.append(pick_option.enemyset)
+      if pick_option.enemyset:
+        player.pursuing_enemysets.append(pick_option.enemyset)
       
       await wait_for_teammates(player.id, f"regiondraft{i}")
 
@@ -142,6 +168,14 @@ class BossRegionDraft:
     self.enemy_sets = enemy_sets
     for _ in range(9):
       random.choice(self.enemy_sets).level_up()
+
+  @property
+  def basic_items(self):
+    return sum([faction_dict[es.faction].basic_items for es in self.enemy_sets], [])
+  
+  @property
+  def special_items(self):
+    return sum([faction_dict[es.faction].special_items for es in self.enemy_sets], [])
 
   def init(self):
     pass

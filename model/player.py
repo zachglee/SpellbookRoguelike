@@ -27,7 +27,9 @@ class Player(CombatEntity):
   # Meta state
   signature_spell: LibrarySpell
   library: list[LibrarySpell]
+
   archived_pages: list[SpellbookPage] = []
+  remaining_blank_archive_pages: int = 0
   archive: list[LibrarySpell] = [] # TODO remove
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
@@ -111,7 +113,7 @@ class Player(CombatEntity):
   async def memorize_seen_spell(self):
     await ws_print(self.render_library(), self.websocket)
     memorization_spell_pool = self.seen_spells + [ls.spell for ls in self.archive]
-    choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 9))
+    choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 6))
     await ws_print("---", self.websocket)
     await ws_print(numbered_list(choices), self.websocket)
     chosen_spell = deepcopy(await choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan"), self.websocket))
@@ -121,7 +123,7 @@ class Player(CombatEntity):
     self.level += 1
     self.max_hp += 1
     self.hp += 1
-    if self.level > 0 and self.level % 2 == 0:
+    if self.level > 0 and self.level % 3 == 0:
       self.memorizations_pending += 1
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
@@ -189,7 +191,8 @@ class Player(CombatEntity):
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
-    self.material = 0
+    self.remaining_blank_archive_pages = 1
+    # self.material = 0
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,
@@ -227,7 +230,7 @@ class Player(CombatEntity):
   
   def render_rituals(self):
     render_str = "-------- PLAYER RITUALS --------\n"
-    render_str += numbered_list(self.rituals)
+    render_str += numbered_list(ritual for ritual in self.rituals if ritual.progress > 0)
     return render_str
   
   def render_inventory(self):

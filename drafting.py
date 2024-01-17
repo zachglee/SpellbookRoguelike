@@ -31,9 +31,16 @@ async def encounter_draft(player, num_pages=2, page_capacity=3):
   player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
   for i in range(num_pages):
     await add_page(player, i+1, page_capacity=3)
+  # remove spent spells from library
+  player.library = [ls for ls in player.library if ls.copies_remaining > 0 or ls.signature]
 
 async def add_page(player, page_number, page_capacity=3):
-  mode = await choose_str(["new", "archive"], "Create new page or use page from archive? > ", player.websocket)
+  # mode = await choose_str(["new", "archive"], "Create new page or use page from archive? > ", player.websocket)
+  if len(player.library) > 1:
+    mode = "new"
+  else:
+    mode = "archive"
+
   if mode is None:
     return SpellbookPage([])
   if mode == "new":
@@ -43,7 +50,7 @@ async def add_page(player, page_number, page_capacity=3):
     available_archived_pages = [page for page in player.archived_pages if not page.spent]
     await ws_print(numbered_list(available_archived_pages, use_headers=True), player.websocket)
     from_archive_page = await choose_obj(available_archived_pages, "Which page do you want to use? > ", player.websocket)
-    from_archive_page.spent = True
+    # from_archive_page.spent = True # Now that arvhive mode is only for boss, let's not punish you so hard
     player.spellbook.pages[page_number - 1] = deepcopy(from_archive_page)
 
 
