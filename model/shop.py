@@ -4,12 +4,12 @@ from termcolor import colored
 from copy import deepcopy
 from utils import choose_obj, numbered_list, ws_input, ws_print
 
-
 class ShopItem:
-  def __init__(self, item, cost, stock):
+  def __init__(self, item, cost, stock, immediate_effect=None):
     self.item = item
     self.cost = cost
     self.stock = stock
+    self.immediate_effect = immediate_effect
   
   def render(self):
     item_str = colored(self.item.render(), "magenta") if self.item.rare else colored(self.item.render(), "cyan")
@@ -40,13 +40,15 @@ class Shop:
       elif chosen_item == "~":
         continue
 
-      if player.material >= chosen_item.cost and len(player.inventory) < player.inventory_capacity:
+      if player.material >= chosen_item.cost and player.inventory_weight < player.inventory_capacity:
         play_sound("inventory.mp3")
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
         player.seen_items.append(deepcopy(chosen_item.item))
         chosen_item.stock -= 1
         await ws_print(f"You bought {chosen_item.item.render()}", player.websocket)
+        if chosen_item.immediate_effect:
+          chosen_item.immediate_effect(player)
       else:
         await ws_input(colored("You cannot afford that item, or don't have space.", "red"), player.websocket)
       self.shop_items = [item if (item != "~" and item.stock > 0) else "~" for item in self.shop_items]

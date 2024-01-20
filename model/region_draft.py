@@ -24,8 +24,9 @@ class DraftPickOption:
     return f"{material_str} | {enemyset_str} | {spell_str}"
 
 class RegionDraft:
-  def __init__(self, difficulty, factions, spell_pool, n_options=3, n_spell_picks=3, n_enemy_picks=3, skip_reward=6):
-    self.difficulty = difficulty
+  def __init__(self, combat_size, factions, spell_pool, n_options=3, n_spell_picks=3,
+               n_enemy_picks=3, skip_reward=6, difficulty=0):
+    self.combat_size = combat_size
     self.factions = factions
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
     self.spell_pool = spell_pool
@@ -34,6 +35,7 @@ class RegionDraft:
     self.n_spell_picks = n_spell_picks
     self.n_enemy_picks = n_enemy_picks
     self.skip_reward = skip_reward
+    self.difficulty = difficulty
 
     self.enemyset_pool_idx = 0
     self.spell_pool_idx = 0
@@ -88,7 +90,7 @@ class RegionDraft:
       if random.random() < 0.33:
         enemyset.obscured = True
         material += 2
-      if random.random() < 0.15:
+      if random.random() < (0.15 + (0.10 * self.difficulty)):
         for i in range(random.choice([1, 1, 1, 2, 2, 3])):
           enemyset.level_up()
           material += 2
@@ -141,9 +143,9 @@ class RegionDraft:
     for i in range(self.n_picks):
       await ws_print(player.render_state(), player.websocket)
       await ws_print("\n", player.websocket)
-      skip_reward_str = colored(f"{self.skip_reward}⛁", "yellow")
-      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ({skip_reward_str} for skipping) ~~~", player.websocket)
       pick_options = self.draft_picks[i]
+      skip_reward_str = colored(f"{self.skip_reward}⛁", "yellow") if pick_options[0].enemyset is None else ""
+      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ({skip_reward_str} for skipping) ~~~", player.websocket)
       player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
       if pick_option.character:
@@ -163,8 +165,8 @@ class RegionDraft:
 
 # Experimental for now...
 class BossRegionDraft:
-  def __init__(self, difficulty, enemy_sets):
-    self.difficulty = difficulty
+  def __init__(self, combat_size, enemy_sets):
+    self.combat_size = combat_size
     self.enemy_sets = enemy_sets
     for _ in range(9):
       random.choice(self.enemy_sets).level_up()

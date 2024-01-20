@@ -33,11 +33,12 @@ class Player(CombatEntity):
   archive: list[LibrarySpell] = [] # TODO remove
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
-  material: int = 0
+  material: int = 100
   secrets_dict: dict[str, int] = defaultdict(int)
+  boss_keys: int = 0
 
   inventory_capacity: int = 12
-  library_capacity: int = 10
+  library_capacity: int = 12
 
   level: int = 0
   experience: int = 0
@@ -92,6 +93,14 @@ class Player(CombatEntity):
   def rituals_dict(self):
     """Returns a dictionary of faction names to ritual objects."""
     return {ritual.faction: ritual for ritual in self.rituals if ritual.faction}
+  
+  @property
+  def active_ritual_list(self):
+    return [ritual for ritual in self.rituals if ritual.progress > 0]
+  
+  @property
+  def inventory_weight(self):
+    return sum([item.weight for item in self.inventory])
     
   def spend_time(self, cost=1):
     if (self.time - cost) >= 0:
@@ -135,7 +144,7 @@ class Player(CombatEntity):
     while True:
       await ws_print(str(self.secrets_dict), self.websocket)
       await ws_print(self.render_rituals(), self.websocket)
-      ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
+      ritual = await choose_obj(self.active_ritual_list, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
 
@@ -191,7 +200,8 @@ class Player(CombatEntity):
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
-    self.remaining_blank_archive_pages = 1
+    # self.remaining_blank_archive_pages = 1
+    self.seen_spells = []
     # self.material = 0
 
   def get_immediate(self, encounter, offset=0):
@@ -230,12 +240,12 @@ class Player(CombatEntity):
   
   def render_rituals(self):
     render_str = "-------- PLAYER RITUALS --------\n"
-    render_str += numbered_list(ritual for ritual in self.rituals if ritual.progress > 0)
+    render_str += numbered_list(self.active_ritual_list)
     return render_str
   
   def render_inventory(self):
     material_str = colored(f"{self.material}⛁", "yellow")
-    render_str = f"-------- INVENTORY ({len(self.inventory)}/{self.inventory_capacity}) {material_str} --------\n"
+    render_str = f"-------- INVENTORY ({self.inventory_weight}/{self.inventory_capacity}) {material_str} --------\n"
     render_str += numbered_list(self.inventory)
     return render_str
   

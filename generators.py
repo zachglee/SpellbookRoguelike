@@ -4,7 +4,7 @@ from model.shop import Shop, ShopItem
 from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
-from content.items import ancient_key
+from content.items import ancient_key, blank_page
 from content.enemy_factions import factions
 
 
@@ -25,7 +25,7 @@ def generate_spell_pools(n_pools=1):
     spell_pools.append(spell_pool)
   return spell_pools
 
-def generate_faction_sets(n_sets=1, set_size=3, overlap=0, faction_pool=factions):
+def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions):
   random.shuffle(faction_pool)
   pool_size = len(faction_pool)
   return [factions[((i * set_size) - (i * overlap)) % pool_size:
@@ -55,13 +55,28 @@ def generate_shop_item(item):
     cost = 6
   return ShopItem(item, cost=cost, stock=stock)
 
-def generate_shop(n_items, item_pool, key=False) -> Shop:
+def generate_blank_page_shop_item():
+  variance = random.randint(0, 10)
+  def blank_page_effect(player):
+    player.remaining_blank_archive_pages += 1
+  return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
+
+def generate_ancient_key_shop_item():
+  variance = random.randint(0, 10)
+  def ancient_key_effect(player):
+    player.boss_keys += 1
+  return ShopItem(ancient_key, cost=30 + variance, stock=1, immediate_effect=ancient_key_effect)
+
+def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   random.shuffle(item_pool)
   shop_items = []
   for item in item_pool[:n_items]:
     shop_items.append(generate_shop_item(item))
   if key:
-    shop_items.append(ShopItem(ancient_key, cost=36, stock=1))
+    variance = random.randint(0, 10)
+    shop_items.append(ShopItem(ancient_key, cost=30 + variance, stock=1))
+  if page:
+    shop_items.append(generate_blank_page_shop_item())
   return Shop(shop_items)
 
 def generate_crafting_shop(n_items, player) -> Shop:
@@ -73,6 +88,5 @@ def generate_crafting_shop(n_items, player) -> Shop:
       shop_items_dict[item.name].stock += 1
     else:
       shop_item = generate_shop_item(item)
-      shop_item.cost = shop_item.cost * 2
       shop_items_dict[item.name] = shop_item
   return Shop(list(shop_items_dict.values()))

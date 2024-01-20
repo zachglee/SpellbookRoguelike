@@ -6,7 +6,7 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 12
+RITUAL_PROGRESS = 13
 
 factions = [
   Faction("Freed Automata", freed_automata,
@@ -19,6 +19,8 @@ factions = [
     ],
     ritual=Ritual("Automatic Armor", "Gain 1 armor on turn 1. Gain 1 shield every turn.", "Freed Automata", RITUAL_PROGRESS,
                   [ritual_event([1], ["armor p 1"]), ritual_event(list(range(1, 10)), ["shield p 1"])]),
+    map_name_adjectives=["Silver", "Golem's", "Abandoned", "Derelict", "Broken", "Rusted", "Steel", "Iron", "Neglected"],
+    map_name_nouns=["Factory", "Junkyard", "Toil", "Foundry", "Forge", "Metalworks", "Mine", "Storehouse"]
   ),
   Faction("Undying Legion", undying_legion,
     basic_items=[
@@ -30,6 +32,8 @@ factions = [
     ],
     ritual=Ritual("Ritual of Mummification", "Gain 8 encase on turn 1. Gain 1 empower every turn.", "Undying Legion", RITUAL_PROGRESS,
                   [ritual_event([1], ["encase p 8"]), ritual_event(list(range(1, 10)), ["empower p 1"])]),
+    map_name_adjectives=["Ochre", "Glorious", "Eternal", "Immortal", "Undying", "Deathless", "Everlasting", "Gladiator's", "Triumphant"],
+    map_name_nouns=["Bastion", "Arena", "Citadel", "Marches", "Training Grounds", "Colosseum", "Tomb", "Pyramid"]
   ),
   Faction("The Collectors", the_collectors,
     basic_items=[
@@ -41,6 +45,8 @@ factions = [
     ],
     ritual=Ritual("Arcane Entrapment", "Encase 6 and stun 1 an enemy on turns 2 and 4.", "The Collectors", RITUAL_PROGRESS,
                   [ritual_event([2, 4], ["encase _ 6", "stun _ 1"])]),
+    map_name_adjectives=["Glass", "Captivating", "Mysterious", "Sterile", "Eerie", "Watchful", "Preserved", "Curated", "Ensnaring"],
+    map_name_nouns=["Museum", "Exhibit", "Gallery", "Collection", "Archive", "Vault", "Library", "Laboratory"]
   ),
   Faction("Doombringers", doombringers,
     basic_items=[
@@ -50,8 +56,10 @@ factions = [
     special_items=[
       Item.make("Omen of Doom", 2, "Inflict doom 4.", ["doom _ 4"], rare=True)
     ],
-    ritual=Ritual("Cursed Footsteps", "Inflict 2 doom on turns 1, 2, 3.", "Doombringers", RITUAL_PROGRESS,
-                  [ritual_event([1, 2, 3], ["doom _ 2"])]),
+    ritual=Ritual("Cursed Footsteps", "Inflict 3 doom on turns 1, 2, 3.", "Doombringers", RITUAL_PROGRESS,
+                  [ritual_event([1, 2, 3], ["doom _ 3"])]),
+    map_name_adjectives=["Gray", "Doomed", "Cursed", "Forsaken", "Ruined", "Lifeless", "Plague-ridden", "Overrun", "Shattered"],
+    map_name_nouns=["Wastes", "Desolation", "Ruins", "Wreckage", "Calamity", "End", "Bunker", "Ashes"]
   ),
   Faction("Sa'ik Collective", saik_collective,
     basic_items=[
@@ -64,6 +72,8 @@ factions = [
     # Evade and fleeting sharp on turns 1, 2, 3
     ritual=Ritual("Skydancer's Prowess", "For first 3 turns, gain 1 evade and 3 fleeting sharp.", "Sa'ik Collective", RITUAL_PROGRESS,
                   [ritual_event([1, 2, 3], ["evade p 1", "sharp p 3", "delay 0 sharp p -3"])]),
+    map_name_adjectives=["Harpy's", "Soaring", "Winged", "Airborne", "Windswept", "Sudden", "Screeching"],
+    map_name_nouns=["Talons", "Peaks", "Cliffs", "Ridges", "Summit", "Pinnacle", "Nesting Grounds", "Edges"]
   ),
   Faction("House of Imir", house_of_imir,
     basic_items=[
@@ -75,6 +85,8 @@ factions = [
     ],
     ritual=Ritual("Vampiric Pact", "Lifesteal 3 on turns 3 and 4.", "House of Imir", RITUAL_PROGRESS,
                   [ritual_event([3, 4], ["lifesteal _ 3"])]),
+    map_name_adjectives=["Vampire's", "Crimson", "Bloody", "Sanguine", "Scarlet", "Bleeding", "Carnal", "Ravenous", "Thirsty"],
+    map_name_nouns=["Coffin", "Feeding Grounds", "Hunting Grounds", "Manor", "Chalice", "Kiss", "Bite", "Fangs"]
   ),
   Faction("Mov's Horde", movs_horde,
     basic_items=[
@@ -86,6 +98,8 @@ factions = [
     ],
     ritual=Ritual("Aura of Undeath", "Gain 1 regen and 1 retaliate every turn.", "Mov's Horde", RITUAL_PROGRESS,
                   [ritual_event(list(range(1, 10)), ["regen p 1", "retaliate p 1"])]),
+    map_name_adjectives=["Mauve", "Lich's", "Necromancer's", "Festering", "Rising", "Inexorable", "Rotting"],
+    map_name_nouns=["Underworld", "Grave", "Necropolis", "Catacombs", "Masses", "Burial Ground", "Cemetery"]
   ),
   Faction("Company of Blades", company_of_blades,
     basic_items=[
@@ -97,6 +111,8 @@ factions = [
     ],
     ritual=Ritual("Unseen Bolts", "Deal 4 damage on turns 2, 4, 6", "Company of Blades", RITUAL_PROGRESS,
                   [ritual_event([2, 4, 6], ["damage _ 4"])]),
+    map_name_adjectives=["Golden", "Mercenary's", "Sharpened", "Treacherous", "Sly", "Fraught", "Lucrative", "Perilous"],
+    map_name_nouns=["Ambush", "Road", "Pass", "Trade Route", "Caravan", "Highway", "Duel", "Opportunity"]
   ),
   Faction("Giantkin", giantkin,
     basic_items=[
@@ -108,6 +124,8 @@ factions = [
     ],
     ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", RITUAL_PROGRESS,
                   [ritual_event([3, 6], ["damage i 10"])]),
+    map_name_adjectives=["Giant's", "Colossal", "Massive", "Towering", "Titanic", "Snowy", "Intimidating", "Unyielding"],
+    map_name_nouns=["Bulwark", "Domain", "Stronghold", "Fist", "Hills", "Mountains", "Steppes", "Glacier"]
   ),
   Faction("Fae Realm", fae_realm,
     basic_items=[
@@ -118,7 +136,9 @@ factions = [
       Item.make("Fae Favor", 1, "Banish 1 all. Gain 4 regen.", ["banish a 1", "regen p 3"], rare=True)
     ],
     ritual=Ritual("Fae Fortunes", "Gain 2 regen or poison an enemy 2, alternating for turns 1-6.", "Fae Realm", RITUAL_PROGRESS,
-                  [ritual_event([1, 3, 5], ["regen p 2"]), ritual_event([2, 4, 6], ["poison _ 2"])])
+                  [ritual_event([1, 3, 5], ["regen p 2"]), ritual_event([2, 4, 6], ["poison _ 2"])]),
+    map_name_adjectives=["Green", "Moonlight", "Fae", "Fickle", "Enchanted", "Bewitched", "Sylvan", "Twilight", "Midnight"],
+    map_name_nouns=["Promise", "Grove", "Glade", "Thicket", "Woods", "Meadow", "Garden", "Court"]
   ),
   Faction("Kingdom of Amar", kingdom_of_amar,
     basic_items=[
@@ -129,7 +149,9 @@ factions = [
       Item.make("Amarian Warsuit", 1, "Gain 1 armor, 2 prolific, and 3 sharp.", ["armor p 1", "prolific p 2", "sharp p 3"], rare=True)
     ],
     ritual=Ritual("Artificer's Ingenuity", "Gain 1 armor or 2 sharp, alternating for turns 3-8.", "Kingdom of Amar", RITUAL_PROGRESS,
-                  [ritual_event([3, 5, 7], ["armor p 1"]), ritual_event([4, 6, 8], ["sharp p 2"])])
+                  [ritual_event([3, 5, 7], ["armor p 1"]), ritual_event([4, 6, 8], ["sharp p 2"])]),
+    map_name_adjectives=["Copper", "Artificer's", "Crafted", "Gilded", "Shining", "Ingenious", "Artificial", "Clockwork"],
+    map_name_nouns=["Workshop", "Guild", "Armory", "Plaza", "Bazaar", "City", "Sigil"]
   ),
   Faction("Infernal Plane", infernal_plane,
     basic_items=[
@@ -140,7 +162,9 @@ factions = [
       Item.make("Demon's Blood", 1, "burn 3 self, gain 6 searing presence, 6 retaliate", ["burn p 3", "searing p 6", "retaliate p 6"], rare=True)
     ],
     ritual=Ritual("Imminent Inferno", "Burn 4 all.", "Infernal Plane", RITUAL_PROGRESS,
-                  [ritual_event([4, 5, 6], ["burn a 4"])])
+                  [ritual_event([4, 5, 6], ["burn a 4"])]),
+    map_name_adjectives=["Scorched", "Burning", "Hellish", "Smoldering", "Demonic", "Devil's", "Blazing"],
+    map_name_nouns=["Pits", "Inferno", "Hellscape", "Pentacale", "Cauldron", "Pyre", "Torture"]
   ),
   Faction("Dominion of Drael", dominion_of_drael,
     basic_items=[
@@ -151,7 +175,9 @@ factions = [
       Item.make("Draelish Bomb", 1, "Deal 15 to all enemies, 5 damage to self", ["damage a 15", "damage p 5"], rare=True)
     ],
     ritual=Ritual("Draelish Warchant", "Gain 3 block and 3 empower on turns 1, 3, 5.", "Dominion of Drael", RITUAL_PROGRESS,
-                  [ritual_event([1, 3, 5], ["block p 3", "empower p 3"])])
+                  [ritual_event([1, 3, 5], ["block p 3", "empower p 3"])]),
+    map_name_adjectives=["Imperial", "Conquered", "Militant", "Belligerent", "Zealot's", "Grinding"],
+    map_name_nouns=["Oath", "Command", "Battlefield", "Siege", "Crusade", "War", "Conquest", "Barracks"]
   ),
   Faction("Spirits", spirits,
     basic_items=[
@@ -162,7 +188,9 @@ factions = [
       Item.make("Unbridled Energy", 1, "Gain 2 energy of each color and prolific 2.", ["blue p 2", "red p 2", "gold p 2", "prolific p 2"], rare=True)
     ],
     ritual=Ritual("Glimpse the Beyond", "Gain 1 inventive and 1 prolific on turns 2, 4, 6.", "Spirits", RITUAL_PROGRESS,
-                  [ritual_event([2, 4, 6], ["inventive p 1", "prolific p 1"])])
+                  [ritual_event([2, 4, 6], ["inventive p 1", "prolific p 1"])]),
+    map_name_adjectives=["Ethereal", "Otherworldly", "Supernatural", "Tranquil", "Balanced", "Bountiful"],
+    map_name_nouns=["Harmony", "Serenity", "Shrine", "Pagoda", "Stillness", "Springs", "Pools", "Fountain"]
   ),
   Faction("Shadow Realm", shadow_realm,
     basic_items=[
@@ -173,7 +201,9 @@ factions = [
       Item.make("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"], rare=True)
     ],
     ritual=Ritual("Menacing Shadows", "Every turn, all enemies gain 1 vulnerable.", "Shadow Realm", RITUAL_PROGRESS,
-                  [ritual_event(list(range(1, 11)), ["vulnerable a 1"])])
+                  [ritual_event(list(range(1, 11)), ["vulnerable a 1"])]),
+    map_name_adjectives=["Indigo", "Murky", "Shrouded", "Lurking", "Maddening", "Night", "Black"],
+    map_name_nouns=["Shadow", "Eclipse", "Dream", "Nightmare", "Terror", "Madness", "Void"]
   ),
   Faction("Ancient Horrors", ancient_horrors,
     basic_items=[
@@ -184,7 +214,9 @@ factions = [
       Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ],
     ritual=Ritual("Call the Unspeakable", "Gain 2 ward on turn 1, then deal 6 damage to random 6 times on turn 6.", "Ancient Horrors", RITUAL_PROGRESS,
-                  [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])])
+                  [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])]),
+    map_name_adjectives=["Old God's", "Ancient", "Unspeakable", "Eldritch", "Forbidden", "Unholy", "Unnatural"],
+    map_name_nouns=["Spire", "Obelisk", "Monolith", "Idol", "Monument", "Altar", "Teeth", "Maw", "Eyes"]
   )
 ]
 

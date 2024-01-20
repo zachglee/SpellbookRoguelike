@@ -314,7 +314,7 @@ gold_use_last_charge = [
   Spell(rules_text="Deal 5 to a random enemy x times, where x is amount of energy.", color="gold", type="Consumer",
         generate_commands_pre=for_player_energy(["repeat * damage r 5"]))],
   #
-  [Spell(rules_text="When you cast a spell's last charge, gain 3 searing presence.", color="gold", type="Passive",
+  [Spell(rules_text="When you cast a spell's last charge, gain 4 searing presence.", color="gold", type="Passive",
           triggers_on=passive_use_last_charge, raw_commands=["searing p 3"]),
   Spell(rules_text="If this has 0 or less charges, damage immediate 8.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),

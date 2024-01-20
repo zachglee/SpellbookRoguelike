@@ -15,6 +15,14 @@ from utils import party_members, choose_obj, choose_str, command_reference, get_
 
 STARTING_EXPLORED = 1
 
+def load_maps_from_files():
+  maps = []
+  for fname in os.listdir("saves/maps"):
+    with open(f"saves/maps/{fname}", "rb") as f:
+      map = dill.load(f)
+      maps.append(map)
+  return maps
+
 class GameOver(Exception):
   pass
 
@@ -41,8 +49,7 @@ class GameStateV2:
   # Admin
 
   def save(self):
-    with open(f"saves/maps/{self.map.name}.pkl", "wb") as f:
-      dill.dump(self.map, f)
+    self.map.save()
     for player in party_members.values():
       player.save()
 
@@ -62,13 +69,13 @@ class GameStateV2:
                     signature_spell=chosen_spell)
     return player
   
-  def generate_encounter(self, player, difficulty=3, boss=False):
+  def generate_encounter(self, player, combat_size=3, boss=False):
     # generate the encounter
     random.shuffle(player.pursuing_enemysets)
-    encounter_enemysets = player.pursuing_enemysets[0:difficulty]
+    encounter_enemysets = player.pursuing_enemysets[0:combat_size]
     for enemyset in encounter_enemysets:
       enemyset.obscured = False
-    player.pursuing_enemysets = player.pursuing_enemysets[difficulty:] 
+    player.pursuing_enemysets = player.pursuing_enemysets[combat_size:] 
     encounter = Encounter([EnemyWave(encounter_enemysets)], player,
                           basic_items=self.current_region.basic_items,
                           special_items=self.current_region.special_items,
@@ -186,18 +193,21 @@ class GameStateV2:
     return player
   
   async def choose_map(self, websocket):
-    existing_map_names = [fname.split(".")[0] for fname in os.listdir("saves/maps")]
-    await ws_print(numbered_list(existing_map_names), websocket)
-    map_choice = await ws_input("Choose a map for your run (A new name will create a new map) > ", websocket)
-    if map_choice in existing_map_names:
-      with open(f"saves/maps/{map_choice}.pkl", "rb") as f:
-        map = dill.load(f)
+    # existing_map_names = [fname.split(".")[0] for fname in os.listdir("saves/maps")]
+    existing_maps = load_maps_from_files()
+    await ws_print(numbered_list(existing_maps), websocket)
+    map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
+    if map_choice:
+      map = map_choice
     else:
-      if map_choice == "Boss":
-        boss_enemy_set_pool = sum([f.enemy_sets for f in random.sample(factions, 3)], [])
-        map = BossMap(name=map_choice, enemy_set_pool=boss_enemy_set_pool)
-      else:
-        map = Map(name=map_choice, n_regions=self.run_length)
+      # if map_choice == "Boss":
+      #   boss_enemy_set_pool = sum([f.enemy_sets for f in random.sample(factions, 3)], [])
+      #   map = BossMap(name=map_choice, enemy_set_pool=boss_enemy_set_pool)
+      # elif map_choice == "new":
+      map = Map(name=None, n_regions=self.run_length)
+      await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
+      # else:
+      #   map = Map(name=map_choice, n_regions=self.run_length)
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
@@ -224,11 +234,11 @@ class GameStateV2:
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
 
-      await ws_input(colored(f"You will fight {region_draft.difficulty} enemy sets next combat!", "red"), websocket)
+      await ws_input(colored(f"You will fight {region_draft.combat_size} enemy sets next combat!", "red"), websocket)
       await region_draft.play(player)
       await region_shop.play(player)
       is_boss_encounter = isinstance(region_draft, BossRegionDraft)
-      encounter = self.generate_encounter(player, difficulty=region_draft.difficulty,
+      encounter = self.generate_encounter(player, combat_size=region_draft.combat_size,
                                           boss=is_boss_encounter)
       await self.play_encounter(player, encounter, num_pages=3 if is_boss_encounter else 2)
 
@@ -243,6 +253,13 @@ class GameStateV2:
         enemyset.level = 0
 
       await self.discovery_phase(player)
+
+    # Generate a new map!
+    if self.map.explored == False:
+      self.map.explored = True
+      new_map = Map(name=None, n_regions=self.run_length, difficulty=self.map.difficulty + 1)
+      new_map.save()
+      await ws_input(f"You discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
 
     await self.end_run(player)
 

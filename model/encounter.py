@@ -549,8 +549,8 @@ class Encounter:
 
     experience_gained = 0
     for es in self.enemy_sets:
-      experience_gained += (es.experience + 5 * es.level)
-      await self.player.gain_secrets(es.faction, 3 * (es.level + 1))
+      experience_gained += (es.experience + 8 * es.level)
+      await self.player.gain_secrets(es.faction, 4 * (es.level + 1))
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 
