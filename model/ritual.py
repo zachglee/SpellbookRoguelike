@@ -26,7 +26,7 @@ class Ritual:
 
   @property
   def next_level_xp(self):
-    return 16 - (1 * self.level)
+    return 15 # 16 - (1 * self.level)
 
   @property
   def activable(self):

@@ -90,10 +90,10 @@ class RegionDraft:
       if random.random() < 0.33:
         enemyset.obscured = True
         material += 2
-      if random.random() < (0.15 + (0.10 * self.difficulty)):
+      if random.random() < (0.20 + (0.20 * self.difficulty)):
         for i in range(random.choice([1, 1, 1, 2, 2, 3])):
           enemyset.level_up()
-          material += 2
+          material += 3
       if self.stranded_characters and random.random() < 0.6:
         character = random.choice(self.stranded_characters)
         enemyset.level_up()

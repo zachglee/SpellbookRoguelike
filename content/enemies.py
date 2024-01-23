@@ -111,8 +111,8 @@ enemies = {
   "Screeching Fury": Enemy.make(20, "Screeching Fury",
                            HealthThresholdAction(AttackAction(2),
                                                  MultiAction([
-                                                     AttackAction(4),
-                                                     AttackAction(4),
+                                                     AttackAction(5),
+                                                     AttackAction(5),
                                                      AddConditionAction("sharp", 1, "self")]
                                                  ), 1)),
   "Witch-Burner Devil": Enemy.make(20, "Witch-Burner Devil",

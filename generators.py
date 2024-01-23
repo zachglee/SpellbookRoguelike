@@ -56,16 +56,16 @@ def generate_shop_item(item):
   return ShopItem(item, cost=cost, stock=stock)
 
 def generate_blank_page_shop_item():
-  variance = random.randint(0, 10)
+  variance = random.randint(0, 11)
   def blank_page_effect(player):
     player.remaining_blank_archive_pages += 1
   return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 10)
+  variance = random.randint(0, 11)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=30 + variance, stock=1, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=25 + variance, stock=1, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   random.shuffle(item_pool)
@@ -73,10 +73,10 @@ def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   for item in item_pool[:n_items]:
     shop_items.append(generate_shop_item(item))
   if key:
-    variance = random.randint(0, 10)
-    shop_items.append(ShopItem(ancient_key, cost=30 + variance, stock=1))
-  if page:
-    shop_items.append(generate_blank_page_shop_item())
+    shop_items.append(generate_ancient_key_shop_item())
+  # Trying out saying you get these from key runs:
+  # if page:
+  #   shop_items.append(generate_blank_page_shop_item())
   return Shop(shop_items)
 
 def generate_crafting_shop(n_items, player) -> Shop:

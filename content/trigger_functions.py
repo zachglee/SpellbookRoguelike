@@ -32,7 +32,7 @@ def passive_at_half_health(encounter, event):
 
 def passive_attacked_for_no_damage(encounter, event):
   if event.has_tag("attack") and event.metadata["damage_dealt"] == 0 and event.metadata["target"].is_player():
-    return event.metadata["attacker"].get_target_string(encounter)
+    return event.metadata["attacker"].get_target_string(encounter) or True
   return False
 
 def passive_third_spell_in_turn(encounter, event):

@@ -33,7 +33,7 @@ class Player(CombatEntity):
   archive: list[LibrarySpell] = [] # TODO remove
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
-  material: int = 100
+  material: int = 0
   secrets_dict: dict[str, int] = defaultdict(int)
   boss_keys: int = 0
 
@@ -101,6 +101,10 @@ class Player(CombatEntity):
   @property
   def inventory_weight(self):
     return sum([item.weight for item in self.inventory])
+  
+  @property
+  def total_ritual_levels(self):
+    return sum([ritual.level for ritual in self.rituals])
     
   def spend_time(self, cost=1):
     if (self.time - cost) >= 0:
@@ -152,7 +156,7 @@ class Player(CombatEntity):
       contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
       ritual.experience += contributed_xp
       self.secrets_dict[ritual.faction] -= contributed_xp
-      if ritual.experience >= ritual.next_level_xp:
+      if ritual.experience >= ritual.next_level_xp and self.total_ritual_levels < self.level:
         ritual.experience = 0
         ritual.level += 1
         await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
@@ -200,9 +204,9 @@ class Player(CombatEntity):
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
-    # self.remaining_blank_archive_pages = 1
     self.seen_spells = []
-    # self.material = 0
+    self.material = 0
+    self.secrets_dict = defaultdict(int)
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,

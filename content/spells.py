@@ -117,7 +117,7 @@ red_spells = sum(red_pages, [])
 
 blue_block_hits = [
   [Spell(rules_text="When you’re attacked and take no damage, deal 6 damage to attacker and shield 1.", color="blue", type="Passive",
-         triggers_on=passive_attacked_for_no_damage, raw_commands=["damage ^ 6", "shield p 1"]),
+         triggers_on=passive_attacked_for_no_damage, raw_commands=["shield p 1", "damage ^ 6"]),
   Spell(rules_text="gain 1 block per enemy.", color="blue", type="Producer",
         generate_commands_pre=for_enemies(["block p *"])),
   Spell(rules_text="Gain 9 block", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 9"]),  # NOTE: Green
