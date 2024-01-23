@@ -82,7 +82,7 @@ class Player(CombatEntity):
   @property
   def next_exp_milestone(self):
     next_level = self.level + 1
-    total_exp_required = 20 + sum([i * 20 for i in range(1, next_level + 1)])
+    total_exp_required = 30 + sum([i * 30 for i in range(1, next_level + 1)])
     return total_exp_required
   
   @property
@@ -156,7 +156,7 @@ class Player(CombatEntity):
       contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
       ritual.experience += contributed_xp
       self.secrets_dict[ritual.faction] -= contributed_xp
-      if ritual.experience >= ritual.next_level_xp and self.total_ritual_levels < self.level:
+      if ritual.experience >= ritual.next_level_xp:
         ritual.experience = 0
         ritual.level += 1
         await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)

@@ -20,7 +20,7 @@ enemies = {
   "Hawk": Enemy.make(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
   "Hunter": Enemy.make(20, "Hunter", NearFarAction(MultiAction([MoveAction(1), AddConditionAction("armor", 1, "self")]), AttackAction(10))),
   "Charging Ogre": Enemy.make(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
-  "Evasive Skydancer": Enemy.make(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 3, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
+  "Evasive Skydancer": Enemy.make(16, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 4, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
   "The Vulture": Enemy.make(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy.make(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),

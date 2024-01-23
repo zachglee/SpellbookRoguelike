@@ -6,7 +6,7 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 12
+RITUAL_PROGRESS = 15
 
 factions = [
   Faction("Freed Automata", freed_automata,

@@ -25,7 +25,7 @@ class DraftPickOption:
 
 class RegionDraft:
   def __init__(self, combat_size, factions, spell_pool, n_options=3, n_spell_picks=3,
-               n_enemy_picks=3, skip_reward=6, difficulty=0):
+               n_enemy_picks=3, skip_reward=7, difficulty=0):
     self.combat_size = combat_size
     self.factions = factions
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
@@ -90,10 +90,11 @@ class RegionDraft:
       if random.random() < 0.33:
         enemyset.obscured = True
         material += 2
-      if random.random() < (0.20 + (0.20 * self.difficulty)):
+      if random.random() < (0.25 + (0.15 * self.difficulty)):
+        material += 1
         for i in range(random.choice([1, 1, 1, 2, 2, 3])):
           enemyset.level_up()
-          material += 3
+          material += i
       if self.stranded_characters and random.random() < 0.6:
         character = random.choice(self.stranded_characters)
         enemyset.level_up()

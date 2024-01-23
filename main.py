@@ -256,14 +256,16 @@ class GameStateV2:
 
     # Generate a new map!
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
+    player.experience += 50 * num_keys
+    await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
     if self.map.explored == False and num_keys > 0:
       self.map.explored = True
       new_map = Map(name=None, n_regions=self.run_length, difficulty=self.map.difficulty + 1)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
-    elif self.map.explored and num_keys == 1:
-      player.remaining_blank_archive_pages += 2
     elif self.map.explored and num_keys == 2:
+      player.remaining_blank_archive_pages += 2
+    elif self.map.explored and num_keys == 3:
       # NOTE: Turn your grimoire into a real spellbook that is claimable by someone who also makes it to here.
       # There's only one copy of it and it gives you fully made pages to do stuff with. Collecting
       # a few of these spellbooks + your own will likely be necessary to make it through the eventual

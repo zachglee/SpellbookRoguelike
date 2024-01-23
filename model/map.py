@@ -39,7 +39,7 @@ class Map:
     # init shops
     self.region_shops = [generate_shop(5, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions,
-                                           key=random.random() > 0.25, page=random.random() > 0.25)
+                                           key=True, page=random.random() > 0.25)
                         for region_draft in self.region_drafts]
     for region_draft in self.region_drafts:
       region_draft.init()
