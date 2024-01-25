@@ -121,14 +121,15 @@ class CombatEntity(BaseModel):
       faf_print(f"{self.name} attacks nothing.", self.websocket)
       return 0
 
-    damage_to_kill = (target.conditions["block"] +
+    max_useful_damage = (target.conditions["block"] +
                       target.conditions["shield"] +
                       target.conditions["armor"] +
                       self.conditions["encase"] +
                       target.conditions["encase"] +
-                      target.hp - self.conditions["sharp"])
+                      min(target.hp, target.conditions["enduring"] or 1000, target.conditions["durable"] or 1000) -
+                      self.conditions["sharp"])
     target_enduring = target.conditions["enduring"] or 1000
-    empower_to_spend = max(0, min(damage_to_kill, target_enduring) - damage)
+    empower_to_spend = max(0, min(max_useful_damage, target_enduring) - damage)
     spent_empower = min(self.conditions["empower"], empower_to_spend)
     self.conditions["empower"] -= spent_empower
     multiplier = 1.5 if target.conditions["vulnerable"] else 1

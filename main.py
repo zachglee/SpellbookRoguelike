@@ -21,7 +21,7 @@ def load_maps_from_files():
     with open(f"saves/maps/{fname}", "rb") as f:
       map = dill.load(f)
       maps.append(map)
-  return maps
+  return sorted(maps, key=lambda m: m.difficulty)
 
 class GameOver(Exception):
   pass
@@ -160,6 +160,7 @@ class GameStateV2:
     player.experience += 100
     await self.discovery_phase(player)
     player.wounds += 1
+    player.location = 0
     # player.stranded = True
     
     await self.end_run(player)
@@ -184,7 +185,9 @@ class GameStateV2:
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
+      # NOTE: Trying out making your signature spell be truly random
+      # player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
+      player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
       character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
@@ -192,28 +195,31 @@ class GameStateV2:
     player.init()
     return player
   
-  async def choose_map(self, websocket):
-    # existing_map_names = [fname.split(".")[0] for fname in os.listdir("saves/maps")]
+  async def choose_map(self, player, websocket):
     existing_maps = load_maps_from_files()
     await ws_print(numbered_list(existing_maps), websocket)
     map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
     if map_choice:
       map = map_choice
+      if player.location != map.difficulty:
+        traversing_maps = [existing_maps[i] for i in range(player.location, map.difficulty)]
+        if all(m.passages > 0 for m in traversing_maps):
+          player.location = map.difficulty
+          for m in traversing_maps:
+            m.passages -= 1
+        else:
+          await ws_print(colored("Not enough passages to get there!", "red"), websocket)
+          return await self.choose_map(player, websocket)
     else:
-      # if map_choice == "Boss":
-      #   boss_enemy_set_pool = sum([f.enemy_sets for f in random.sample(factions, 3)], [])
-      #   map = BossMap(name=map_choice, enemy_set_pool=boss_enemy_set_pool)
-      # elif map_choice == "new":
       map = Map(name=None, n_regions=self.run_length)
       await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
-      # else:
-      #   map = Map(name=map_choice, n_regions=self.run_length)
+
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
-    map = await self.choose_map(websocket)
-    self.map = map
     player = await self.choose_character(websocket)
+    map = await self.choose_map(player, websocket)
+    self.map = map
     map.init(player)
     # self.player = player
     party_members[player_id] = player
@@ -263,14 +269,15 @@ class GameStateV2:
       new_map = Map(name=None, n_regions=self.run_length, difficulty=self.map.difficulty + 1)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
-    elif self.map.explored and num_keys == 2:
-      player.remaining_blank_archive_pages += 2
-    elif self.map.explored and num_keys == 3:
-      # NOTE: Turn your grimoire into a real spellbook that is claimable by someone who also makes it to here.
-      # There's only one copy of it and it gives you fully made pages to do stuff with. Collecting
-      # a few of these spellbooks + your own will likely be necessary to make it through the eventual
-      # endgame boss guantlet of 6-enemy combats, (9-12 levels between them) three of them in a row
-      pass
+    if num_keys >= 1:
+      self.map.passages += 1
+    # TO BE WORKSHOPPED
+    # elif self.map.explored and num_keys == 3:
+    #   # NOTE: Turn your grimoire into a real spellbook that is claimable by someone who also makes it to here.
+    #   # There's only one copy of it and it gives you fully made pages to do stuff with. Collecting
+    #   # a few of these spellbooks + your own will likely be necessary to make it through the eventual
+    #   # endgame boss guantlet of 6-enemy combats, (9-12 levels between them) three of them in a row
+    #   pass
 
     await self.end_run(player)
 

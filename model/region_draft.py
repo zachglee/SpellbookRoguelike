@@ -94,7 +94,7 @@ class RegionDraft:
         material += 1
         for i in range(random.choice([1, 1, 1, 2, 2, 3])):
           enemyset.level_up()
-          material += i
+          material += (i+1)
       if self.stranded_characters and random.random() < 0.6:
         character = random.choice(self.stranded_characters)
         enemyset.level_up()

@@ -12,12 +12,13 @@ class RitualEvent:
 
 
 class Ritual:
-  def __init__(self, name, description, faction, required_progress, ritual_events):
+  def __init__(self, name, description, faction, required_progress, ritual_events, priority=1):
     self.name = name
     self.description = description
     self.faction: str = faction
     self.progress = 0
     self.required_progress = required_progress
+    self.priority = priority
 
     self.level = 0
     self.experience = 0
@@ -26,7 +27,7 @@ class Ritual:
 
   @property
   def next_level_xp(self):
-    return 15 # 16 - (1 * self.level)
+    return 100
 
   @property
   def activable(self):

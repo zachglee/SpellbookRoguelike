@@ -1,6 +1,7 @@
 
 import random
 import dill
+from termcolor import colored
 from generators import generate_crafting_shop, generate_faction_sets, generate_shop, generate_spell_pools
 from model.region_draft import BossRegionDraft, RegionDraft
 from content.items import minor_energy_potions, health_potions
@@ -29,6 +30,7 @@ class Map:
                                            minor_energy_potions)*2) + health_potions)
                         for region_draft in self.region_drafts]
     self.explored = False
+    self.passages = 0
     self.runs = 0
 
   def save(self):
@@ -48,7 +50,10 @@ class Map:
     self.runs += 1
 
   def render(self):
-    return f"{self.name} | d.{self.difficulty}"
+    name_part = colored(self.name, "magenta")
+    difficulty_part = colored(f"d.{self.difficulty}", "red")
+    passages_part = colored(f"{self.passages} passages", "green")
+    return f"{name_part} | {difficulty_part} | {passages_part}"
 
 class BossMap:
   def __init__(self, name, enemy_set_pool, length=2, combat_size=6):

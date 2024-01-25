@@ -432,8 +432,16 @@ class Encounter:
 
   async def init_with_player(self, player):
     self.player = player
-    activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
-    self.rituals = activable_rituals
+
+    chosen_ritual = True
+    while chosen_ritual is not None:
+      activable_rituals = [ritual for ritual in self.player.rituals if ritual.activable]
+      await ws_print(numbered_list(activable_rituals), self.player.websocket)
+      chosen_ritual = await choose_obj(activable_rituals, colored("Choose ritual to activate > ", "cyan"), self.player.websocket)
+      if chosen_ritual:
+        self.rituals.append(chosen_ritual)
+        chosen_ritual.progress -= chosen_ritual.required_progress
+
 
   async def upkeep_phase(self):
     # begin new round
@@ -474,9 +482,9 @@ class Encounter:
         else:
           self.events += enemy.entry.act(enemy, self)
         self.events.append(Event(["enemy_spawn"], metadata={"turn": self.turn, "enemy": enemy}))
-    await self.player_upkeep()
     await self.render_combat()
     await self.ritual_upkeep()
+    await self.player_upkeep()
 
   async def player_end_phase(self):
     # self.resolve_events()
@@ -550,7 +558,7 @@ class Encounter:
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += (es.experience + 8 * es.level)
-      await self.player.gain_secrets(es.faction, 4 * (es.level + 1))
+      await self.player.gain_secrets(es.faction, 3 * (es.level + 1))
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 
@@ -573,6 +581,8 @@ class Encounter:
     self.player.damage_taken_this_turn = 0
     self.player.events = []
     for ritual in self.player.rituals:
+      if ritual.progress >= ritual.required_progress:
+        continue
       if random.random() < (ritual.progress / ritual.required_progress):
         await ws_print(colored(f"{ritual.name} completed!", "yellow"), self.player.websocket)
         ritual.progress = ritual.required_progress

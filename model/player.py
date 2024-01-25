@@ -42,6 +42,7 @@ class Player(CombatEntity):
 
   level: int = 0
   experience: int = 0
+  location: int = 0
   wounds: int = 0
   request: str = None
   stranded: bool = False
@@ -145,10 +146,11 @@ class Player(CombatEntity):
       await self.level_up()
 
   async def learn_rituals(self):
-    while True:
+    # while True:
+    for _ in range(1):
       await ws_print(str(self.secrets_dict), self.websocket)
-      await ws_print(self.render_rituals(), self.websocket)
-      ritual = await choose_obj(self.active_ritual_list, "Choose a ritual to work on > ", self.websocket)
+      await ws_print(numbered_list(self.rituals), self.websocket)
+      ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
 
@@ -160,6 +162,7 @@ class Player(CombatEntity):
         ritual.experience = 0
         ritual.level += 1
         await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
+    await ws_print(numbered_list(self.rituals), self.websocket)
 
   async def memorize(self):
     while self.memorizations_pending > 0:
@@ -193,7 +196,7 @@ class Player(CombatEntity):
         library_spell.copies_remaining = max(library_spell.max_copies_remaining, library_spell.copies_remaining)
 
     for ritual in self.rituals:
-      ritual.progress = ritual.level
+      ritual.progress = ritual.level * ritual.required_progress
 
     inventory = deepcopy(self.starting_inventory)
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
@@ -207,6 +210,7 @@ class Player(CombatEntity):
     self.seen_spells = []
     self.material = 0
     self.secrets_dict = defaultdict(int)
+    self.remaining_blank_archive_pages = 1
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,

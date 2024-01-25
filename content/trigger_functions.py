@@ -78,8 +78,12 @@ def passive_on_entry(encounter, event):
 def passive_first_3_turns(encounter, event):
   return event.has_tag("begin_turn") and encounter.turn <= 3
 
+# TODO: Remove this on next iteration
 def passive_first_face(encounter, event):
-  return event.has_tag("face") and encounter.player.face_count == 1
+  return event.has_tag("face")
+
+def passive_on_face(encounter, event):
+  return event.has_tag("face")
 
 def passive_use_last_charge(encounter, event):
   return event.has_tag("spell_cast") and event.metadata["spell"].charges <= 0

@@ -6,7 +6,7 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 15
+RITUAL_PROGRESS = 12
 
 factions = [
   Faction("Freed Automata", freed_automata,
@@ -84,7 +84,7 @@ factions = [
       Item.make("Imir Blood Ward", 1, "Suffer 4 and banish an enemy for 3 turns.", ["suffer p 4", "banish _ 3"], rare=True)
     ],
     ritual=Ritual("Vampiric Pact", "Lifesteal 3 on turns 3 and 4.", "House of Imir", RITUAL_PROGRESS,
-                  [ritual_event([3, 4], ["lifesteal _ 3"])]),
+                  [ritual_event([3, 4], ["lifesteal _ 3"])], priority=3),
     map_name_adjectives=["Vampire's", "Crimson", "Bloody", "Sanguine", "Scarlet", "Bleeding", "Carnal", "Ravenous", "Thirsty"],
     map_name_nouns=["Coffin", "Feeding Grounds", "Hunting Grounds", "Manor", "Chalice", "Kiss", "Bite", "Fangs"]
   ),
@@ -110,7 +110,7 @@ factions = [
       Item.make("Duelist's Blade", 3, "Deal 4 damage to immediate and block 4", ["damage i 4", "block p 4"], rare=True)
     ],
     ritual=Ritual("Unseen Bolts", "Deal 4 damage on turns 2, 4, 6", "Company of Blades", RITUAL_PROGRESS,
-                  [ritual_event([2, 4, 6], ["damage _ 4"])]),
+                  [ritual_event([2, 4, 6], ["damage _ 4"])], priority=2),
     map_name_adjectives=["Golden", "Mercenary's", "Sharpened", "Treacherous", "Sly", "Fraught", "Lucrative", "Perilous"],
     map_name_nouns=["Ambush", "Road", "Pass", "Trade Route", "Caravan", "Highway", "Duel", "Opportunity"]
   ),
@@ -123,7 +123,7 @@ factions = [
       Item.make("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"], rare=True)
     ],
     ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", RITUAL_PROGRESS,
-                  [ritual_event([3, 6], ["damage i 10"])]),
+                  [ritual_event([3, 6], ["damage i 10"])], priority=4),
     map_name_adjectives=["Giant's", "Colossal", "Massive", "Towering", "Titanic", "Snowy", "Intimidating", "Unyielding"],
     map_name_nouns=["Bulwark", "Domain", "Stronghold", "Fist", "Hills", "Mountains", "Steppes", "Glacier"]
   ),
@@ -214,7 +214,7 @@ factions = [
       Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
     ],
     ritual=Ritual("Call the Unspeakable", "Gain 2 ward on turn 1, then deal 6 damage to random 6 times on turn 6.", "Ancient Horrors", RITUAL_PROGRESS,
-                  [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])]),
+                  [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])], priority=4),
     map_name_adjectives=["Old God's", "Ancient", "Unspeakable", "Eldritch", "Forbidden", "Unholy", "Unnatural"],
     map_name_nouns=["Spire", "Obelisk", "Monolith", "Idol", "Monument", "Altar", "Teeth", "Maw", "Eyes"]
   )
