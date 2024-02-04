@@ -305,7 +305,7 @@ class GameStateV2:
 
     self.haven.material += player.material
     player.material = 0
-    self.haven.supplies += (self.map.difficulty * num_keys) + 1
+    self.haven.supplies += ((self.map.difficulty + 1) * num_keys) + 1
 
     await self.end_run(player)
     await ws_print(self.haven.render(), websocket)
