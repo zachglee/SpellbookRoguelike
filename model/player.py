@@ -1,5 +1,6 @@
 from typing import Any, Optional
 from drafting import draft_player_library
+from model.grimoire import Grimoire
 from model.ritual import Ritual
 from termcolor import colored
 import random
@@ -9,7 +10,7 @@ from collections import defaultdict
 from model.combat_entity import CombatEntity
 from model.spellbook import LibrarySpell, Spell, Spellbook, SpellbookPage
 from model.item import Item
-from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, ws_input, ws_print
+from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, render_secrets_dict, ws_input, ws_print
 from sound_utils import play_sound
 from model.event import Event
 from content.enemy_factions import faction_rituals_dict
@@ -30,18 +31,22 @@ class Player(CombatEntity):
 
   archived_pages: list[SpellbookPage] = []
   remaining_blank_archive_pages: int = 0
-  archive: list[LibrarySpell] = [] # TODO remove
+  archive: list[LibrarySpell] = [] # archive of drafted spells
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
+  grimoire: Optional[Grimoire] = None
   material: int = 0
   secrets_dict: dict[str, int] = defaultdict(int)
-  boss_keys: int = 0
+  boss_keys: int = 0 # TODO get rid of this in a few iterations if no longer used
 
   inventory_capacity: int = 12
   library_capacity: int = 12
 
   level: int = 0
   experience: int = 0
+  age: int = 0 # TODO remove, along with .effective_age later
+  supplies: int = 6
+  retirement_age: int = 3
   location: int = 0
   wounds: int = 0
   request: str = None
@@ -106,6 +111,10 @@ class Player(CombatEntity):
   @property
   def total_ritual_levels(self):
     return sum([ritual.level for ritual in self.rituals])
+  
+  @property
+  def effective_age(self):
+    return self.age + self.wounds
     
   def spend_time(self, cost=1):
     if (self.time - cost) >= 0:
@@ -114,7 +123,7 @@ class Player(CombatEntity):
       raise ValueError(colored("Not enough time!", "red"))
 
   def memorize_spell(self, spell: Spell):
-    duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == spell.rules_text]
+    duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == spell.rules_text and ls.signature]
     in_library_spell = duplicate_spells[0] if duplicate_spells else None
 
     if in_library_spell:
@@ -148,18 +157,18 @@ class Player(CombatEntity):
   async def learn_rituals(self):
     # while True:
     for _ in range(1):
-      await ws_print(str(self.secrets_dict), self.websocket)
+      await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
       await ws_print(numbered_list(self.rituals), self.websocket)
       ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
 
-      xp_needed = ritual.next_level_xp - ritual.experience
-      contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
-      ritual.experience += contributed_xp
-      self.secrets_dict[ritual.faction] -= contributed_xp
-      if ritual.experience >= ritual.next_level_xp:
-        ritual.experience = 0
+      # xp_needed = ritual.next_level_xp - ritual.experience
+      # contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
+      ritual.experience += self.secrets_dict[ritual.faction]
+      self.secrets_dict[ritual.faction] = 0
+      while ritual.experience >= ritual.next_level_xp:
+        ritual.experience -= ritual.next_level_xp
         ritual.level += 1
         await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
     await ws_print(numbered_list(self.rituals), self.websocket)
@@ -196,12 +205,12 @@ class Player(CombatEntity):
         library_spell.copies_remaining = max(library_spell.max_copies_remaining, library_spell.copies_remaining)
 
     for ritual in self.rituals:
-      ritual.progress = ritual.level * ritual.required_progress
+      ritual.progress = ritual.level
 
     inventory = deepcopy(self.starting_inventory)
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
                   Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
-    self.hp = self.max_hp
+    # self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
     self.spellbook = starting_spellbook
@@ -210,7 +219,7 @@ class Player(CombatEntity):
     self.seen_spells = []
     self.material = 0
     self.secrets_dict = defaultdict(int)
-    self.remaining_blank_archive_pages = 1
+    self.remaining_blank_archive_pages += 1
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,
@@ -260,6 +269,11 @@ class Player(CombatEntity):
   def render_library(self):
     render_str = "-------- PLAYER LIBRARY --------\n"
     render_str += numbered_list(self.library)
+    return render_str
+
+  def render_archive(self):
+    render_str = "-------- PLAYER ARCHIVE --------\n"
+    render_str += numbered_list(self.archived_pages, use_headers=True)
     return render_str
 
   def render_pursuing_enemysets(self):

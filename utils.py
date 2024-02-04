@@ -75,6 +75,9 @@ def aligned_line(line_items, column_width=30):
     padded_line_items.append(padded_line)
   return "".join(padded_line_items)
 
+def render_secrets_dict(secrets_dict):
+  return numbered_list([f"{f}: {n}" for f, n in secrets_dict.items()])
+
 # choosing
 
 async def choose_str(choices: List[str], prompt, websocket: WebSocket):

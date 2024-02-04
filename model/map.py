@@ -9,16 +9,20 @@ from content.enemy_factions import factions
 from pydantic import BaseModel
 
 class Map:
-  def __init__(self, name, n_regions=4, difficulty=0):
+  def __init__(self, name, n_regions=3, difficulty=0):
     self.name = name
     self.difficulty = difficulty
     self.region_drafts = []
 
     spell_pools = generate_spell_pools(n_pools=n_regions)
-    faction_sets = generate_faction_sets(n_sets=n_regions, set_size=2, overlap=1, faction_pool=factions)
-    self.region_drafts = [RegionDraft(combat_size, faction_set, spell_pool, difficulty=self.difficulty)
-                          for combat_size, spell_pool, faction_set in
-                          zip([2, 3, 4, 5], spell_pools, faction_sets)]
+    random.shuffle(factions)
+    faction_sets = generate_faction_sets(n_sets=n_regions, set_size=2, overlap=1, faction_pool=factions[:3])
+    print(f"--------------------\n\n\n\n\n\n\n{faction_sets}")
+    self.region_drafts = [
+      RegionDraft(combat_size, faction_set, spell_pool, n_enemy_picks=n_enemy_picks, n_spell_picks=n_spell_picks, difficulty=self.difficulty)
+      for combat_size, n_enemy_picks, n_spell_picks, spell_pool, faction_set in
+      zip([3, 4, 5], [3, 3, 4], [4, 3, 3], spell_pools, faction_sets)
+    ]
 
     if self.name is None:
       faction1, faction2 = tuple(self.region_drafts[0].factions)
@@ -29,6 +33,7 @@ class Map:
     self.region_shops = [generate_shop(5, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions)
                         for region_draft in self.region_drafts]
+    self.grimoires = []
     self.explored = False
     self.passages = 0
     self.runs = 0
@@ -50,10 +55,12 @@ class Map:
     self.runs += 1
 
   def render(self):
-    name_part = colored(self.name, "magenta")
+    faction_symbol_part = "".join(faction.symbol for faction in self.region_drafts[0].factions)
+    name_part = colored(f"{self.name} ({faction_symbol_part})", "magenta")
     difficulty_part = colored(f"d.{self.difficulty}", "red")
     passages_part = colored(f"{self.passages} passages", "green")
-    return f"{name_part} | {difficulty_part} | {passages_part}"
+    grimoires_part = self.grimoires[0].render_preview() if self.grimoires else ""
+    return f"{name_part} | {difficulty_part} | {passages_part} | {grimoires_part}"
 
 class BossMap:
   def __init__(self, name, enemy_set_pool, length=2, combat_size=6):

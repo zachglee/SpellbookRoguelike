@@ -29,7 +29,7 @@ def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions
   random.shuffle(faction_pool)
   pool_size = len(faction_pool)
   return [factions[((i * set_size) - (i * overlap)) % pool_size:
-                   (((i+1) * set_size) - (i * overlap)) % pool_size]
+                   (((i+1) * set_size) - (i * overlap)) % (pool_size+1)]
                    for i in range(n_sets)]
 
 def generate_library_spells(size, spell_pool=spells, copies=3):
@@ -62,10 +62,10 @@ def generate_blank_page_shop_item():
   return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 21)
+  variance = random.randint(0, 26)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=30 + variance, stock=1, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=25 + variance, stock=1, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   random.shuffle(item_pool)

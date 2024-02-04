@@ -3,7 +3,7 @@ from termcolor import colored
 from collections import defaultdict
 import random
 
-from utils import colorize, numbered_list, choose_obj, ws_print
+from utils import colorize, ws_print
 
 class RitualEvent:
   def __init__(self, trigger, effect):
@@ -27,7 +27,7 @@ class Ritual:
 
   @property
   def next_level_xp(self):
-    return 100
+    return 5
 
   @property
   def activable(self):

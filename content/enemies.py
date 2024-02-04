@@ -147,9 +147,9 @@ enemies = {
   "Nightmare Remnant": Enemy.make(5, "Nightmare Remnant", BackstabAction(AttackAction(5), SelfDamageAction(5))),
   "Dreamstalker": Enemy.make(20, "Dreamstalker", BackstabAction(
       AddConditionAction("slow", 2, "player"),
-      AttackAction(6))),
-  "Shadow of a Doubt": Enemy.make(20, "Shadow of a Doubt", BackstabAction(
-      AttackAction(6),
+      AttackAction(8))),
+  "Shadow of a Doubt": Enemy.make(25, "Shadow of a Doubt", BackstabAction(
+      AttackAction(8),
       AddConditionAction("vulnerable", 2, "player"))),
   "Necromancer Apprentice": Enemy.make(15, "Necromancer Apprentice",
       NearFarAction(
@@ -417,7 +417,7 @@ fae_realm = [
   EnemySet("Midnight Court", [
       EnemySpawn(2, "f", make_enemy("Midnight Courtier")),
       EnemySpawn(3, "b", make_enemy("Midnight Courtier")),
-  ], faction="Fae Realm", description="Duo, poison you if you have no energy, otherwise gain retaliate."),
+  ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise gain retaliate."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))
   ], faction="Fae Realm", description="Poisons you on entry. If you leave her be, she'll cure and heal you."),

@@ -1,7 +1,7 @@
 import random
 import dill
 import os
-from drafting import encounter_draft
+from drafting import build_grimoire, encounter_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import BossMap, Map
 from model.player import Player
@@ -10,8 +10,9 @@ from sound_utils import play_sound
 from termcolor import colored
 from generators import generate_faction_sets, generate_library_spells, generate_shop, generate_spell_pools
 from model.region_draft import BossRegionDraft, RegionDraft
+from model.haven import Haven
 from content.enemy_factions import factions
-from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
+from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
 
 STARTING_EXPLORED = 1
 
@@ -31,6 +32,7 @@ class GameStateV2:
     self.map = None
     self.current_region_idx = 0
     self.player = None
+    self.haven = None
 
     #
     self.show_intents = False
@@ -52,12 +54,13 @@ class GameStateV2:
     self.map.save()
     for player in party_members.values():
       player.save()
+    self.haven.save()
 
   # Generators
 
   async def generate_new_character(self, spell_pool, websocket=None):
     await ws_print("Starting a new character...", websocket)
-    signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
+    signature_spell_options = generate_library_spells(2, spell_pool=spell_pool)
     await ws_print(numbered_list(signature_spell_options), websocket)
     chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
@@ -159,6 +162,7 @@ class GameStateV2:
     await ws_input("Gained 100xp...", player.websocket)
     player.experience += 100
     await self.discovery_phase(player)
+    await player.check_level_up()
     player.wounds += 1
     player.location = 0
     # player.stranded = True
@@ -172,15 +176,28 @@ class GameStateV2:
     self.map.end_run()
     await player.memorize()
     await player.learn_rituals()
+
+    await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
+    chosen_faction = await choose_str(list(self.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
+    self.haven.secrets_dict[chosen_faction] += self.player.secrets_dict[chosen_faction]
+
+    player.age += 1
+    await ws_print(colored(f"{player.name} has {player.supplies} left...", "magenta"), player.websocket)
+    # await self.check_player_retirement(player)
     player.websocket = None
     self.save()
+
+  async def check_player_retirement(self, player):
+    if player.effective_age >= player.retirement_age:
+      grimoire = await build_grimoire(player, num_pages=2)
+      self.map.grimoires.append(grimoire)
 
   async def choose_character(self, websocket):
     available_characters = []
     for fname in os.listdir("saves/characters"):
       with open(f"saves/characters/{fname}", "rb") as f:
         character = dill.load(f)
-        if not character.stranded:
+        if not character.stranded and character.supplies > 0:
           available_characters.append(character)
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
@@ -192,6 +209,9 @@ class GameStateV2:
       character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
         player = dill.load(f)
+    unchosen_characters = [c for c in available_characters if c != player]
+    for character in unchosen_characters:
+      character.heal(3)
     player.init()
     return player
   
@@ -199,17 +219,22 @@ class GameStateV2:
     existing_maps = load_maps_from_files()
     await ws_print(numbered_list(existing_maps), websocket)
     map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
+    # map_choice = existing_maps[player.location] if player.location < len(existing_maps) else None
     if map_choice:
       map = map_choice
-      if player.location != map.difficulty:
-        traversing_maps = [existing_maps[i] for i in range(player.location, map.difficulty)]
-        if all(m.passages > 0 for m in traversing_maps):
-          player.location = map.difficulty
-          for m in traversing_maps:
-            m.passages -= 1
-        else:
-          await ws_print(colored("Not enough passages to get there!", "red"), websocket)
-          return await self.choose_map(player, websocket)
+      # choose difficulty
+      difficulty = int(await ws_input(f"Choose a difficulty > ", websocket))
+      map.difficulty = difficulty
+      await ws_print(f"You embark on {map.render()}...", websocket)
+      # if player.location < map.difficulty:
+      #   traversing_maps = [existing_maps[i] for i in range(player.location, map.difficulty)]
+      #   if all(m.passages > 0 for m in traversing_maps):
+      #     player.location = map.difficulty
+      #     for m in traversing_maps:
+      #       m.passages -= 1
+      #   else:
+      #     await ws_print(colored("Not enough passages to get there!", "red"), websocket)
+      #     return await self.choose_map(player, websocket)
     else:
       map = Map(name=None, n_regions=self.run_length)
       await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
@@ -217,6 +242,12 @@ class GameStateV2:
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
+    # if a Haven save file doesn't exist, make one
+    if not os.path.exists("saves/haven.pkl"):
+      self.haven = Haven()
+    else:
+      with open("saves/haven.pkl", "rb") as f:
+        self.haven = dill.load(f)
     player = await self.choose_character(websocket)
     map = await self.choose_map(player, websocket)
     self.map = map
@@ -225,7 +256,7 @@ class GameStateV2:
     party_members[player_id] = player
     player.id = player_id
     player.websocket = websocket
-    self.run_length = 4
+    self.run_length = 3
     return player, map
 
   async def play_encounter(self, player, encounter, num_pages=2, page_capacity=3):
@@ -235,6 +266,8 @@ class GameStateV2:
 
   async def play(self, player_id, websocket=None):
     player, map = await self.play_setup(player_id=player_id, websocket=websocket)
+    # TODO: Run pre-embark phase where you can heal?
+    await self.haven.pre_embark(player)
     self.started = True
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
@@ -264,22 +297,18 @@ class GameStateV2:
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
     player.experience += 50 * num_keys
     await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
-    if self.map.explored == False and num_keys > 0:
+    if self.map.explored == False and num_keys > 0 and self.map.difficulty >= 6:
       self.map.explored = True
-      new_map = Map(name=None, n_regions=self.run_length, difficulty=self.map.difficulty + 1)
+      new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
-    if num_keys >= 1:
-      self.map.passages += 1
-    # TO BE WORKSHOPPED
-    # elif self.map.explored and num_keys == 3:
-    #   # NOTE: Turn your grimoire into a real spellbook that is claimable by someone who also makes it to here.
-    #   # There's only one copy of it and it gives you fully made pages to do stuff with. Collecting
-    #   # a few of these spellbooks + your own will likely be necessary to make it through the eventual
-    #   # endgame boss guantlet of 6-enemy combats, (9-12 levels between them) three of them in a row
-    #   pass
+
+    self.haven.material += player.material
+    player.material = 0
+    self.haven.supplies += (self.map.difficulty * num_keys) + 1
 
     await self.end_run(player)
+    await ws_print(self.haven.render(), websocket)
 
 
 # helpers

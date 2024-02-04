@@ -6,12 +6,12 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 12
+RITUAL_PROGRESS = 10
 
 factions = [
-  Faction("Freed Automata", freed_automata,
+  Faction("Freed Automata", freed_automata, "⚙",
     basic_items=[
-      Item.make("Heavy Plating", 1, "Gain 3 armor. (takes 4 actions)", ["armor p 1"], time_cost=4),
+      Item.make("Heavy Plating", 1, "Gain 3 armor. (takes 4 actions)", ["armor p 3"], time_cost=4),
       Item.make("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
@@ -22,7 +22,7 @@ factions = [
     map_name_adjectives=["Silver", "Golem's", "Abandoned", "Derelict", "Broken", "Rusted", "Steel", "Iron", "Neglected"],
     map_name_nouns=["Factory", "Junkyard", "Toil", "Foundry", "Forge", "Metalworks", "Mine", "Storehouse"]
   ),
-  Faction("Undying Legion", undying_legion,
+  Faction("Undying Legion", undying_legion, "⚱",
     basic_items=[
       Item.make("Regrowing Shield", 2, "Gain 3 block and break: 3 block.", ["block p 3", "break block p 3"]),
       Item.make("Embalming Wraps", 2, "Gain 4 encase and 4 empower", ["encase p 4", "empower p 4"])
@@ -35,7 +35,7 @@ factions = [
     map_name_adjectives=["Ochre", "Glorious", "Eternal", "Immortal", "Undying", "Deathless", "Everlasting", "Gladiator's", "Triumphant"],
     map_name_nouns=["Bastion", "Arena", "Citadel", "Marches", "Training Grounds", "Colosseum", "Tomb", "Pyramid"]
   ),
-  Faction("The Collectors", the_collectors,
+  Faction("The Collectors", the_collectors, "⚷",
     basic_items=[
       Item.make("Beast Cage", 1, "Encase 12 an enemy.", ["encase _ 12"]),
       Item.make("Stun Rod", 3, "Stun 1 an enemy.", ["stun _ 1"])
@@ -48,7 +48,7 @@ factions = [
     map_name_adjectives=["Glass", "Captivating", "Mysterious", "Sterile", "Eerie", "Watchful", "Preserved", "Curated", "Ensnaring"],
     map_name_nouns=["Museum", "Exhibit", "Gallery", "Collection", "Archive", "Vault", "Library", "Laboratory"]
   ),
-  Faction("Doombringers", doombringers,
+  Faction("Doombringers", doombringers, "⚶",
     basic_items=[
       Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor, 1 searing presence.", ["sharp p 1", "armor p 1", "searing p 1"]),
       Item.make("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
@@ -61,13 +61,13 @@ factions = [
     map_name_adjectives=["Gray", "Doomed", "Cursed", "Forsaken", "Ruined", "Lifeless", "Plague-ridden", "Overrun", "Shattered"],
     map_name_nouns=["Wastes", "Desolation", "Ruins", "Wreckage", "Calamity", "End", "Bunker", "Ashes"]
   ),
-  Faction("Sa'ik Collective", saik_collective,
+  Faction("Sa'ik Collective", saik_collective, "⚚",
     basic_items=[
       Item.make("Soaring Javelin", 1, "Deal 6 damage.", ["damage _ 6"]),
       Item.make("Harrier's Cloak", 2, "Gain 1 evade.", ["evade p 1"]),
     ],
     special_items=[
-      Item.make("Skydancer's Talon", 3, "Deal 2 damage to a single target twice.", ["repeat 2 damage _ 2"], rare=True)
+      Item.make("Skydancer's Talon", 3, "Deal 3 damage to a single target twice.", ["repeat 2 damage _ 3"], rare=True)
     ],
     # Evade and fleeting sharp on turns 1, 2, 3
     ritual=Ritual("Skydancer's Prowess", "For first 3 turns, gain 1 evade and 3 fleeting sharp.", "Sa'ik Collective", RITUAL_PROGRESS,
@@ -75,7 +75,7 @@ factions = [
     map_name_adjectives=["Harpy's", "Soaring", "Winged", "Airborne", "Windswept", "Sudden", "Screeching"],
     map_name_nouns=["Talons", "Peaks", "Cliffs", "Ridges", "Summit", "Pinnacle", "Nesting Grounds", "Edges"]
   ),
-  Faction("House of Imir", house_of_imir,
+  Faction("House of Imir", house_of_imir, "⚰",
     basic_items=[
       Item.make("Thirsting Blade", 2, "Lifesteal 2 from immediate", ["lifesteal i 2"]),
       Item.make("Sacrifice Dagger", 2, "Suffer 2 and deal 10 damage to immediate", ["suffer p 2", "damage i 10"]),
@@ -88,7 +88,7 @@ factions = [
     map_name_adjectives=["Vampire's", "Crimson", "Bloody", "Sanguine", "Scarlet", "Bleeding", "Carnal", "Ravenous", "Thirsty"],
     map_name_nouns=["Coffin", "Feeding Grounds", "Hunting Grounds", "Manor", "Chalice", "Kiss", "Bite", "Fangs"]
   ),
-  Faction("Mov's Horde", movs_horde,
+  Faction("Mov's Horde", movs_horde, "☠",
     basic_items=[
       Item.make("Reaper's Scythe", 2, "Deal 3 damage to immediate two enemies.", ["damage i1 3", "damage i2 3"]),
       Item.make("Ichor of Undeath", 1, "Gain 4 enduring this turn.", ["enduring p 4", "delay 0 enduring p -4"]),
@@ -101,7 +101,7 @@ factions = [
     map_name_adjectives=["Mauve", "Lich's", "Necromancer's", "Festering", "Rising", "Inexorable", "Rotting"],
     map_name_nouns=["Underworld", "Grave", "Necropolis", "Catacombs", "Masses", "Burial Ground", "Cemetery"]
   ),
-  Faction("Company of Blades", company_of_blades,
+  Faction("Company of Blades", company_of_blades, "⚔",
     basic_items=[
       Item.make("Trusty Sword", 6, "Deal 2 damage to immediate.", ["damage i 2"]),
       Item.make("Battered Shield", 3, "Block 4.", ["block p 4"]),
@@ -114,7 +114,7 @@ factions = [
     map_name_adjectives=["Golden", "Mercenary's", "Sharpened", "Treacherous", "Sly", "Fraught", "Lucrative", "Perilous"],
     map_name_nouns=["Ambush", "Road", "Pass", "Trade Route", "Caravan", "Highway", "Duel", "Opportunity"]
   ),
-  Faction("Giantkin", giantkin,
+  Faction("Giantkin", giantkin, "⛰",
     basic_items=[
       Item.make("Giant's Club", 2, "Deal 12 damage to immediate. Costs 3 time.", ["damage i 10"], time_cost=3),
       Item.make("Potion of Strength", 3, "Gain 3 empower.", ["empower p 3"])
@@ -125,9 +125,9 @@ factions = [
     ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", RITUAL_PROGRESS,
                   [ritual_event([3, 6], ["damage i 10"])], priority=4),
     map_name_adjectives=["Giant's", "Colossal", "Massive", "Towering", "Titanic", "Snowy", "Intimidating", "Unyielding"],
-    map_name_nouns=["Bulwark", "Domain", "Stronghold", "Fist", "Hills", "Mountains", "Steppes", "Glacier"]
+    map_name_nouns=["Fortress", "Domain", "Stronghold", "Fist", "Hills", "Mountains", "Steppes", "Glacier"]
   ),
-  Faction("Fae Realm", fae_realm,
+  Faction("Fae Realm", fae_realm, "☪",
     basic_items=[
       Item.make("Luring Flute", 1, "Heal immediate 3 and banish it 1.", ["heal i 3", "banish i 1"]),
       Item.make("Sleeper Darts", 2, "Inflict 1 stun and 3 poison.", ["stun _ 1", "poison _ 3"])
@@ -140,7 +140,7 @@ factions = [
     map_name_adjectives=["Green", "Moonlight", "Fae", "Fickle", "Enchanted", "Bewitched", "Sylvan", "Twilight", "Midnight"],
     map_name_nouns=["Promise", "Grove", "Glade", "Thicket", "Woods", "Meadow", "Garden", "Court"]
   ),
-  Faction("Kingdom of Amar", kingdom_of_amar,
+  Faction("Kingdom of Amar", kingdom_of_amar, "⚖",
     basic_items=[
       Item.make("Knifewing Set", 2, "Deal 1 damage to immediate thrice.", ["repeat 3 damage i 1"]),
       Item.make("Animate Armor", 3, "Gain 1 fleeting armor.", ["armor p 1", "delay 0 armor p -1"]),
@@ -153,7 +153,7 @@ factions = [
     map_name_adjectives=["Copper", "Artificer's", "Crafted", "Gilded", "Shining", "Ingenious", "Artificial", "Clockwork"],
     map_name_nouns=["Workshop", "Guild", "Armory", "Plaza", "Bazaar", "City", "Sigil"]
   ),
-  Faction("Infernal Plane", infernal_plane,
+  Faction("Infernal Plane", infernal_plane, "⛧",
     basic_items=[
       Item.make("Hellfire Torch", 3, "Burn 2 immediate.", ["burn i 2"]),
       Item.make("Summoning Circle", 4, "Gain 1 regen and call 1.", ["regen p 1", "call 1"])
@@ -166,7 +166,7 @@ factions = [
     map_name_adjectives=["Scorched", "Burning", "Hellish", "Smoldering", "Demonic", "Devil's", "Blazing"],
     map_name_nouns=["Pits", "Inferno", "Hellscape", "Pentacale", "Cauldron", "Pyre", "Torture"]
   ),
-  Faction("Dominion of Drael", dominion_of_drael,
+  Faction("Dominion of Drael", dominion_of_drael, "⛨",
     basic_items=[
       Item.make("Captain's Warhorn", 1, "Block 5, Empower 5", ["block p 5", "empower p 5"]),
       Item.make("Shieldmage's Gauntlets", 2, "Gain 3 shield and 2 retaliate.", ["shield p 3", "retaliate p 2"]),
@@ -179,7 +179,7 @@ factions = [
     map_name_adjectives=["Imperial", "Conquered", "Militant", "Belligerent", "Zealot's", "Grinding"],
     map_name_nouns=["Oath", "Command", "Battlefield", "Siege", "Crusade", "War", "Conquest", "Barracks"]
   ),
-  Faction("Spirits", spirits,
+  Faction("Spirits", spirits, "☯",
     basic_items=[
       Item.make("Spirit's Blessing", 1, "Gain 2 prolific.", ["prolific p 2"]),
       Item.make("Spirit Snare", 2, "At end of this round, stun 2 immediate.", ["delay 0 stun i 2"]),
@@ -192,7 +192,7 @@ factions = [
     map_name_adjectives=["Ethereal", "Otherworldly", "Supernatural", "Tranquil", "Balanced", "Bountiful"],
     map_name_nouns=["Harmony", "Serenity", "Shrine", "Pagoda", "Stillness", "Springs", "Pools", "Fountain"]
   ),
-  Faction("Shadow Realm", shadow_realm,
+  Faction("Shadow Realm", shadow_realm, "☽",
     basic_items=[
       Item.make("Brave Face", 2, "Face, then block 5.", ["face!", "block p 5"]),
       Item.make("Mirror Blade", 1, "Deal 6 damage immediately behind.", ["damage bi 6"])
@@ -205,7 +205,7 @@ factions = [
     map_name_adjectives=["Indigo", "Murky", "Shrouded", "Lurking", "Maddening", "Night", "Black"],
     map_name_nouns=["Shadow", "Eclipse", "Dream", "Nightmare", "Terror", "Madness", "Void"]
   ),
-  Faction("Ancient Horrors", ancient_horrors,
+  Faction("Ancient Horrors", ancient_horrors, "♅",
     basic_items=[
       Item.make("Damaged Ward", 4, "Gain 1 ward.", ["ward p 1"]),
       Item.make("Forbidden Text", 4, "Gain 1 inventive.", ["inventive p 1"]),
