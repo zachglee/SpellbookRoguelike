@@ -12,3 +12,8 @@ class Faction:
     self.map_name_adjectives = map_name_adjectives
     self.map_name_nouns = map_name_nouns
 
+    for item in self.basic_items:
+      item.faction = self.name
+    for item in self.special_items:
+      item.faction = self.name
+

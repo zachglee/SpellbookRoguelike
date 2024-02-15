@@ -17,11 +17,11 @@ class Map:
     spell_pools = generate_spell_pools(n_pools=n_regions)
     random.shuffle(factions)
     faction_sets = generate_faction_sets(n_sets=n_regions, set_size=2, overlap=1, faction_pool=factions[:3])
-    print(f"--------------------\n\n\n\n\n\n\n{faction_sets}")
+
     self.region_drafts = [
       RegionDraft(combat_size, faction_set, spell_pool, n_enemy_picks=n_enemy_picks, n_spell_picks=n_spell_picks, difficulty=self.difficulty)
       for combat_size, n_enemy_picks, n_spell_picks, spell_pool, faction_set in
-      zip([3, 4, 5], [3, 3, 4], [4, 3, 3], spell_pools, faction_sets)
+      zip([3, 4, 5], [3, 3, 4], [4, 2, 1], spell_pools, faction_sets)
     ]
 
     if self.name is None:

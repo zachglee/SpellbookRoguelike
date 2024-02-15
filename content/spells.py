@@ -8,9 +8,9 @@ red_enemy_dies = [
   [Spell(rules_text="When an enemy dies, gain 4 empower and deal overkill damage to immediate.", color="red", type="Passive",
          triggers_on=passive_for_death_overkill, raw_commands=["empower p 4", "damage i ^"]),
   Spell(rules_text="inflict 1 vulnerable", color="red", type="Producer", raw_commands=["vulnerable _ 1"]),
-  Spell(rules_text="Deal 9 damage. If this kills, +1 red.", color="red", type="Converter", conversion_color="gold",
-        targets=["_"], raw_commands=["damage _ 9"], generate_commands_post=if_kill("_", ["red p 1"])),
-  Spell(rules_text="Deal 16 damage", color="red", type="Consumer", raw_commands=["damage _ 16"])],
+  Spell(rules_text="Deal 10 damage. If this kills, +1 red.", color="red", type="Converter", conversion_color="gold",
+        targets=["_"], raw_commands=["damage _ 10"], generate_commands_post=if_kill("_", ["red p 1"])),
+  Spell(rules_text="Deal 18 damage", color="red", type="Consumer", raw_commands=["damage _ 18"])],
   #
   [Spell(rules_text="When an enemy dies, inflict 4 burn on random.", color="red", type="Passive",
          triggers_on=passive_for_death_overkill, raw_commands=["burn r 4"]),
@@ -27,7 +27,7 @@ red_take_damage = [
         raw_commands=["damage _ 2"], generate_commands_post=if_kill("_", ["time -1", "recharge last"])),
   Spell(rules_text="Gain 1 sharp for every missing 4 health.", color="red", type="Converter", conversion_color="gold",
         generate_commands_pre=for_player_missing_hp(4, ["sharp p *"])),
-  Spell(rules_text="8 damage to all enemies on faced side.", color="red", type="Consumer", raw_commands=["damage iside 8"])],
+  Spell(rules_text="9 damage to all enemies on faced side.", color="red", type="Consumer", raw_commands=["damage iside 9"])],
   #
   [Spell(rules_text="When you lose hp, inflict 3 burn on all enemies.", color="red", type="Passive",
          triggers_on=passive_lose_hp, raw_commands=["burn a 3"]),
@@ -39,20 +39,20 @@ red_take_damage = [
 ]
 
 red_big_attack = [
-  [Spell(rules_text="If at or below half health at turn start, gain 1 red, 2 sharp, and deal 1 damage to random.", color="red", type="Passive",
-         triggers_on=passive_at_half_health, raw_commands=["red p 1", "sharp p 2", "damage r 1"]),
-  Spell(rules_text="If you're at or below half health, +1 red.", color="red", type="Producer",
-        generate_commands_pre=if_player_hp(0.5, ["red p 1"], above=False)),
+  [Spell(rules_text="If at or below half health at turn start, gain 1 red, 2 sharp, and deal 3 damage to random.", color="red", type="Passive",
+         triggers_on=passive_at_half_health, raw_commands=["red p 1", "sharp p 2", "damage r 3"]),
+  Spell(rules_text="If you're at or below half health, +2 red.", color="red", type="Producer",
+        generate_commands_pre=if_player_hp(0.5, ["red p 2"], above=False)),
   # TODO: Fix this -- it's bugged and does 1 less energy than it should I think because the conversion is not instant?
   Spell(rules_text="Deal 2 damage x times, where x is amount of energy you have.", color="red", type="Converter", conversion_color="gold",
         generate_commands_post=for_player_energy(["repeat * damage _ 2"])),
   # TODO: implement the 3+ energy part
-  Spell(rules_text="Deal 12 damage. If you have 3 or more energy, recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 12"])],
+  Spell(rules_text="Deal 13 damage. If you have 3 or more energy, recharge and refresh this.", color="red", type="Consumer", raw_commands=["damage _ 13"])],
   #
   [Spell(rules_text="If at or below half health at turn start, gain 3 regen.", color="red", type="Passive",
          triggers_on=passive_at_half_health, raw_commands=["regen p 3"]),
-  Spell(rules_text="If at full health, deal 6 damage, otherwise gain 1 regen.", color="red", type="Producer",
-        generate_commands_pre=if_player_hp(1.0, ["damage _ 6"], else_commands=["regen p 1"], above=True)),
+  Spell(rules_text="If at full health, deal 8 damage, otherwise gain 1 regen.", color="red", type="Producer",
+        generate_commands_pre=if_player_hp(1.0, ["damage _ 8"], else_commands=["regen p 1"], above=True)),
   Spell(rules_text="Suffer 3 damage, gain 3 sharp.", color="red", type="Converter", conversion_color="gold", raw_commands=["suffer p 3", "sharp p 3"]), # NOTE: Green
   Spell(rules_text="Deal 6 damage. Heal for unblocked.", color="red", type="Consumer", raw_commands=["lifesteal _ 6"])],
 ]
@@ -68,8 +68,8 @@ red_hit_big_enemy = [
   #
   [Spell(rules_text="The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["regen p 3"]),
-  Spell(rules_text="Deal 6 damage to a target at or above 10 health.", color="red", type="Producer",
-        targets=["_"], generate_commands_pre=if_enemy_hp("_", 10, ["damage _ 6"], above=True)),
+  Spell(rules_text="Deal 8 damage to a target at or above 10 health.", color="red", type="Producer",
+        targets=["_"], generate_commands_pre=if_enemy_hp("_", 10, ["damage _ 8"], above=True)),
   # TODO: make the stun target the same enemy automatically
   Spell(rules_text="Deal 6 damage. Stun 1 the target if 10 or more hp remains.", color="red", type="Converter", conversion_color="blue",
         targets=["_"], raw_commands=["damage _ 6"], generate_commands_post=if_enemy_hp("_", 10, ["stun _ 1"], above=True)),
@@ -91,20 +91,20 @@ red_first_3_turns = [
         generate_commands_post=if_spell_charges(0, ["dig p 2"], above=False)),
   Spell(rules_text="Call 2. Gain 15 empower.", color="red", type="Converter", conversion_color="gold", raw_commands=["call 2", "empower p 15"]),
   Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 10 damage to random thrice.", color="red", type="Consumer",
-        raw_commands=["regen p 1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
+        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
 ]
 
 red_random_target = [
-  [Spell(rules_text="At turn start, inflict 2 vulnerable on a random enemy", color="red", type="Passive",
-          triggers_on=passive_turn_start, raw_commands=["vulnerable r 2"]),
-  Spell(rules_text="deal 3 damage to a random enemy.", color="red", type="Producer", raw_commands=["damage r 3"]),
+  [Spell(rules_text="At turn start, inflict 3 vulnerable on a random enemy", color="red", type="Passive",
+          triggers_on=passive_turn_start, raw_commands=["vulnerable r 3"]),
+  Spell(rules_text="deal 6 damage to a random enemy.", color="red", type="Producer", raw_commands=["damage r 6"]),
   Spell(rules_text="Gain 2 sharp this turn, inflict 2 vulnerable on all enemies.", color="red", type="Converter", conversion_color="gold",
         raw_commands=["sharp p 2", "delay 0 sharp p -2", "vulnerable a 2"]),
   Spell(rules_text="Deal 12 damage to any target.", color="red", type="Consumer", raw_commands=["damage _ 12"])],
   #
   [Spell(rules_text="At turn start, inflict 3 poison on a random enemy", color="red", type="Passive",
           triggers_on=passive_turn_start, raw_commands=["poison r 3"]),
-  Spell(rules_text="deal 2 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 2", "damage r 2"]),
+  Spell(rules_text="deal 3 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 3", "damage r 3"]),
   Spell(rules_text="Inflict 6 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 6"]),
   Spell(rules_text="Gain 5 regen and 5 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 5", "vulnerable p 5"])]
 ]
@@ -127,7 +127,7 @@ blue_block_hits = [
   [Spell(rules_text="When you’re attacked and take no damage, gain 3 retaliate and shield 1", color="blue", type="Passive",
          triggers_on=passive_attacked_for_no_damage, raw_commands=["retaliate p 3", "shield p 1"]),
   Spell(rules_text="gain 1 block and Break: deal 6 damage to attacker.", color="blue", type="Producer", raw_commands=["block p 1", "break damage ^ 6"]),
-  Spell(rules_text="Block 5. Deal 4 damage.", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 5", "damage _ 4"]),
+  Spell(rules_text="Block 5. Deal 5 damage.", color="blue", type="Converter", conversion_color="gold", raw_commands=["block p 5", "damage _ 5"]),
   # TODO: implement the damage scaling part
   Spell(rules_text="Block 4. Break: Deal 4 times the breaker’s attack damage back.", color="blue", type="Consumer", raw_commands=["block p 4"])],
 ]
@@ -185,10 +185,10 @@ blue_no_enemy_deaths = [
   [Spell(rules_text="At turn start, if no enemies are dead, gain 8 block.", color="blue", type="Passive",
           triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["block p 8"]),
   Spell(rules_text="encase self 5", color="blue", type="Producer", raw_commands=["encase p 5"]),
-  Spell(rules_text="Inflict 4 doom.", color="blue", type="Converter", conversion_color="red",
-        raw_commands=["doom _ 4"]),
-  Spell(rules_text="Encase 12 an enemy and inflict 2 doom.", color="blue", type="Consumer",
-        raw_commands=["encase _ 12", "doom _ 2"])],
+  Spell(rules_text="Inflict 5 doom.", color="blue", type="Converter", conversion_color="red",
+        raw_commands=["doom _ 5"]),
+  Spell(rules_text="Encase 12 an enemy and inflict 3 doom.", color="blue", type="Consumer",
+        raw_commands=["encase _ 12", "doom _ 3"])],
   #
   [Spell(rules_text="At turn start, if no enemies are dead, ward self 1.", color="blue", type="Passive",
           triggers_on=passive_no_dead_enemies_at_begin, raw_commands=["ward p 1"]),
@@ -212,8 +212,8 @@ blue_on_entry = [
   [Spell(rules_text="When an enemy enters, deal it 4 damage.", color="blue", type="Passive",
           triggers_on=passive_on_entry, raw_commands=["damage ^ 4"]),
   Spell(rules_text="deal 5 damage to an enemy that entered this turn.", color="blue", type="Producer", raw_commands=["damage _entered 5"]),
-  Spell(rules_text="Deal 10 damage to the furthest faced enemy.", color="blue", type="Converter", conversion_color="gold",
-        raw_commands=["damage distant 10"]),
+  Spell(rules_text="Deal 12 damage to the furthest faced enemy.", color="blue", type="Converter", conversion_color="gold",
+        raw_commands=["damage distant 12"]),
   Spell(rules_text="Banish 2 an enemy.", color="blue", type="Consumer", raw_commands=["banish _ 2"])]
 ]
 
@@ -227,8 +227,8 @@ gold_3rd_spell = [
   [Spell(rules_text="When you cast your 3rd spell in a turn, gain 3 sharp.", color="gold", type="Passive",
          triggers_on=passive_third_spell_in_turn, raw_commands=["sharp p 3"]),
   Spell(rules_text="Deal 2 damage to each adjacent enemy.", color="gold", type="Producer", raw_commands=["damage f1 2", "damage b1 2"]),
-  Spell(rules_text="Deal 3 damage to immediate enemy. Repeat twice more.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 3", "damage i 3", "damage i 3"]),
-  Spell(rules_text="Deal 12 damage to immediate, deal 6 damage to immediate behind.", color="gold", type="Consumer", raw_commands=["damage i 12", "damage bi 6"])],
+  Spell(rules_text="Deal 4 damage to immediate enemy. Repeat twice more.", color="gold", type="Converter", conversion_color="red", raw_commands=["damage i 4", "damage i 4", "damage i 4"]),
+  Spell(rules_text="Deal 12 damage to immediate, deal 8 damage to immediate behind.", color="gold", type="Consumer", raw_commands=["damage i 12", "damage bi 8"])],
   #
   [Spell(rules_text="When you cast your 3rd spell in a turn, gain 13 block.", color="gold", type="Passive",
          triggers_on=passive_third_spell_in_turn, raw_commands=["block p 13"]),
@@ -244,13 +244,13 @@ gold_turn_page = [
         generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
   Spell(rules_text="Deal 6 damage to immediate. Gain 1 empower for each missing spell charge on this page.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["damage i 6"], generate_commands_post=for_missing_charges(["empower p *"])),
-  Spell(rules_text="Gain Dig Deep 3. (Spells can go to -1 charge) Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
+  Spell(rules_text="Gain Dig Deep 3. Refresh all other spells. Gain 3 shield.", color="gold", type="Consumer", raw_commands=["dig p 3", "shield p 3"])],
   #
   [Spell(rules_text="When you turn to this page, gain 2 inventive.", color="gold", type="Passive",
          triggers_on=passive_on_page, raw_commands=["inventive p 2"]),
   Spell(rules_text="refresh a spell.", color="gold", type="Producer"),
-  Spell(rules_text="Gain 3 block and 3 time. Refresh and recharge last spell cast.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["time -3", "block p 3", "recharge -2"]),
+  Spell(rules_text="Gain 5 block and 1 time. Refresh this and recharge a random spell.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["time -1", "block p 5", "recharge r"]),
   Spell(rules_text="Gain 2x shield and deal 2x to all where x is # of spells cast this turn.", color="gold", type="Consumer",
         generate_commands_pre=for_spells_cast(["shield p *", "damage a *"], lambda s: 2*s))], 
 ]
@@ -259,15 +259,15 @@ gold_1_spell = [
   [Spell(rules_text="If you cast 1 or less spell in a turn, gain 1 energy of any color.", color="gold", type="Passive",
          triggers_on=passive_1_spell_in_turn, raw_commands=[]), # TODO fix this
   Spell(rules_text="you may convert 1 energy to another color.", color="gold", type="Producer"),
-  Spell(rules_text="Deal 5 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["damage _ 5", "damage _ 5", "slow p 2"]), # NOTE: Green
+  Spell(rules_text="Deal 6 damage twice. Gain 2 slow.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["damage _ 6", "damage _ 6", "slow p 2"]),
   Spell(rules_text="Gain 5 retaliate and 10 block", color="gold", type="Consumer", raw_commands=["retaliate p 5", "block p 10"])],
   #
-  [Spell(rules_text="If you cast 1 or less spell in a turn, empower 6.", color="gold", type="Passive",
-         triggers_on=passive_1_spell_in_turn, raw_commands=["empower p 6"]),
+  [Spell(rules_text="If you cast 1 or less spell in a turn, empower 7.", color="gold", type="Passive",
+         triggers_on=passive_1_spell_in_turn, raw_commands=["empower p 7"]),
   Spell(rules_text="+2 time.", color="gold", type="Producer", raw_commands=["time -2"]),
-  Spell(rules_text="Deal 6 damage to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
-        targets=["i"], raw_commands=["damage i 6"], generate_commands_post=if_kill("i", ["recharge last"])),
+  Spell(rules_text="Deal 7 damage to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
+        targets=["i"], raw_commands=["damage i 7"], generate_commands_post=if_kill("i", ["recharge last"])),
   Spell(rules_text="Gain 3 prolific.", color="gold", type="Consumer", raw_commands=["prolific p 3"])],
 ]
 
@@ -300,18 +300,18 @@ gold_first_face = [
   [Spell(rules_text="Whenever you face, deal 3 damage to immediate.", color="gold", type="Passive",
           triggers_on=passive_on_face, raw_commands=["damage i 6"]),
   Spell(rules_text="inflict 3 vulnerable on immediate behind.", color="gold", type="Producer", raw_commands=["vulnerable bi 3"]),
-  Spell(rules_text="Gain 2 sharp this turn, face, deal 4 to immediate.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["sharp p 2", "delay 0 sharp p -2", "face!", "damage i 4"]),
-  Spell(rules_text="Deal 10 damage to immediate. Then, if facing no enemies, face and deal 10 damage to immediate.", color="gold", type="Consumer",
-        raw_commands=["damage i 10"], generate_commands_post=if_facing_none(["face!", "damage i 10"]))]
+  Spell(rules_text="Gain 2 sharp this turn, face, deal 5 to immediate.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["sharp p 2", "delay 0 sharp p -2", "face!", "damage i 5"]),
+  Spell(rules_text="Deal 12 damage to immediate. Then, if facing no enemies, face and deal 12 damage to immediate.", color="gold", type="Consumer",
+        raw_commands=["damage i 12"], generate_commands_post=if_facing_none(["face!", "damage i 12"]))]
 ]
 
 gold_use_last_charge = [
   [Spell(rules_text="When you cast a spell's last charge, gain 4 shield.", color="gold", type="Passive",
          triggers_on=passive_use_last_charge, raw_commands=["shield p 4"]),
   Spell(rules_text="gain 1 inventive", color="gold", type="Producer", raw_commands=["inventive p 1"]),
-  Spell(rules_text="Gain 3 shield. Gain 4 empower.", color="gold", type="Converter", conversion_color="blue",
-        raw_commands=["shield p 3", "empower p 4"]),
+  Spell(rules_text="Gain 3 shield. Gain 5 empower.", color="gold", type="Converter", conversion_color="blue",
+        raw_commands=["shield p 3", "empower p 5"]),
   Spell(rules_text="Deal 6 to a random enemy x times, where x is amount of energy.", color="gold", type="Consumer",
         generate_commands_pre=for_player_energy(["repeat * damage r 6"]))],
   #
@@ -319,8 +319,8 @@ gold_use_last_charge = [
           triggers_on=passive_use_last_charge, raw_commands=["searing p 4"]),
   Spell(rules_text="If this has 0 or less charges, damage immediate 8.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),
-  Spell(rules_text="Gain 1 prolific, 2 dig deep, 3 block.", color="gold", type="Converter", conversion_color="red",
-        raw_commands=["prolific p 1", "dig p 2", "block p 3"]),
+  Spell(rules_text="Gain 1 prolific, 2 dig deep, 3 shield.", color="gold", type="Converter", conversion_color="red",
+        raw_commands=["prolific p 1", "dig p 2", "shield p 3"]),
   Spell(rules_text="Gain block and searing presence equal to missing charges on this page.", color="gold", type="Consumer",
         generate_commands_pre=for_missing_charges(["block p *", "searing p *"]))]
 ]

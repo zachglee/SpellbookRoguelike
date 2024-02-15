@@ -6,7 +6,7 @@ from content.enemies import *
 from content.command_generators import *
 from model.ritual import Ritual
 
-RITUAL_PROGRESS = 10
+RITUAL_PROGRESS = 9
 
 factions = [
   Faction("Freed Automata", freed_automata, "⚙",
@@ -30,8 +30,8 @@ factions = [
     special_items=[
       Item.make("Ambrosia of the Undying", 2, "Gain 1 undying.", ["undying p 1"], rare=True)
     ],
-    ritual=Ritual("Ritual of Mummification", "Gain 8 encase on turn 1. Gain 1 empower every turn.", "Undying Legion", RITUAL_PROGRESS,
-                  [ritual_event([1], ["encase p 8"]), ritual_event(list(range(1, 10)), ["empower p 1"])]),
+    ritual=Ritual("Ritual of Mummification", "Gain 8 encase on turn 1. Gain 2 empower every turn.", "Undying Legion", RITUAL_PROGRESS,
+                  [ritual_event([1], ["encase p 8"]), ritual_event(list(range(1, 10)), ["empower p 2"])]),
     map_name_adjectives=["Ochre", "Glorious", "Eternal", "Immortal", "Undying", "Deathless", "Everlasting", "Gladiator's", "Triumphant"],
     map_name_nouns=["Bastion", "Arena", "Citadel", "Marches", "Training Grounds", "Colosseum", "Tomb", "Pyramid"]
   ),

@@ -1,6 +1,7 @@
 import random
 from model.spellbook import LibrarySpell, SpellbookSpell
 from model.shop import Shop, ShopItem
+from model.recipe import Recipe
 from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
@@ -27,6 +28,7 @@ def generate_spell_pools(n_pools=1):
 
 def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions):
   random.shuffle(faction_pool)
+  faction_pool = faction_pool * 2
   pool_size = len(faction_pool)
   return [factions[((i * set_size) - (i * overlap)) % pool_size:
                    (((i+1) * set_size) - (i * overlap)) % (pool_size+1)]
@@ -62,10 +64,10 @@ def generate_blank_page_shop_item():
   return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 26)
+  variance = random.randint(0, 21)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=25 + variance, stock=1, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=25 + variance, stock=2, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   random.shuffle(item_pool)
@@ -74,9 +76,6 @@ def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
     shop_items.append(generate_shop_item(item))
   if key:
     shop_items.append(generate_ancient_key_shop_item())
-  # Trying out saying you get these from key runs:
-  # if page:
-  #   shop_items.append(generate_blank_page_shop_item())
   return Shop(shop_items)
 
 def generate_crafting_shop(n_items, player) -> Shop:
@@ -90,3 +89,21 @@ def generate_crafting_shop(n_items, player) -> Shop:
       shop_item = generate_shop_item(item)
       shop_items_dict[item.name] = shop_item
   return Shop(list(shop_items_dict.values()))
+
+def generate_recipe(item):
+  overall_value = int(generate_shop_item(item).cost / 2)
+  material_cost = 1
+  secret_cost = {item.faction: 1}
+  stock = 4
+  while overall_value > 0:
+    r = random.choice(["material", "secret", "stock"])
+    if r == "material":
+      material_cost += random.randint(2, 3)
+      overall_value -= 1
+    elif r == "secret":
+      secret_cost[item.faction] += 1
+      overall_value -= 1
+    elif r == "stock" and stock > 1:
+      stock -= 1
+      overall_value -= 1
+  return Recipe(item, material_cost, secret_cost, stock)

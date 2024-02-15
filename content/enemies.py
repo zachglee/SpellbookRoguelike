@@ -20,7 +20,7 @@ enemies = {
   "Hawk": Enemy.make(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
   "Hunter": Enemy.make(20, "Hunter", NearFarAction(MultiAction([MoveAction(1), AddConditionAction("armor", 1, "self")]), AttackAction(10))),
   "Charging Ogre": Enemy.make(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
-  "Evasive Skydancer": Enemy.make(16, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 4, "self"), AttackAction(6)), entry=AddConditionAction("enduring", 6, "self")),
+  "Evasive Skydancer": Enemy.make(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 5, "self"), AttackAction(5)), entry=AddConditionAction("enduring", 5, "self")),
   "The Vulture": Enemy.make(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy.make(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),
@@ -33,8 +33,8 @@ enemies = {
   "Conniving Impfiend": Enemy.make(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
                               SideOverwhelmAction(
-                                MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("armor", 2, "self")]),
-                                MultiAction([SetConditionAction("armor", 0, "self"), AttackAction(3), AttackAction(3)]), 2
+                                MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("retaliate", 2, "self"), AddConditionAction("armor", 2, "self")]),
+                                MultiAction([SetConditionAction("armor", 0, "self"), SetConditionAction("retaliate", 0, "self"), AttackAction(3), AttackAction(3)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy.make(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
@@ -49,8 +49,8 @@ enemies = {
                             entry=AddConditionAction("durable", 3, "self"), exp=6),
   "Slumbering Giant": Enemy.make(45, "Slumbering Giant", AttackAction(20), entry=AddConditionAction("stun", 4, "self")),
   "Mindless Maw": Enemy.make(50, "Mindless Maw", MultiAction([AttackImmediate(5, lifesteal=True), AddConditionAction("sharp", 5, "self")]), entry=SelfDamageAction(30), exp=20),
-  "Midnight Courtier": Enemy.make(15, "Imperious Seelie", EnergyThresholdAction(
-      AddConditionAction("retaliate", 3, "self"), AddConditionAction("poison", 3, "player"), 2)),
+  "Imperious Seelie": Enemy.make(15, "Imperious Seelie", EnergyThresholdAction(
+      AttackAction(3), AddConditionAction("poison", 3, "player"), 3)),
   "Zealous Battlemage": Enemy.make(8, "Zealous Battlemage", AttackAction(1), entry=MultiAction([AddConditionAction("block", 8, "self"), AddConditionAction("empower", 8, "self")])),
   "Draelish Captain": Enemy.make(7, "Draelish Captain", AttackAction(0), entry=MultiAction([AddConditionAction("block", 4, "all_enemies"), AddConditionAction("empower", 4, "all_enemies")])),
   "Conscript": Enemy.make(6, "Conscript", CowardlyAction(NothingAction(), AttackAction(2), hp_threshold=7)),
@@ -91,35 +91,34 @@ enemies = {
                                               AddConditionAction("armor", 2, "self"),
                                             ])),
                               entry=AddConditionAction("sharp", 2, "all_enemies")),
-  "Vampire Lord": Enemy.make(25, "Vampire Lord",
+  "Vampire Lord": Enemy.make(27, "Vampire Lord",
                         HealthThresholdAction(
-                          AddConditionAction("sharp", 1, "player"), AttackAction(7, lifesteal=True), 1),
+                          AddConditionAction("sharp", 2, "player"), AttackAction(9, lifesteal=True), 1),
                         entry=MultiAction([
-                          SelfDamageAction(7),
-                          AddConditionAction("retaliate", 2, "self"),
+                          SelfDamageAction(9)
                         ])),
   "Cocky Descender": Enemy.make(9, "Cocky Descender",
                                   HealthThresholdAction(
-                                    MultiAction([AttackAction(4), AttackAction(4)]),
-                                    AttackAction(2), 1)),
+                                    MultiAction([AttackAction(3), AttackAction(3)]),
+                                    AttackAction(1), 1)),
   "Fickle Witch-Queen": Enemy.make(12, "Fickle Witch-Queen",
                            CautiousAction(NothingAction(), WindupAction(MultiAction([
                                SetConditionAction("poison", 0, "player"),
                                AddConditionAction("regen", 4, "player")
                                ]), 2)),
-                           entry=AddConditionAction("poison", 3, "player")),
+                           entry=AddConditionAction("poison", 4, "player")),
   "Screeching Fury": Enemy.make(20, "Screeching Fury",
-                           HealthThresholdAction(AttackAction(2),
+                           HealthThresholdAction(AttackAction(3),
                                                  MultiAction([
                                                      AttackAction(5),
                                                      AttackAction(5),
                                                      AddConditionAction("sharp", 1, "self")]
                                                  ), 1)),
   "Witch-Burner Devil": Enemy.make(20, "Witch-Burner Devil",
-                              EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(1), 1)),
-  "Tithetaker": Enemy.make(25, "Tithetaker",
+                              EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(2), 1)),
+  "Tithetaker": Enemy.make(26, "Tithetaker",
                       EnergyThresholdAction(
-                          AddConditionAction("regen", 1, "player"),
+                          MultiAction([AddConditionAction("regen", 1, "player"), SetConditionAction("green", 0, "player")]),
                           AttackAction(13, lifesteal=True), 6)),
   "Generous Sprite": Enemy.make(1, "Generous Sprite",
                          BackstabAction(
@@ -154,7 +153,7 @@ enemies = {
   "Necromancer Apprentice": Enemy.make(15, "Necromancer Apprentice",
       NearFarAction(
         MultiAction([AddConditionAction("regen", 3, "self"), AttackAction(3)]),
-        AddConditionAction("regen", 4, "immediate"),
+        AddConditionAction("regen", 6, "immediate"),
       ),
       entry=AddConditionAction("undying", 1, "all_enemies")),
   "Assault Golem": Enemy.make(20, "Assault Golem", CautiousAction(AttackAction(10), MultiAction([
@@ -162,7 +161,7 @@ enemies = {
   "Aegis Orb": Enemy.make(20, "Aegis Orb", MultiAction([AddConditionAction("armor", 1, "all_enemies"), AddConditionAction("retaliate", 1, "all_enemies")])),
   "Defective Shieldbot": Enemy.make(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
-                               entry=AddConditionAction("shield", 30, "self")),
+                               entry=AddConditionAction("shield", 40, "self")),
   "Plated Warmech": Enemy.make(12, "Plated Warmech", AttackAction(4), entry=AddConditionAction("armor", 6, "self")),
   "Relentless Legionnaire": Enemy.make(8, "Relentless Legionnaire", AttackAction(2),
     entry=MultiAction([AddConditionAction("undying", 1, "self"), AddConditionAction("empower", 3, "self")])),
@@ -318,7 +317,9 @@ saik_collective = [
   EnemySet("Sa'ik Descenders", [
     EnemySpawn(3, "f", make_enemy("Cocky Descender")),
     EnemySpawn(3, "b", make_enemy("Cocky Descender")),
-  ], faction="Sa'ik Collective", description="High damage while at full health."),
+    EnemySpawn(3, "f", make_enemy("Cocky Descender")),
+    EnemySpawn(3, "b", make_enemy("Cocky Descender")),
+  ], faction="Sa'ik Collective", description="4 enemies, spawn all at once, high damage while at full health."),
   EnemySet("Screeching Fury", [
     EnemySpawn(3, "b", make_enemy("Screeching Fury")),
   ], faction="Sa'ik Collective", description="High damage while not at full health."),
@@ -381,7 +382,7 @@ company_of_blades = [
     EnemySpawn(4, "f", make_enemy("Hunter"))
   ], faction="Company of Blades", description="Hawk inflicts vulnerable, hunter has heavy attacks from backline."),
   EnemySet("Insistent Duelist", [
-    EnemySpawn(2, "f", make_enemy("Insistent Duelist"))
+    EnemySpawn(1, "f", make_enemy("Insistent Duelist"))
   ], faction="Company of Blades", description="Only attacks if he's alone on his side, otherwise powers up."),
   EnemySet("Crossbow Deadeyes", [
     EnemySpawn(2, "b", make_enemy("Crossbow Deadeye")),
@@ -415,8 +416,8 @@ fae_realm = [
     EnemySpawn(6, "b", make_enemy("Faerie Assassin")),
   ], faction="Fae Realm", description="Trio, poison you from behind, otherwise small attacks."),
   EnemySet("Midnight Court", [
-      EnemySpawn(2, "f", make_enemy("Midnight Courtier")),
-      EnemySpawn(3, "b", make_enemy("Midnight Courtier")),
+      EnemySpawn(2, "f", make_enemy("Imperious Seelie")),
+      EnemySpawn(3, "b", make_enemy("Imperious Seelie")),
   ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise gain retaliate."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))

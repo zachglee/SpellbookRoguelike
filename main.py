@@ -3,15 +3,14 @@ import dill
 import os
 from drafting import build_grimoire, encounter_draft
 from model.encounter import Encounter, EnemyWave
-from model.map import BossMap, Map
+from model.map import Map
 from model.player import Player
 from model.spellbook import LibrarySpell
 from sound_utils import play_sound
 from termcolor import colored
-from generators import generate_faction_sets, generate_library_spells, generate_shop, generate_spell_pools
-from model.region_draft import BossRegionDraft, RegionDraft
+from generators import generate_library_spells, generate_spell_pools
+from model.region_draft import BossRegionDraft
 from model.haven import Haven
-from content.enemy_factions import factions
 from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
 
 STARTING_EXPLORED = 1
@@ -28,7 +27,7 @@ class GameOver(Exception):
   pass
 
 class GameStateV2:
-  def __init__(self, n_regions=4):
+  def __init__(self):
     self.map = None
     self.current_region_idx = 0
     self.player = None
@@ -36,7 +35,7 @@ class GameStateV2:
 
     #
     self.show_intents = False
-    self.run_length = n_regions
+    self.run_length = 3
     self.started = False
 
     #
@@ -177,9 +176,9 @@ class GameStateV2:
     await player.memorize()
     await player.learn_rituals()
 
-    await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
-    chosen_faction = await choose_str(list(self.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
-    self.haven.secrets_dict[chosen_faction] += self.player.secrets_dict[chosen_faction]
+    await ws_print(render_secrets_dict(player.secrets_dict), player.websocket)
+    chosen_faction = await choose_str(list(player.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
+    self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
 
     player.age += 1
     await ws_print(colored(f"{player.name} has {player.supplies} left...", "magenta"), player.websocket)
@@ -202,9 +201,8 @@ class GameStateV2:
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      # NOTE: Trying out making your signature spell be truly random
-      # player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
-      player = await self.generate_new_character(generate_spell_pools()[0], websocket)
+      player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
+      # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
       character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
@@ -226,15 +224,6 @@ class GameStateV2:
       difficulty = int(await ws_input(f"Choose a difficulty > ", websocket))
       map.difficulty = difficulty
       await ws_print(f"You embark on {map.render()}...", websocket)
-      # if player.location < map.difficulty:
-      #   traversing_maps = [existing_maps[i] for i in range(player.location, map.difficulty)]
-      #   if all(m.passages > 0 for m in traversing_maps):
-      #     player.location = map.difficulty
-      #     for m in traversing_maps:
-      #       m.passages -= 1
-      #   else:
-      #     await ws_print(colored("Not enough passages to get there!", "red"), websocket)
-      #     return await self.choose_map(player, websocket)
     else:
       map = Map(name=None, n_regions=self.run_length)
       await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
@@ -256,7 +245,6 @@ class GameStateV2:
     party_members[player_id] = player
     player.id = player_id
     player.websocket = websocket
-    self.run_length = 3
     return player, map
 
   async def play_encounter(self, player, encounter, num_pages=2, page_capacity=3):
@@ -297,11 +285,18 @@ class GameStateV2:
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
     player.experience += 50 * num_keys
     await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
-    if self.map.explored == False and num_keys > 0 and self.map.difficulty >= 6:
+    if self.map.explored == False and self.map.difficulty >= 6:
       self.map.explored = True
       new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
+    if num_keys >= 1:
+      player.learn_recipe()
+      pass
+    if num_keys >= 2:
+      player.remaining_blank_archive_pages += 2
+      await ws_print(colored("You gained 2 blank archive pages!", "green"), websocket)
+
 
     self.haven.material += player.material
     player.material = 0

@@ -1,6 +1,8 @@
 from typing import Any, Optional
 from drafting import draft_player_library
+from generators import generate_recipe
 from model.grimoire import Grimoire
+from model.recipe import Recipe
 from model.ritual import Ritual
 from termcolor import colored
 import random
@@ -14,6 +16,7 @@ from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj
 from sound_utils import play_sound
 from model.event import Event
 from content.enemy_factions import faction_rituals_dict
+from content.items import minor_energy_potions
 
 class Player(CombatEntity):
 
@@ -35,12 +38,13 @@ class Player(CombatEntity):
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
   grimoire: Optional[Grimoire] = None
+  recipes: list[Recipe] = []
   material: int = 0
   secrets_dict: dict[str, int] = defaultdict(int)
   boss_keys: int = 0 # TODO get rid of this in a few iterations if no longer used
 
-  inventory_capacity: int = 12
-  library_capacity: int = 12
+  inventory_capacity: int = 10
+  library_capacity: int = 10
 
   level: int = 0
   experience: int = 0
@@ -54,7 +58,8 @@ class Player(CombatEntity):
   seen_items: list[Item] = []
   pursuing_enemysets: list[list[str]] = []
 
-  memorizations_pending: int = 0 # TODO: remove this
+  memorizations_pending: int = 0
+  ritual_learnings_pending: int = 0
   personal_item: Item = None
 
   done: bool = False
@@ -148,6 +153,8 @@ class Player(CombatEntity):
     self.hp += 1
     if self.level > 0 and self.level % 3 == 0:
       self.memorizations_pending += 1
+    if self.level > 0 and self.level % 5 == 0:
+      self.ritual_learnings_pending += 1
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
   async def check_level_up(self):
@@ -155,23 +162,40 @@ class Player(CombatEntity):
       await self.level_up()
 
   async def learn_rituals(self):
-    # while True:
-    for _ in range(1):
-      await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
+    while self.ritual_learnings_pending > 0:
       await ws_print(numbered_list(self.rituals), self.websocket)
       ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
+      ritual.level += ritual.required_progres
+      self.ritual_learnings_pending -= 1
+      await ws_print(numbered_list(self.rituals), self.websocket)
+    # while True:
+    # for _ in range(1):
+    #   await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
+    #   await ws_print(numbered_list(self.rituals), self.websocket)
+    #   ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
+    #   if ritual is None:
+    #     break
 
-      # xp_needed = ritual.next_level_xp - ritual.experience
-      # contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
-      ritual.experience += self.secrets_dict[ritual.faction]
-      self.secrets_dict[ritual.faction] = 0
-      while ritual.experience >= ritual.next_level_xp:
-        ritual.experience -= ritual.next_level_xp
-        ritual.level += 1
-        await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
-    await ws_print(numbered_list(self.rituals), self.websocket)
+    #   # xp_needed = ritual.next_level_xp - ritual.experience
+    #   # contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
+    #   ritual.experience += self.secrets_dict[ritual.faction]
+    #   self.secrets_dict[ritual.faction] = 0
+    #   while ritual.experience >= ritual.next_level_xp:
+    #     ritual.experience -= ritual.next_level_xp
+    #     ritual.level += 1
+    #     await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
+
+  async def learn_recipe(self):
+    item_options = random.sample([item for item in self.seen_items if item.craftable], 3)
+    recipe_options = [generate_recipe(item) for item in item_options]
+    await ws_print(numbered_list(recipe_options), self.websocket)
+    chosen_recipe = await choose_obj(recipe_options, "Choose an item to learn the recipe for > ", self.websocket)
+    if chosen_recipe is None:
+      return
+    self.recipes.append(chosen_recipe)
+    await ws_print(colored(f"You've learned the recipe for {chosen_recipe.item.name}!", "green"), self.websocket)
 
   async def memorize(self):
     while self.memorizations_pending > 0:
@@ -209,8 +233,9 @@ class Player(CombatEntity):
 
     inventory = deepcopy(self.starting_inventory)
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
-                  Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
-    # self.hp = self.max_hp
+                  Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True),
+                  deepcopy(random.choice(minor_energy_potions))]
+    self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
     self.spellbook = starting_spellbook
@@ -219,7 +244,7 @@ class Player(CombatEntity):
     self.seen_spells = []
     self.material = 0
     self.secrets_dict = defaultdict(int)
-    self.remaining_blank_archive_pages += 1
+    # self.remaining_blank_archive_pages += 1
 
   def get_immediate(self, encounter, offset=0):
     """Returns the closest enemy on the side the player is facing,

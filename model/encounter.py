@@ -550,7 +550,7 @@ class Encounter:
   async def end_encounter(self):
 
     # If you have 3 excess energy of one color, turn it into a potion
-    for color in energy_colors:
+    for color in ["red", "blue", "gold"]:
       while self.player.conditions[color] >= 3:
         self.player.inventory.append(deepcopy(minor_energy_potions_dict[color]))
         self.player.conditions[color] -= 3
