@@ -503,11 +503,12 @@ class Encounter:
     await self.resolve_events()
     # recharge random spell
     if self.turn > 0:
-      recharge_candidates = [sp for sp in self.player.spellbook.spells
+      off_page_spells = sum([page.spells for i, page in enumerate(self.player.spellbook.pages)
+                             if i != self.player.spellbook.current_page_idx], [])
+      recharge_candidates = [sp for sp in off_page_spells
                             if sp.charges < sp.max_charges and
                             sp.spell.type != "Passive" and
-                            "Unrechargeable" not in sp.spell.description and
-                            sp.echoing is None]
+                            "Unrechargeable" not in sp.spell.description]
       if len(recharge_candidates) > 0:
         random.choice(recharge_candidates).recharge()
     # unexhaust all spells

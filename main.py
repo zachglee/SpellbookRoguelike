@@ -63,7 +63,7 @@ class GameStateV2:
     await ws_print(numbered_list(signature_spell_options), websocket)
     chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
-    library = ([LibrarySpell(chosen_spell.spell, copies=3, signature=True)])
+    library = ([LibrarySpell(chosen_spell.spell, copies=2, signature=True)])
     player = Player.make(hp=30, name=name,
                     spellbook=None,
                     inventory=[],

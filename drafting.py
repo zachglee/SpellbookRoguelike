@@ -2,30 +2,15 @@ from copy import deepcopy
 import random
 from model.grimoire import Grimoire
 from termcolor import colored
-from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell, LibrarySpell
-from utils import choose_obj, choose_str, numbered_list, choose_idx, ws_input, ws_print
+from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
+from utils import choose_obj, numbered_list, ws_input, ws_print
 from sound_utils import play_sound
-from generators import generate_library_spells
 
 async def render_spell_draft(player, editing_page_idx, websocket=None):
     await ws_print("-------- Current Spellbook --------", websocket)
     await ws_print(player.spellbook.render(editing_page_idx=editing_page_idx), websocket)
     if player.library:
       await ws_print(player.render_library(), websocket)
-
-def draft_player_library(player, spell_pool, randoms=1, picks=2, options_per_pick=2):
-  # Get random spells from pool
-  random_spells = generate_library_spells(randoms, spell_pool=spell_pool, copies=2)
-  player.library += random_spells
-  print(player.render_library())
-  # Get picks from pool
-  all_choices = generate_library_spells(picks * options_per_pick, spell_pool=spell_pool, copies=1)
-  for i in range(picks):
-    choices = all_choices[i * options_per_pick : (i + 1) * options_per_pick]
-    print("---\n" + numbered_list(choices))
-    choice = choose_obj(choices, "Which spell have you been studying > ")
-    if choice:
-      player.library.append(choice)
 
 async def encounter_draft(player, num_pages=2, page_capacity=3):
   play_sound("build-spellbook.mp3")

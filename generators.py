@@ -34,7 +34,7 @@ def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions
                    (((i+1) * set_size) - (i * overlap)) % (pool_size+1)]
                    for i in range(n_sets)]
 
-def generate_library_spells(size, spell_pool=spells, copies=3):
+def generate_library_spells(size, spell_pool=spells, copies=1):
   sampled_spells = random.sample(spell_pool, size)
   return [LibrarySpell(sp, copies=copies) for sp in sampled_spells]
 

@@ -168,7 +168,7 @@ class RegionDraft:
         self.stranded_characters.remove(pick_option.character)
         pick_option.character.save()
       if pick_option.spell:
-        chosen_library_spell = LibrarySpell(pick_option.spell, copies=2)
+        chosen_library_spell = LibrarySpell(pick_option.spell, copies=1)
         player.library.append(chosen_library_spell)
       if pick_option.material:
         player.material += pick_option.material
