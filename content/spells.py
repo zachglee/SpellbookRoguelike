@@ -87,11 +87,11 @@ red_first_3_turns = [
   #
   [Spell(rules_text="At start of first 3 turns, gain 1 inventive and 1 prolific.", color="red", type="Passive",
           triggers_on=passive_first_3_turns, raw_commands=["inventive p 1", "prolific p 1"]),
-  Spell(rules_text="If this has 0 or less charges, gain dig deep 2.", color="red", type="Producer",
+  Spell(rules_text="If this has 0 or less charges, gain dig deep 3.", color="red", type="Producer",
         generate_commands_post=if_spell_charges(0, ["dig p 2"], above=False)),
   Spell(rules_text="Call 2. Gain 15 empower.", color="red", type="Converter", conversion_color="gold", raw_commands=["call 2", "empower p 15"]),
-  Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 10 damage to random thrice.", color="red", type="Consumer",
-        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
+  Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 12 damage to random thrice.", color="red", type="Consumer",
+        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 12"], above=False))]
 ]
 
 red_random_target = [
@@ -240,7 +240,7 @@ gold_3rd_spell = [
 gold_turn_page = [
   [Spell(rules_text="When you turn to this page, recharge a random spell and +1 time.", color="gold", type="Passive",
          triggers_on=passive_on_page, raw_commands=["recharge r", "time -1"]),
-  Spell(rules_text="if this has 0 or less charges, gain 4 shield.", color="gold", type="Producer",
+  Spell(rules_text="if this has 0 or less charges, gain 5 shield.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["shield p 4"], above=False)),
   Spell(rules_text="Deal 6 damage to immediate. Gain 1 empower for each missing spell charge on this page.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["damage i 6"], generate_commands_post=for_missing_charges(["empower p *"])),
@@ -292,8 +292,8 @@ gold_first_face = [
   [Spell(rules_text="Whenever you face, gain 3 block.", color="gold", type="Passive",
           triggers_on=passive_on_face, raw_commands=["block p 6"]),
   Spell(rules_text="Stun 1 immediate behind.", color="gold", type="Producer", raw_commands=["stun bi 1"]),
-  Spell(rules_text="Face, gain 2 shield for each enemy behind.", color="gold", type="Converter", conversion_color="blue",
-        raw_commands=["face!"], generate_commands_post=for_enemies(["shield p *"], magnitude_func=lambda e: 2*e, specifier="behind")),
+  Spell(rules_text="Gain 2 shield for each enemy behind.", color="gold", type="Converter", conversion_color="blue",
+        raw_commands=[], generate_commands_post=for_enemies(["shield p *"], magnitude_func=lambda e: 2*e, specifier="behind")),
   Spell(rules_text="Stun faced side 1, face, deal 8 damage to immediate.", color="gold", type="Consumer",
         raw_commands=["stun iside 1", "face!", "damage i 8"])],
   #
@@ -317,7 +317,7 @@ gold_use_last_charge = [
   #
   [Spell(rules_text="When you cast a spell's last charge, gain 4 searing presence.", color="gold", type="Passive",
           triggers_on=passive_use_last_charge, raw_commands=["searing p 4"]),
-  Spell(rules_text="If this has 0 or less charges, damage immediate 8.", color="gold", type="Producer",
+  Spell(rules_text="If this has 0 or less charges, damage immediate 10.", color="gold", type="Producer",
         generate_commands_post=if_spell_charges(0, ["damage i 8"], above=False)),
   Spell(rules_text="Gain 1 prolific, 2 dig deep, 3 shield.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["prolific p 1", "dig p 2", "shield p 3"]),
@@ -337,6 +337,7 @@ for i, spell in enumerate(spells):
   spells_by_id[i] = spell
 
 # TODO ideas:
+# - to make straight damage stronger -- effects like break that trigger on hitting stuff
 # - Double your empower?
 # - on-hit effects (no limit)
 # - stuff that turns enemy's power against them? Doom?

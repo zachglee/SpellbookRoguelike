@@ -1,3 +1,4 @@
+from collections import defaultdict
 import dill
 from termcolor import colored
 from utils import choose_str, numbered_list, render_secrets_dict, ws_print
@@ -7,7 +8,7 @@ class Haven:
   def __init__(self):
     self.material = 0
     self.supplies = 0
-    self.secrets_dict = {}
+    self.secrets_dict = defaultdict(int)
     self.items = []
     self.grimoires = []
     self.library = []
@@ -17,19 +18,20 @@ class Haven:
       dill.dump(self, f)
 
   async def pre_embark(self, player):
-    pass # TODO: replace with crafting items from other character shopkeepers
-    # choice = True
-    # while choice:
-    #   await ws_print(player.render(), player.websocket)
-    #   await ws_print(self.render(), player.websocket)
-    #   choice = await choose_str(["heal"], "Would you like to spend 1♦ and 10⛁ to heal 10 hp? ", player.websocket)
-    #   if choice == "heal":
-    #     if self.supplies >= 1 and self.material >= 8:
-    #       self.supplies -= 1
-    #       self.material -= 10
-    #       player.heal(10)
-    #     else:
-    #       await ws_print(colored("Not enough resources!", "red") , player.websocket)
+    # pass # TODO: replace with crafting items from other character shopkeepers
+    choice = True
+    while choice:
+      await ws_print(player.render(), player.websocket)
+      await ws_print(self.render(), player.websocket)
+      choice = await choose_str(["heal"], "Would you like to spend 1♦ and 5⛁ to heal 3 + 50% missing hp? ", player.websocket)
+      if choice == "heal":
+        if self.supplies >= 1 and self.material >= 5:
+          self.supplies -= 1
+          self.material -= 5
+          heal_amount = int((player.max_hp - player.hp) * 0.5) + 3
+          player.heal(heal_amount)
+        else:
+          await ws_print(colored("Not enough resources!", "red") , player.websocket)
 
   def render(self):
     material_part = colored(f"{self.material}⛁", "yellow")

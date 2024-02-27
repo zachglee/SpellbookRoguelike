@@ -12,13 +12,18 @@ async def render_spell_draft(player, editing_page_idx, websocket=None):
     if player.library:
       await ws_print(player.render_library(), websocket)
 
-async def encounter_draft(player, num_pages=2, page_capacity=3):
+async def encounter_draft(player, num_pages=3, page_capacity=3):
   play_sound("build-spellbook.mp3")
   player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
+  for ls in player.library:
+    ls.copies_remaining = ls.max_copies_remaining
   for i in range(num_pages):
-    await add_page(player, i+1, page_capacity=3)
+    await add_page(player, i+1, page_capacity=page_capacity)
   # remove spent spells from library
-  player.library = [ls for ls in player.library if ls.copies_remaining > 0 or ls.signature]
+  # NOTE: keep spells when they go to 0 charges, because your library is persistent across
+  # combats now
+  # player.library = [ls for ls in player.library if ls.copies_remaining > 0 or ls.signature]
+  player.spellbook.pages = [page for page in player.spellbook.pages if page.spells]
 
 async def add_page(player, page_number, page_capacity=3):
   # mode = await choose_str(["new", "archive"], "Create new page or use page from archive? > ", player.websocket)

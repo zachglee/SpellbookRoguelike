@@ -64,10 +64,10 @@ def generate_blank_page_shop_item():
   return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 21)
+  variance = random.randint(0, 16)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=25 + variance, stock=2, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=20 + variance, stock=2, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
   random.shuffle(item_pool)
@@ -92,7 +92,7 @@ def generate_crafting_shop(n_items, player) -> Shop:
 
 def generate_recipe(item):
   overall_value = int(generate_shop_item(item).cost / 2)
-  material_cost = 1
+  material_cost = 2
   secret_cost = {item.faction: 1}
   stock = 4
   while overall_value > 0:
@@ -101,7 +101,7 @@ def generate_recipe(item):
       material_cost += random.randint(2, 3)
       overall_value -= 1
     elif r == "secret":
-      secret_cost[item.faction] += 1
+      secret_cost[item.faction] += 2
       overall_value -= 1
     elif r == "stock" and stock > 1:
       stock -= 1

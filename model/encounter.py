@@ -47,16 +47,19 @@ class Encounter:
     self.front = []
     self.dead_enemies = []
     self.events = []
-    if self.boss:
-      self.max_turns = 10
-    else:
-      self.max_turns = 9
-    self.min_turns = 6
     self.scheduled_commands = []
     self.spells_cast_this_turn = []
     self.dropped_items = []
 
   # -------- @properties --------
+
+  @property
+  def min_turns(self):
+    return 5 + len(self.waves)
+  
+  @property
+  def max_turns(self):
+    return 8 + len(self.waves)
 
   @property
   def enemy_sets(self):
@@ -442,6 +445,7 @@ class Encounter:
       if chosen_ritual:
         self.rituals.append(chosen_ritual)
         chosen_ritual.progress -= chosen_ritual.required_progress
+        chosen_ritual.level += 1
 
 
   async def upkeep_phase(self):
@@ -560,7 +564,7 @@ class Encounter:
     experience_gained = 0
     for es in self.enemy_sets:
       experience_gained += (es.experience + 8 * es.level)
-      await self.player.gain_secrets(es.faction, 4 * (es.level + 1))
+      await self.player.gain_secrets(es.faction, 3 * (es.level + 1))
     self.player.experience += experience_gained
     await ws_print(colored(f"You gained {experience_gained} experience! Now at {self.player.level_progress_str}", "green"), self.player.websocket)
 
@@ -572,7 +576,7 @@ class Encounter:
     # Save one page to archive
     if self.player.remaining_blank_archive_pages > 0:
       await ws_print(self.player.spellbook.render(), self.player.websocket)
-      chosen_page = await choose_obj(self.player.spellbook.pages, colored("Choose page to archive > ", "cyan"), self.player.websocket)
+      chosen_page = await choose_obj(self.player.spellbook.pages, colored("Choose a page to archive > ", "cyan"), self.player.websocket)
       if chosen_page:
         self.player.archived_pages.append(deepcopy(chosen_page))
         self.player.remaining_blank_archive_pages -= 1

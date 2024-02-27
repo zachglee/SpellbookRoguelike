@@ -169,7 +169,10 @@ enemies = {
      AttackAction(2), AddConditionAction("sharp", 2, "self"), AddConditionAction("regen", 3, "self")]),
     entry=MultiAction([AddConditionAction("undying", 3, "self")])),
   "Risen Warrior": Enemy.make(15, "Risen Warrior", AttackAction(10), entry=AddConditionAction("encase", 20, "self")),
-  "Intrepid Bannerman": Enemy.make(15, "Intrepid Bannerman", AddConditionAction("empower", 4, "side"),
+  "Intrepid Bannerman": Enemy.make(15, "Intrepid Bannerman", MultiAction([
+    NearFarAction(AttackAction(0), NothingAction()),
+    AddConditionAction("empower", 4, "side")
+    ]),
     entry=AddConditionAction("undying", 1, "self")),
   "Inquisitive Eye": Enemy.make(4, "Inquisitive Eye", CallAction(None, 1)),
   "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(MultiAction([AddConditionAction("doom", 1, "player"), AddConditionAction("encase", 4, "player")]), 1)),
@@ -418,7 +421,7 @@ fae_realm = [
   EnemySet("Midnight Court", [
       EnemySpawn(2, "f", make_enemy("Imperious Seelie")),
       EnemySpawn(3, "b", make_enemy("Imperious Seelie")),
-  ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise gain retaliate."),
+  ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise attack."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))
   ], faction="Fae Realm", description="Poisons you on entry. If you leave her be, she'll cure and heal you."),

@@ -21,7 +21,7 @@ class Map:
     self.region_drafts = [
       RegionDraft(combat_size, faction_set, spell_pool, n_enemy_picks=n_enemy_picks, n_spell_picks=n_spell_picks, difficulty=self.difficulty)
       for combat_size, n_enemy_picks, n_spell_picks, spell_pool, faction_set in
-      zip([3, 4, 5], [3, 3, 4], [4, 2, 1], spell_pools, faction_sets)
+      zip([3, 4, 5, 6], [3, 2, 2, 2], [3, 1, 1, 1], spell_pools, faction_sets)
     ]
 
     if self.name is None:

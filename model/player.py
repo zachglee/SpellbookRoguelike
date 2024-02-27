@@ -138,6 +138,7 @@ class Player(CombatEntity):
       self.library.append(new_library_spell)
 
   async def memorize_seen_spell(self):
+    # TODO turn an existing library spell into signature?
     await ws_print(self.render_library(), self.websocket)
     memorization_spell_pool = self.seen_spells + [ls.spell for ls in self.archive]
     choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 6))
@@ -150,10 +151,14 @@ class Player(CombatEntity):
     self.level += 1
     self.max_hp += 1
     self.hp += 1
-    if self.level > 0 and self.level % 3 == 0:
+    if self.level > 0 and self.level % 2 == 0:
       self.memorizations_pending += 1
+      await self.memorize()
+    if self.level > 0 and self.level % 3 == 0:
+      await self.learn_recipe()
     if self.level > 0 and self.level % 5 == 0:
       self.ritual_learnings_pending += 1
+      await self.learn_rituals()
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
   async def check_level_up(self):
@@ -166,7 +171,8 @@ class Player(CombatEntity):
       ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
-      ritual.level += ritual.required_progres
+      ritual.level += ritual.required_progress
+      ritual.progress += ritual.required_progress
       self.ritual_learnings_pending -= 1
       await ws_print(numbered_list(self.rituals), self.websocket)
     # while True:
@@ -198,7 +204,13 @@ class Player(CombatEntity):
 
   async def memorize(self):
     while self.memorizations_pending > 0:
-      await self.memorize_seen_spell()
+      # Mark an existing library spell as signature spell
+      await ws_print(self.render_library(), self.websocket)
+      chosen_spell = await choose_obj(self.library, "Choose a spell to memorize > ", self.websocket)
+      if chosen_spell is None:
+        break
+      chosen_spell.signature = True
+      # await self.memorize_seen_spell() # FOR NOW BYPASSING THIS
       self.memorizations_pending -= 1
 
   def prompt_personal_destination(self):
@@ -234,7 +246,7 @@ class Player(CombatEntity):
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
                   Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True),
                   deepcopy(random.choice(minor_energy_potions))]
-    self.hp = self.max_hp
+    # self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
     self.spellbook = starting_spellbook
@@ -266,10 +278,10 @@ class Player(CombatEntity):
       self.events.append(Event(["face"]))
       self.face_count += 1
 
-  def archive_library_spells(self, copies_threshold=0):
-    to_archive = [ls for ls in self.library if ls.copies_remaining <= copies_threshold and not ls.signature and not ls.in_archive]
-    self.archive += to_archive
-    self.library = [ls for ls in self.library if ls.copies_remaining > copies_threshold or ls.signature]
+  # def archive_library_spells(self, copies_threshold=0):
+  #   to_archive = [ls for ls in self.library if ls.copies_remaining <= copies_threshold and not ls.signature and not ls.in_archive]
+  #   self.archive += to_archive
+  #   self.library = [ls for ls in self.library if ls.copies_remaining > copies_threshold or ls.signature]
 
   def render(self):
     entity_str = super().render()

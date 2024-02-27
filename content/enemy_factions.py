@@ -116,7 +116,7 @@ factions = [
   ),
   Faction("Giantkin", giantkin, "⛰",
     basic_items=[
-      Item.make("Giant's Club", 2, "Deal 12 damage to immediate. Costs 3 time.", ["damage i 10"], time_cost=3),
+      Item.make("Giant's Club", 2, "Deal 12 damage to immediate. Costs 3 time.", ["damage i 12"], time_cost=3),
       Item.make("Potion of Strength", 3, "Gain 3 empower.", ["empower p 3"])
     ],
     special_items=[

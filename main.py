@@ -35,7 +35,7 @@ class GameStateV2:
 
     #
     self.show_intents = False
-    self.run_length = 3
+    self.run_length = 4
     self.started = False
 
     #
@@ -153,7 +153,6 @@ class GameStateV2:
       player.hp = 3
       player.conditions["undying"] -= 1
       return
-    player.inventory = []
     # player.material = 0
     # death admin
     play_sound("player-death.mp3")
@@ -164,6 +163,7 @@ class GameStateV2:
     await player.check_level_up()
     player.wounds += 1
     player.location = 0
+    player.hp = 0
     # player.stranded = True
     
     await self.end_run(player)
@@ -178,11 +178,19 @@ class GameStateV2:
 
     await ws_print(render_secrets_dict(player.secrets_dict), player.websocket)
     chosen_faction = await choose_str(list(player.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
-    self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
+    if chosen_faction:
+      self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
 
     player.age += 1
-    await ws_print(colored(f"{player.name} has {player.supplies} left...", "magenta"), player.websocket)
-    # await self.check_player_retirement(player)
+    num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
+    self.haven.material += player.material
+    await ws_print(colored(f"You contributed {player.material} material to the haven!", "green"), player.websocket)
+    player.material = 0
+    supplies_gained = ((self.map.difficulty + 1) * num_keys) + 1
+    self.haven.supplies += supplies_gained
+    await ws_print(colored(f"You contributed {supplies_gained} supplies to the haven!", "green"), player.websocket)
+    player.inventory = []
+
     player.websocket = None
     self.save()
 
@@ -213,11 +221,10 @@ class GameStateV2:
     player.init()
     return player
   
-  async def choose_map(self, player, websocket):
+  async def choose_map(self, websocket):
     existing_maps = load_maps_from_files()
     await ws_print(numbered_list(existing_maps), websocket)
     map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
-    # map_choice = existing_maps[player.location] if player.location < len(existing_maps) else None
     if map_choice:
       map = map_choice
       # choose difficulty
@@ -237,9 +244,9 @@ class GameStateV2:
     else:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
-    player = await self.choose_character(websocket)
-    map = await self.choose_map(player, websocket)
+    map = await self.choose_map(websocket)
     self.map = map
+    player = await self.choose_character(websocket)
     map.init(player)
     # self.player = player
     party_members[player_id] = player
@@ -247,7 +254,7 @@ class GameStateV2:
     player.websocket = websocket
     return player, map
 
-  async def play_encounter(self, player, encounter, num_pages=2, page_capacity=3):
+  async def play_encounter(self, player, encounter, num_pages=3, page_capacity=3):
     await encounter.init_with_player(player)
     await encounter_draft(player, num_pages=num_pages, page_capacity=page_capacity)
     await self.encounter_phase(encounter)
@@ -267,17 +274,18 @@ class GameStateV2:
       is_boss_encounter = isinstance(region_draft, BossRegionDraft)
       encounter = self.generate_encounter(player, combat_size=region_draft.combat_size,
                                           boss=is_boss_encounter)
-      await self.play_encounter(player, encounter, num_pages=3 if is_boss_encounter else 2)
+      await self.play_encounter(player, encounter, num_pages=3)
 
       # Persistent enemy sets
-      stronger_enemyset = random.choice(encounter.enemy_sets)
-      persistent_enemysets = [stronger_enemyset] + [es for es in encounter.enemy_sets if es.persistent]
+      escaped_enemyset = random.choice(encounter.enemy_sets)
+      await ws_input(colored(f"You've escaped {escaped_enemyset.name}...", "green"), websocket)
+      persistent_enemysets = [es for es in encounter.enemy_sets if es != escaped_enemyset]
       player.pursuing_enemysets += persistent_enemysets
-      for enemyset in persistent_enemysets:
+      stronger_enemysets = [random.choice(persistent_enemysets)]
+      for enemyset in stronger_enemysets:
         enemyset.level_up()
         await ws_input(colored(f"{enemyset.name} still follows you, stronger...", "red"), websocket)
-      for enemyset in [es for es in encounter.enemy_sets if es not in persistent_enemysets]:
-        enemyset.level = 0
+      escaped_enemyset.level = 0
 
       await self.discovery_phase(player)
 
@@ -290,17 +298,12 @@ class GameStateV2:
       new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
-    if num_keys >= 1:
-      player.learn_recipe()
-      pass
-    if num_keys >= 2:
-      player.remaining_blank_archive_pages += 2
-      await ws_print(colored("You gained 2 blank archive pages!", "green"), websocket)
-
-
-    self.haven.material += player.material
-    player.material = 0
-    self.haven.supplies += ((self.map.difficulty + 1) * num_keys) + 1
+    # if num_keys >= 1:
+    #   player.learn_recipe()
+    #   pass
+    # if num_keys >= 2:
+    #   player.remaining_blank_archive_pages += 2
+    #   await ws_print(colored("You gained 2 blank archive pages!", "green"), websocket)
 
     await self.end_run(player)
     await ws_print(self.haven.render(), websocket)
