@@ -49,6 +49,7 @@ class Map:
                                            key=True, page=random.random() > 0.25)
                         for region_draft in self.region_drafts]
     for region_draft in self.region_drafts:
+      region_draft.difficulty = self.difficulty
       region_draft.init()
 
   def end_run(self):

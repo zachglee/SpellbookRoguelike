@@ -1,5 +1,6 @@
 import random
-from model.spellbook import LibrarySpell, SpellbookSpell
+from typing import List
+from model.spellbook import LibrarySpell, Spell, SpellbookSpell
 from model.shop import Shop, ShopItem
 from model.recipe import Recipe
 from content.enemies import enemy_sets
@@ -13,7 +14,7 @@ def generate_enemy_set_pool(n=10):
   random.shuffle(enemy_sets)
   return enemy_sets[:n]
 
-def generate_spell_pools(n_pools=1):
+def generate_spell_pools(n_pools=1) -> List[List[Spell]]:
   random.shuffle(red_pages)
   random.shuffle(blue_pages)
   random.shuffle(gold_pages)

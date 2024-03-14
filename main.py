@@ -59,7 +59,7 @@ class GameStateV2:
 
   async def generate_new_character(self, spell_pool, websocket=None):
     await ws_print("Starting a new character...", websocket)
-    signature_spell_options = generate_library_spells(2, spell_pool=spell_pool)
+    signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
     await ws_print(numbered_list(signature_spell_options), websocket)
     chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
@@ -209,7 +209,9 @@ class GameStateV2:
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      player = await self.generate_new_character(self.map.region_drafts[0].spell_pool, websocket)
+      signature_spell_pool = [sp for sp in sum([rd.spell_pool for rd in self.map.region_drafts], [])
+                              if sp.type in ["Producer", "Passive"]]
+      player = await self.generate_new_character(signature_spell_pool, websocket)
       # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
       character_file = f"saves/characters/{character_choice}.pkl"
@@ -293,7 +295,7 @@ class GameStateV2:
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
     player.experience += 50 * num_keys
     await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
-    if self.map.explored == False and self.map.difficulty >= 6:
+    if self.map.explored == False and self.map.difficulty >= 4:
       self.map.explored = True
       new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()

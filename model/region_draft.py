@@ -58,7 +58,7 @@ class RegionDraft:
 
   def level_enemyset(self, enemyset):
     material = 0
-    if random.random() < (0.25 + (0.25 * min(self.difficulty, 3))):
+    if random.random() < (0.20 + (0.20 * min(self.difficulty, 4))):
       material += 1
       if self.difficulty <= 3:
         level_distribution = [1, 1, 1, 1, 2, 2]
@@ -105,7 +105,7 @@ class RegionDraft:
 
     if type == "enemy":
       enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
-      if random.random() < 0.33:
+      if random.random() < (0.33 + self.difficulty * 0.03):
         enemyset.obscured = True
         material += 2
       material += self.level_enemyset(enemyset)

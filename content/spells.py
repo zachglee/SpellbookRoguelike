@@ -290,7 +290,7 @@ gold_face_noone = [
 
 gold_first_face = [
   [Spell(rules_text="Whenever you face, gain 3 block.", color="gold", type="Passive",
-          triggers_on=passive_on_face, raw_commands=["block p 6"]),
+          triggers_on=passive_on_face, raw_commands=["block p 3"]),
   Spell(rules_text="Stun 1 immediate behind.", color="gold", type="Producer", raw_commands=["stun bi 1"]),
   Spell(rules_text="Gain 2 shield for each enemy behind.", color="gold", type="Converter", conversion_color="blue",
         raw_commands=[], generate_commands_post=for_enemies(["shield p *"], magnitude_func=lambda e: 2*e, specifier="behind")),

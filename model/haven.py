@@ -23,12 +23,12 @@ class Haven:
     while choice:
       await ws_print(player.render(), player.websocket)
       await ws_print(self.render(), player.websocket)
-      choice = await choose_str(["heal"], "Would you like to spend 1♦ and 5⛁ to heal 3 + 50% missing hp? ", player.websocket)
+      choice = await choose_str(["heal"], "Would you like to spend 1♦ and 5⛁ to heal 50% missing hp? ", player.websocket)
       if choice == "heal":
         if self.supplies >= 1 and self.material >= 5:
           self.supplies -= 1
           self.material -= 5
-          heal_amount = int((player.max_hp - player.hp) * 0.5) + 3
+          heal_amount = int((player.max_hp - player.hp) * 0.5)
           player.heal(heal_amount)
         else:
           await ws_print(colored("Not enough resources!", "red") , player.websocket)
