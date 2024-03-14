@@ -30,6 +30,7 @@ class Player(CombatEntity):
   # Meta state
   signature_spell: LibrarySpell
   library: list[LibrarySpell]
+  known_rituals: list[Ritual] = []
 
   archived_pages: list[SpellbookPage] = []
   remaining_blank_archive_pages: int = 0
@@ -171,10 +172,12 @@ class Player(CombatEntity):
       ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
       if ritual is None:
         break
-      ritual.level += ritual.required_progress
-      ritual.progress += ritual.required_progress
+      # ritual.level += ritual.required_progress
+      # ritual.progress += ritual.required_progress
+      self.known_rituals.append(ritual)
       self.ritual_learnings_pending -= 1
-      await ws_print(numbered_list(self.rituals), self.websocket)
+      await ws_print(f"-------- Known Rituals --------", self.websocket)
+      await ws_print(numbered_list(self.known_rituals), self.websocket)
     # while True:
     # for _ in range(1):
     #   await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
@@ -239,8 +242,9 @@ class Player(CombatEntity):
       if library_spell.signature:
         library_spell.copies_remaining = max(library_spell.max_copies_remaining, library_spell.copies_remaining)
 
-    for ritual in self.rituals:
-      ritual.progress = ritual.level
+    # NOTE: We're trying buying ritual progress with secrets in pre-embark phase instead
+    # for ritual in self.rituals:
+    #   ritual.progress = ritual.level
 
     inventory = deepcopy(self.starting_inventory)
     inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),

@@ -263,7 +263,6 @@ class GameStateV2:
 
   async def play(self, player_id, websocket=None):
     player, map = await self.play_setup(player_id=player_id, websocket=websocket)
-    # TODO: Run pre-embark phase where you can heal?
     await self.haven.pre_embark(player)
     self.started = True
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
