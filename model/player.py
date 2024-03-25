@@ -155,8 +155,8 @@ class Player(CombatEntity):
     if self.level > 0 and self.level % 2 == 0:
       self.memorizations_pending += 1
       await self.memorize()
-    if self.level > 0 and self.level % 3 == 0:
-      await self.learn_recipe()
+    # if self.level > 0 and self.level % 3 == 0:
+    #   await self.learn_recipe()
     if self.level > 0 and self.level % 5 == 0:
       self.ritual_learnings_pending += 1
       await self.learn_rituals()
@@ -196,7 +196,8 @@ class Player(CombatEntity):
     #     await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
 
   async def learn_recipe(self):
-    item_options = random.sample([item for item in self.seen_items if item.craftable], 3)
+    item_options = (random.sample([item for item in self.seen_items if item.craftable], 3)
+                    if len(self.seen_items) > 3 else self.seen_items)
     recipe_options = [generate_recipe(item) for item in item_options]
     await ws_print(numbered_list(recipe_options), self.websocket)
     chosen_recipe = await choose_obj(recipe_options, "Choose an item to learn the recipe for > ", self.websocket)
@@ -247,9 +248,10 @@ class Player(CombatEntity):
     #   ritual.progress = ritual.level
 
     inventory = deepcopy(self.starting_inventory)
-    inventory += [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
-                  Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True),
-                  deepcopy(random.choice(minor_energy_potions))]
+    inventory += (
+      [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
+      Item.make(f"{self.name}'s Dagger", 3, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
+      + [deepcopy(p) for p in minor_energy_potions])
     # self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"

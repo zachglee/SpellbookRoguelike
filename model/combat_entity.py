@@ -116,6 +116,25 @@ class CombatEntity(BaseModel):
     self.conditions["durable"] = None
     self.conditions["enduring"] = None
 
+  def clear_good_conditions(self):
+    self.conditions["regen"] = 0
+    self.conditions["empower"] = 0
+    self.conditions["searing"] = 0
+    self.conditions["charge"] = 0
+    self.conditions["ward"] = 0
+    self.conditions["sharp"] = 0
+    self.conditions["armor"] = 0
+    self.conditions["block"] = 0
+    self.conditions["shield"] = 0
+    self.conditions["encase"] = 0
+    self.conditions["prolific"] = 0
+    self.conditions["inventive"] = 0
+    self.conditions["dig"] = 0
+    self.conditions["undying"] = 0
+    self.conditions["retaliate"] = 0
+    self.conditions["durable"] = None
+    self.conditions["enduring"] = None
+
   def attack(self, target, damage, lifesteal=False):
     if target is None:
       faf_print(f"{self.name} attacks nothing.", self.websocket)

@@ -35,7 +35,7 @@ class Haven:
           player.heal(heal_amount)
         else:
           await ws_print(colored("Not enough resources!", "red") , player.websocket)
-      else:
+      elif choice:
         targets = [r for r in player.known_rituals if r.faction == choice]
         if targets and self.secrets_dict[choice] >= RITUAL_PROGRESS_PRICE:
           target_ritual = targets[0]

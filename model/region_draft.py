@@ -83,14 +83,13 @@ class RegionDraft:
     spell_draft_pick_options = [self.generate_draft_pick_options(self.n_options, type="spell") for _ in range(self.n_spell_picks)]
     enemy_draft_pick_options = [self.generate_draft_pick_options(self.n_options-1, type="enemy") for _ in range(self.n_enemy_picks)]
     
-    for i in range(max(self.n_spell_picks, self.n_enemy_picks)):
-      if spell_draft_pick_options:
-        self.draft_picks.append(spell_draft_pick_options.pop(0))
-      if enemy_draft_pick_options:
-        self.draft_picks.append(enemy_draft_pick_options.pop(0))
+    self.draft_picks = spell_draft_pick_options + enemy_draft_pick_options
+    # for i in range(max(self.n_spell_picks, self.n_enemy_picks)):
+    #   if spell_draft_pick_options:
+    #     self.draft_picks.append(spell_draft_pick_options.pop(0))
+    #   if enemy_draft_pick_options:
+    #     self.draft_picks.append(enemy_draft_pick_options.pop(0))
 
-    # for i in range(self.n_picks):
-    #   self.draft_picks.append(self.generate_draft_pick_options(self.n_options))
 
   def generate_draft_pick_option(self, type="spell") -> DraftPickOption:
     if type == "enemy" and self.enemyset_pool_idx >= len(self.enemyset_pool):

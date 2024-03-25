@@ -71,7 +71,7 @@ enemies = {
                               AddConditionAction("gold", 1, "player"),
                               AddConditionAction("empower", 6, "player")])),
   "Vengeful Mine": Enemy.make(1, "Vengeful Mine", OverwhelmAction(MultiAction([SelfDamageAction(3), AttackAction(6)]), NothingAction(), 5), entry=AddConditionAction("retaliate", 3, "self")),
-  "Bomber Zealot": Enemy.make(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(16), AttackSide(16), SelfDamageAction(16)]), 1), entry=AddConditionAction("block", 8, "self")),
+  "Bomber Zealot": Enemy.make(8, "Bomber Zealot", WindupAction(MultiAction([AttackAction(15), AttackSide(15), SelfDamageAction(15)]), 1), entry=AddConditionAction("block", 8, "self")),
   "Grizzled Shieldmage": Enemy.make(10, "Grizzled Shieldmage",
                                NearFarAction(AttackAction(2),
                                              MultiAction([AddConditionAction("shield", 5, "immediate"), AddConditionAction("retaliate", 1, "immediate")])),

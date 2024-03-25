@@ -209,8 +209,8 @@ class GameStateV2:
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      signature_spell_pool = [sp for sp in sum([rd.spell_pool for rd in self.map.region_drafts], [])
-                              if sp.type in ["Producer", "Passive"]]
+      signature_spell_pool = [sp for sp in self.map.region_draft[0].spell_pool # sum([rd.spell_pool for rd in self.map.region_drafts], [])
+                              if sp.type in ["Producer", "Passive", "Converter"]]
       player = await self.generate_new_character(signature_spell_pool, websocket)
       # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:

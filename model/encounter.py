@@ -218,7 +218,8 @@ class Encounter:
       self.back.pop(idx)
     if target in self.front:
       self.front.pop(idx)
-    target.clear_conditions()
+    # Let's try not clearing conditions...
+    target.clear_good_conditions()
     target.spawned = False
     target.conditions["ward"] += ward
     target.resurrected = False
@@ -260,7 +261,7 @@ class Encounter:
       self.player.seen_items.append(deepcopy(found_item))
 
   async def observe(self):
-    self.player.experience += 1
+    self.player.experience += 2
     observed_factions = [e.faction for e in self.faced_enemy_queue]
     observed_factions = observed_factions[0:1] # just take immediate for now
     if not observed_factions:

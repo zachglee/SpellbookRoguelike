@@ -175,8 +175,8 @@ class Spellbook:
     return spells
 
   @property
-  def current_page(self):
-    return self.pages[self.current_page_idx]
+  def current_page(self) -> SpellbookPage:
+    return self.pages[self.current_page_idx] if self.pages else SpellbookPage([])
 
   def switch_page(self):
     self.current_page_idx = (self.current_page_idx + 1) % len(self.pages)

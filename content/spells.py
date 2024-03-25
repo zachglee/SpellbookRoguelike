@@ -61,8 +61,8 @@ red_hit_big_enemy = [
   [Spell(rules_text="The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["burn ^ 5"]),
   Spell(rules_text="Deal 4 damage to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
-  Spell(rules_text="Apply 1 poison. Apply extra 1 poison for every 4 hp the target has.", color="red", type="Converter", conversion_color="blue",
-        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 4, ["poison _ 1", "poison _ *"])), # NOTE: Purple
+  Spell(rules_text="Apply 2 poison. Apply extra 1 poison for every 4 hp the target has.", color="red", type="Converter", conversion_color="blue",
+        targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 4, ["poison _ 2", "poison _ *"])), # NOTE: Purple
   Spell(rules_text="Target loses half its remaining health.", color="red", type="Consumer",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["suffer _ *"]))],
   #
@@ -102,10 +102,10 @@ red_random_target = [
         raw_commands=["sharp p 2", "delay 0 sharp p -2", "vulnerable a 2"]),
   Spell(rules_text="Deal 12 damage to any target.", color="red", type="Consumer", raw_commands=["damage _ 12"])],
   #
-  [Spell(rules_text="At turn start, inflict 3 poison on a random enemy", color="red", type="Passive",
-          triggers_on=passive_turn_start, raw_commands=["poison r 3"]),
+  [Spell(rules_text="At turn start, inflict 4 poison on a random enemy", color="red", type="Passive",
+          triggers_on=passive_turn_start, raw_commands=["poison r 4"]),
   Spell(rules_text="deal 3 damage to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 3", "damage r 3"]),
-  Spell(rules_text="Inflict 6 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 6"]),
+  Spell(rules_text="Inflict 7 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 7"]),
   Spell(rules_text="Gain 5 regen and 5 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 5", "vulnerable p 5"])]
 ]
 
@@ -203,7 +203,7 @@ blue_no_enemy_deaths = [
 blue_on_entry = [
   [Spell(rules_text="When an enemy enters, gain 1 retaliate and 3 block.", color="blue", type="Passive",
           triggers_on=passive_on_entry, raw_commands=["retaliate p 2", "block p 2"]),
-  Spell(rules_text="inflict 1 poison.", color="blue", type="Producer", raw_commands=["poison _ 1"]),
+  Spell(rules_text="inflict 2 poison.", color="blue", type="Producer", raw_commands=["poison _ 2"]),
   Spell(rules_text="Block 4. Break: Poison 4 all enemies.", color="blue", type="Converter", conversion_color="red",
         raw_commands=["block p 4", "break poison a 4"]),
   Spell(rules_text="Banish all enemies 0. You gain 1 shield for each enemy.", color="blue", type="Consumer",
