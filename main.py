@@ -59,16 +59,16 @@ class GameStateV2:
 
   async def generate_new_character(self, spell_pool, websocket=None):
     await ws_print("Starting a new character...", websocket)
-    signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
-    await ws_print(numbered_list(signature_spell_options), websocket)
-    chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
+    # signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
+    # await ws_print(numbered_list(signature_spell_options), websocket)
+    # chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
-    library = ([LibrarySpell(chosen_spell.spell, copies=2, signature=True)])
+    library = [] # [LibrarySpell(chosen_spell.spell, copies=2, signature=True)]
     player = Player.make(hp=30, name=name,
                     spellbook=None,
                     inventory=[],
-                    library=library,
-                    signature_spell=chosen_spell)
+                    library=library)
+                    # signature_spell=chosen_spell)
     return player
   
   def generate_encounter(self, player, combat_size=3, boss=False):
@@ -209,8 +209,8 @@ class GameStateV2:
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      signature_spell_pool = [sp for sp in self.map.region_draft[0].spell_pool # sum([rd.spell_pool for rd in self.map.region_drafts], [])
-                              if sp.type in ["Producer", "Passive", "Converter"]]
+      # signature_spell_pool = [sp for sp in self.map.region_drafts[0].spell_pool # sum([rd.spell_pool for rd in self.map.region_drafts], [])
+      #                         if sp.type in ["Producer", "Passive", "Converter"]]
       player = await self.generate_new_character(signature_spell_pool, websocket)
       # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
