@@ -6,7 +6,7 @@ from model.recipe import Recipe
 from content.enemies import enemy_sets
 from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
-from content.items import ancient_key, blank_page
+from content.items import ancient_key
 from content.enemy_factions import factions
 
 
@@ -57,12 +57,6 @@ def generate_shop_item(item):
     stock = 1
     cost = 6
   return ShopItem(item, cost=cost, stock=stock)
-
-def generate_blank_page_shop_item():
-  variance = random.randint(0, 11)
-  def blank_page_effect(player):
-    player.remaining_blank_archive_pages += 1
-  return ShopItem(blank_page, cost=15 + variance, stock=2, immediate_effect=blank_page_effect)
 
 def generate_ancient_key_shop_item():
   variance = random.randint(0, 16)

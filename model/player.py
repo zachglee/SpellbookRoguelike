@@ -1,6 +1,5 @@
 from typing import Any, Optional
 from generators import generate_recipe
-from model.grimoire import Grimoire
 from model.recipe import Recipe
 from model.ritual import Ritual
 from termcolor import colored
@@ -28,7 +27,7 @@ class Player(CombatEntity):
   explored: int = 0
 
   # Meta state
-  signature_spell: LibrarySpell
+  signature_spell: Optional[LibrarySpell] = None
   library: list[LibrarySpell]
   known_rituals: list[Ritual] = []
 
@@ -37,9 +36,8 @@ class Player(CombatEntity):
   archive: list[LibrarySpell] = [] # archive of drafted spells
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
-  grimoire: Optional[Grimoire] = None
   recipes: list[Recipe] = []
-  material: int = 0
+  material: int = 30
   secrets_dict: dict[str, int] = defaultdict(int)
   boss_keys: int = 0 # TODO get rid of this in a few iterations if no longer used
 
@@ -252,14 +250,14 @@ class Player(CombatEntity):
       [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
       Item.make(f"{self.name}'s Dagger", 3, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
       + [deepcopy(p) for p in minor_energy_potions])
-    # self.hp = self.max_hp
+    self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
     self.spellbook = starting_spellbook
     self.inventory = inventory
     self.request = None
     self.seen_spells = []
-    self.material = 0
+    # self.material = 0
     self.secrets_dict = defaultdict(int)
     # self.remaining_blank_archive_pages += 1
 
@@ -284,10 +282,6 @@ class Player(CombatEntity):
       self.events.append(Event(["face"]))
       self.face_count += 1
 
-  # def archive_library_spells(self, copies_threshold=0):
-  #   to_archive = [ls for ls in self.library if ls.copies_remaining <= copies_threshold and not ls.signature and not ls.in_archive]
-  #   self.archive += to_archive
-  #   self.library = [ls for ls in self.library if ls.copies_remaining > copies_threshold or ls.signature]
 
   def render(self):
     entity_str = super().render()
@@ -309,7 +303,8 @@ class Player(CombatEntity):
     return render_str
   
   def render_library(self):
-    render_str = "-------- PLAYER LIBRARY --------\n"
+    material_str = colored(f"{self.material}⛁", "yellow")
+    render_str = f"-------- PLAYER LIBRARY ({material_str}) --------\n"
     render_str += numbered_list(self.library)
     return render_str
 

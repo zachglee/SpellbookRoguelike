@@ -95,12 +95,13 @@ class Spell(BaseModel):
     return self.description
 
 class LibrarySpell:
-  def __init__(self, spell: Spell, copies=3, signature=False, in_archive=False):
+  def __init__(self, spell: Spell, copies=3, material_cost=5, signature=False):
     self.spell = spell
     self.signature = signature
     self.copies_remaining = copies
     self.max_copies_remaining = copies
-    self.in_archive = in_archive # TODO: deprecate this if I'm not archving spells anymore
+    self.material_cost = material_cost
+    
   
   def render(self):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
@@ -113,11 +114,12 @@ class LibrarySpell:
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
     rendered_str = rendered_str.replace("Passive", colored("Passive", "yellow"))
     copies_remaining_part = f"[{self.copies_remaining}/{self.max_copies_remaining}]"
+    material_cost_part = colored(f"({self.material_cost}⛁)", "yellow")
     if self.signature:
       copies_remaining_part = colored(copies_remaining_part, "magenta")
     if self.copies_remaining <= 0:
       copies_remaining_part = colored(copies_remaining_part, "red")
-    return f"{copies_remaining_part} {rendered_str}"
+    return f"{copies_remaining_part} {material_cost_part} {rendered_str}"
 
 class SpellbookSpell:
   def __init__(self, spell: Spell):

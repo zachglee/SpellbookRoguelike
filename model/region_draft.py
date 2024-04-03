@@ -58,16 +58,9 @@ class RegionDraft:
 
   def level_enemyset(self, enemyset):
     material = 0
-    if random.random() < (0.20 + (0.20 * min(self.difficulty, 4))):
+    if random.random() < (0.20 + (0.20 * min(self.difficulty, 3))):
       material += 1
-      if self.difficulty <= 3:
-        level_distribution = [1, 1, 1, 1, 2, 2]
-      elif self.difficulty == 4:
-        level_distribution = [1, 1, 1, 2, 2, 3]
-      elif self.difficulty == 5:
-        level_distribution = [1, 1, 2, 2, 3, 3]
-      elif self.difficulty == 6:
-        level_distribution = [1, 2, 2, 3, 3, 3]
+      level_distribution = [1, 1, 1, 2, 2, 3]
       
       for i in range(random.choice(level_distribution)):
         enemyset.level_up()

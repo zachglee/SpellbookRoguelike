@@ -1,6 +1,5 @@
 from copy import deepcopy
 import random
-from model.grimoire import Grimoire
 from termcolor import colored
 from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
 from utils import choose_obj, numbered_list, ws_input, ws_print
@@ -65,22 +64,39 @@ async def edit_page_from_library(player, page_number, page_capacity=3) -> Spellb
     library_spell.copies_remaining -= 1
     play_sound("write-spell.mp3")
 
+async def haven_library_draft(player, haven):
+  chosen_spells = []
+  while True:
+    await ws_print(haven.render(), player.websocket)
+    await ws_print(player.render_library(), player.websocket)
+    choice = await choose_obj(haven.library, "Choose a spell to add to library > ", player.websocket)
 
-async def build_grimoire(player, num_pages=2):
-  spellbook = Spellbook([SpellbookPage([]) for i in range(num_pages)])
-  for i in range(num_pages):
-    await ws_print(spellbook.render(), player.websocket)
-    await ws_print(player.render_archive(), player.websocket)
-    from_archive_page = await choose_obj(player.archived_pages, f"Add a page to your grimoire ({i+1} of {num_pages}) > ", player.websocket)
-    if from_archive_page is None:
+    if choice is None:
+      break
+
+    if choice.copies_remaining <= 0:
+      await ws_print(colored("This spell is out of copies.", "red"), player.websocket)
       continue
-    spellbook.pages[i] = from_archive_page
-    player.archived_pages.remove(from_archive_page)
+
+    if player.material < choice.material_cost:
+      await ws_print(colored("Not enough material!", "red"), player.websocket)
+      continue
+
+    player.library.append(deepcopy(choice))
+    chosen_spells.append(choice)
+    player.material -= choice.material_cost
+    choice.copies_remaining -= 1
+    
   
-  leveled_rituals = [ritual for ritual in player.rituals if ritual.level > 0]
-  await ws_print(numbered_list(leveled_rituals), player.websocket)
-  ritual = await choose_obj(leveled_rituals, "Choose 1 ritual to add to your grimoire > ", player.websocket)
-
-  name = await ws_input("Name your grimoire > ", player.websocket)
-
-  return Grimoire(name, player.name, spellbook, deepcopy(ritual))
+  # Do admin to adjust spell costs
+  increase_cost_spells = random.sample(chosen_spells, 3) if len(chosen_spells) > 3 else chosen_spells
+  for spell in increase_cost_spells:
+    spell.material_cost += 3
+  unchosen_spells = [ls for ls in haven.library if ls not in chosen_spells]
+  total_discounts = 0
+  while total_discounts < 9:
+    spell_to_discount = random.choice(unchosen_spells)
+    if spell_to_discount.material_cost > 0:
+      spell_to_discount.material_cost -= 1
+      total_discounts += 1
+  await ws_print(haven.render(), player.websocket)

@@ -12,7 +12,6 @@ major_health_potion = Item.make("Major Health Potion", 5, "Heal 3", ["heal p 3"]
 health_potions = [minor_health_potion, middling_health_potion, major_health_potion]
 
 ancient_key = Item.make("Ancient Key", 1, "A key to a door long forgotten.", [], weight=0, rare=True, craftable=False)
-blank_page = Item.make("Blank Page", 0, "A blank page for your grimoire.", [], weight=0, rare=True, craftable=False)
 
 minor_energy_potions = [red_potion, blue_potion, gold_potion]
 minor_energy_potions_dict = {"red": red_potion, "blue": blue_potion, "gold": gold_potion}

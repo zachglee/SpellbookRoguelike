@@ -1,1 +1,0 @@
-aspirations = ["Slayer", "Explorer", "Scholar"]

@@ -13,6 +13,7 @@ class Map:
     self.name = name
     self.difficulty = difficulty
     self.region_drafts = []
+    completed_difficulties = [] # Mapping of int difficulty to how many times completed
 
     spell_pools = generate_spell_pools(n_pools=n_regions)
     random.shuffle(factions)
@@ -21,7 +22,7 @@ class Map:
     self.region_drafts = [
       RegionDraft(combat_size, faction_set, spell_pool, n_enemy_picks=n_enemy_picks, n_spell_picks=n_spell_picks, difficulty=self.difficulty)
       for combat_size, n_enemy_picks, n_spell_picks, spell_pool, faction_set in
-      zip([3, 4, 5, 6], [3, 2, 2, 2], [3, 1, 1, 1], spell_pools, faction_sets)
+      zip([3, 4, 5, 6], [3, 2, 2, 2], [0, 0, 0, 0], spell_pools, faction_sets)
     ]
 
     if self.name is None:
@@ -33,7 +34,6 @@ class Map:
     self.region_shops = [generate_shop(5, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions)
                         for region_draft in self.region_drafts]
-    self.grimoires = []
     self.explored = False
     self.passages = 0
     self.runs = 0
@@ -60,8 +60,7 @@ class Map:
     name_part = colored(f"{self.name} ({faction_symbol_part})", "magenta")
     difficulty_part = colored(f"d.{self.difficulty}", "red")
     passages_part = colored(f"{self.passages} passages", "green")
-    grimoires_part = self.grimoires[0].render_preview() if self.grimoires else ""
-    return f"{name_part} | {difficulty_part} | {passages_part} | {grimoires_part}"
+    return f"{name_part} | {difficulty_part} | {passages_part} "
 
 class BossMap:
   def __init__(self, name, enemy_set_pool, length=2, combat_size=6):

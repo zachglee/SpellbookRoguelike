@@ -1,7 +1,7 @@
 import random
 import dill
 import os
-from drafting import build_grimoire, encounter_draft
+from drafting import encounter_draft, haven_library_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import Map
 from model.player import Player
@@ -37,9 +37,6 @@ class GameStateV2:
     self.show_intents = False
     self.run_length = 4
     self.started = False
-
-    #
-    # self.websocket = websocket
 
   # Properties
 
@@ -194,11 +191,6 @@ class GameStateV2:
     player.websocket = None
     self.save()
 
-  async def check_player_retirement(self, player):
-    if player.effective_age >= player.retirement_age:
-      grimoire = await build_grimoire(player, num_pages=2)
-      self.map.grimoires.append(grimoire)
-
   async def choose_character(self, websocket):
     available_characters = []
     for fname in os.listdir("saves/characters"):
@@ -211,7 +203,7 @@ class GameStateV2:
     if character_choice == "new":
       # signature_spell_pool = [sp for sp in self.map.region_drafts[0].spell_pool # sum([rd.spell_pool for rd in self.map.region_drafts], [])
       #                         if sp.type in ["Producer", "Passive", "Converter"]]
-      player = await self.generate_new_character(signature_spell_pool, websocket)
+      player = await self.generate_new_character([], websocket)
       # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
       character_file = f"saves/characters/{character_choice}.pkl"
@@ -242,18 +234,26 @@ class GameStateV2:
   async def play_setup(self, player_id=None, websocket=None):
     # if a Haven save file doesn't exist, make one
     if not os.path.exists("saves/haven.pkl"):
-      self.haven = Haven()
+      self.haven = Haven(library=generate_library_spells(12))
     else:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
-    map = await self.choose_map(websocket)
-    self.map = map
+
+    # Choose Character
     player = await self.choose_character(websocket)
-    map.init(player)
     # self.player = player
     party_members[player_id] = player
     player.id = player_id
     player.websocket = websocket
+
+    # Do the character haven draft
+    await haven_library_draft(player, self.haven)
+
+    # Choose Map
+    map = await self.choose_map(websocket)
+    self.map = map
+    map.init(player)
+
     return player, map
 
   async def play_encounter(self, player, encounter, num_pages=3, page_capacity=3):
@@ -272,9 +272,7 @@ class GameStateV2:
       await ws_input(colored(f"You will fight {region_draft.combat_size} enemy sets next combat!", "red"), websocket)
       await region_draft.play(player)
       await region_shop.play(player)
-      is_boss_encounter = isinstance(region_draft, BossRegionDraft)
-      encounter = self.generate_encounter(player, combat_size=region_draft.combat_size,
-                                          boss=is_boss_encounter)
+      encounter = self.generate_encounter(player, combat_size=region_draft.combat_size)
       await self.play_encounter(player, encounter, num_pages=3)
 
       # Persistent enemy sets
