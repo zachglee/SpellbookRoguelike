@@ -150,14 +150,14 @@ class Player(CombatEntity):
     self.level += 1
     self.max_hp += 1
     self.hp += 1
-    if self.level > 0 and self.level % 2 == 0:
-      self.memorizations_pending += 1
-      await self.memorize()
+    # if self.level > 0 and self.level % 2 == 0:
+    #   self.memorizations_pending += 1
+    #   await self.memorize()
     # if self.level > 0 and self.level % 3 == 0:
     #   await self.learn_recipe()
-    if self.level > 0 and self.level % 5 == 0:
-      self.ritual_learnings_pending += 1
-      await self.learn_rituals()
+    # if self.level > 0 and self.level % 5 == 0:
+    #   self.ritual_learnings_pending += 1
+    #   await self.learn_rituals()
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
   async def check_level_up(self):
@@ -248,7 +248,7 @@ class Player(CombatEntity):
     inventory = deepcopy(self.starting_inventory)
     inventory += (
       [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
-      Item.make(f"{self.name}'s Dagger", 3, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
+      Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
       + [deepcopy(p) for p in minor_energy_potions])
     self.hp = self.max_hp
     self.clear_conditions()

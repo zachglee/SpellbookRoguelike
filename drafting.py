@@ -65,6 +65,9 @@ async def edit_page_from_library(player, page_number, page_capacity=3) -> Spellb
     play_sound("write-spell.mp3")
 
 async def haven_library_draft(player, haven):
+  for ls in haven.library:
+    ls.copies_remaining = ls.max_copies_remaining
+
   chosen_spells = []
   while True:
     await ws_print(haven.render(), player.websocket)
@@ -99,4 +102,5 @@ async def haven_library_draft(player, haven):
     if spell_to_discount.material_cost > 0:
       spell_to_discount.material_cost -= 1
       total_discounts += 1
+
   await ws_print(haven.render(), player.websocket)

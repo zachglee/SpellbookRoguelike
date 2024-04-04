@@ -58,13 +58,12 @@ class RegionDraft:
 
   def level_enemyset(self, enemyset):
     material = 0
-    if random.random() < (0.20 + (0.20 * min(self.difficulty, 3))):
-      material += 1
+    if random.random() < (0.0 + (0.20 * min(self.difficulty, 3))):
       level_distribution = [1, 1, 1, 2, 2, 3]
       
       for i in range(random.choice(level_distribution)):
         enemyset.level_up()
-        material += (i+1)
+        material += (i+3)
     return material
 
   def init(self):
@@ -77,11 +76,6 @@ class RegionDraft:
     enemy_draft_pick_options = [self.generate_draft_pick_options(self.n_options-1, type="enemy") for _ in range(self.n_enemy_picks)]
     
     self.draft_picks = spell_draft_pick_options + enemy_draft_pick_options
-    # for i in range(max(self.n_spell_picks, self.n_enemy_picks)):
-    #   if spell_draft_pick_options:
-    #     self.draft_picks.append(spell_draft_pick_options.pop(0))
-    #   if enemy_draft_pick_options:
-    #     self.draft_picks.append(enemy_draft_pick_options.pop(0))
 
 
   def generate_draft_pick_option(self, type="spell") -> DraftPickOption:
@@ -93,13 +87,13 @@ class RegionDraft:
     spell = None
     enemyset = None
     character = None
-    material = random.randint(0, 5)
+    material = random.randint(1, 6)
 
     if type == "enemy":
       enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
-      if random.random() < (0.33 + self.difficulty * 0.03):
+      if random.random() < (0.20 + self.difficulty * 0.05):
         enemyset.obscured = True
-        material += 2
+        material += 3
       material += self.level_enemyset(enemyset)
       if self.stranded_characters and random.random() < 0.6:
         character = random.choice(self.stranded_characters)

@@ -49,22 +49,22 @@ def generate_shop_item(item):
     cost = item.material_cost
   elif item.rare:
     stock = 1
-    cost = 15
+    cost = 10
   elif item.name in ["Gold Potion", "Red Potion", "Blue Potion"]:
     stock = 2
-    cost = 3
+    cost = 2
   elif not item.rare:
     stock = 1
-    cost = 6
+    cost = 4
   return ShopItem(item, cost=cost, stock=stock)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 16)
+  variance = random.randint(0, 11)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=20 + variance, stock=2, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=15 + variance, stock=2, immediate_effect=ancient_key_effect)
 
-def generate_shop(n_items, item_pool, key=False, page=False) -> Shop:
+def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)
   shop_items = []
   for item in item_pool[:n_items]:

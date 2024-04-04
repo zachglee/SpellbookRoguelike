@@ -35,7 +35,7 @@ class GameStateV2:
 
     #
     self.show_intents = False
-    self.run_length = 4
+    self.run_length = 3
     self.started = False
 
   # Properties
@@ -173,19 +173,15 @@ class GameStateV2:
     await player.memorize()
     await player.learn_rituals()
 
-    await ws_print(render_secrets_dict(player.secrets_dict), player.websocket)
-    chosen_faction = await choose_str(list(player.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
-    if chosen_faction:
-      self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
+    # await ws_print(render_secrets_dict(player.secrets_dict), player.websocket)
+    # chosen_faction = await choose_str(list(player.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
+    # if chosen_faction:
+    #   self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
+    for faction, secrets in player.secrets_dict.items():
+      self.haven.secrets_dict[faction] += secrets
 
     player.age += 1
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
-    self.haven.material += player.material
-    await ws_print(colored(f"You contributed {player.material} material to the haven!", "green"), player.websocket)
-    player.material = 0
-    supplies_gained = ((self.map.difficulty + 1) * num_keys) + 1
-    self.haven.supplies += supplies_gained
-    await ws_print(colored(f"You contributed {supplies_gained} supplies to the haven!", "green"), player.websocket)
     player.inventory = []
 
     player.websocket = None
@@ -221,20 +217,22 @@ class GameStateV2:
     map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
     if map_choice:
       map = map_choice
-      # choose difficulty
-      difficulty = int(await ws_input(f"Choose a difficulty > ", websocket))
-      map.difficulty = difficulty
       await ws_print(f"You embark on {map.render()}...", websocket)
     else:
       map = Map(name=None, n_regions=self.run_length)
       await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
+
+    # choose difficulty
+    difficulty = int(await ws_input(f"Choose a difficulty > ", websocket))
+    map.difficulty = difficulty
 
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
     # if a Haven save file doesn't exist, make one
     if not os.path.exists("saves/haven.pkl"):
-      self.haven = Haven(library=generate_library_spells(12))
+      starting_library = random.sample(generate_spell_pools(n_pools=1)[0], 10)
+      self.haven = Haven(library=starting_library)
     else:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
@@ -288,21 +286,34 @@ class GameStateV2:
 
       await self.discovery_phase(player)
 
-    # Generate a new map!
+    # End of run rewards
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
     player.experience += 50 * num_keys
     await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
-    if self.map.explored == False and self.map.difficulty >= 4:
-      self.map.explored = True
+
+    completed_difficulty = None
+    if num_keys >= self.map.completed_difficulties[self.map.difficulty]:
+      completed_difficulty = self.map.difficulty
+      self.map.completed_difficulties[self.map.difficulty] += 1
+      await ws_print(colored(f"You've completed difficulty {self.map.difficulty}!", "green"), websocket)
+
+    if completed_difficulty in [0, 1]:
+      # get a new spell for the haven
+      await ws_print(self.haven.render(), websocket)
+      choices = random.sample(self.map.region_drafts[0].spell_pool, 3)
+      chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven > ", websocket)
+      self.haven.library.append(chosen_spell)
+    if completed_difficulty == 2:
+      # add a new ritual
+      pass
+    if completed_difficulty == 3:
+      # get an item recipe
+      pass
+    if completed_difficulty == 4:
+      # get a new map
       new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
-    # if num_keys >= 1:
-    #   player.learn_recipe()
-    #   pass
-    # if num_keys >= 2:
-    #   player.remaining_blank_archive_pages += 2
-    #   await ws_print(colored("You gained 2 blank archive pages!", "green"), websocket)
 
     await self.end_run(player)
     await ws_print(self.haven.render(), websocket)

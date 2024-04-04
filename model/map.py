@@ -1,4 +1,5 @@
 
+from collections import defaultdict
 import random
 import dill
 from termcolor import colored
@@ -13,7 +14,7 @@ class Map:
     self.name = name
     self.difficulty = difficulty
     self.region_drafts = []
-    completed_difficulties = [] # Mapping of int difficulty to how many times completed
+    self.completed_difficulties = defaultdict(int) # Mapping of int difficulty to how many times completed
 
     spell_pools = generate_spell_pools(n_pools=n_regions)
     random.shuffle(factions)
@@ -22,7 +23,7 @@ class Map:
     self.region_drafts = [
       RegionDraft(combat_size, faction_set, spell_pool, n_enemy_picks=n_enemy_picks, n_spell_picks=n_spell_picks, difficulty=self.difficulty)
       for combat_size, n_enemy_picks, n_spell_picks, spell_pool, faction_set in
-      zip([3, 4, 5, 6], [3, 2, 2, 2], [0, 0, 0, 0], spell_pools, faction_sets)
+      zip([3, 4, 5], [3, 2, 2], [0, 0, 0], spell_pools, faction_sets)
     ]
 
     if self.name is None:
@@ -46,7 +47,7 @@ class Map:
     # init shops
     self.region_shops = [generate_shop(5, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions,
-                                           key=True, page=random.random() > 0.25)
+                                           key=True)
                         for region_draft in self.region_drafts]
     for region_draft in self.region_drafts:
       region_draft.difficulty = self.difficulty
