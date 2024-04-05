@@ -5,7 +5,7 @@ from termcolor import colored
 from utils import choose_str, numbered_list, render_secrets_dict, ws_print
 from content.enemy_factions import faction_rituals_dict
 
-RITUAL_PROGRESS_PRICE = 3
+RITUAL_PROGRESS_PRICE = 50
 
 class Haven:
   def __init__(self, library):
@@ -24,7 +24,7 @@ class Haven:
   async def pre_embark(self, player):
     
     choice = True
-    while choice:
+    while choice and self.rituals:
       await ws_print(player.render(), player.websocket)
       await ws_print(self.render(), player.websocket)
       choices = [ritual.faction for ritual in self.rituals]
@@ -33,10 +33,10 @@ class Haven:
       prepared_rituals = {}
       if choice and self.secrets_dict[choice] >= RITUAL_PROGRESS_PRICE:
         if prepared_rituals.get(choice):
-          prepared_rituals[choice].progress += 1
+          prepared_rituals[choice].progress += prepared_rituals[choice].required_progress
         else:
           prepared_rituals[choice] = deepcopy(faction_rituals_dict[choice])
-          prepared_rituals[choice].progress += 1
+          prepared_rituals[choice].progress += prepared_rituals[choice].required_progress
 
         self.secrets_dict[choice] -= RITUAL_PROGRESS_PRICE
         await ws_print(player.render_rituals(), player.websocket)
@@ -48,5 +48,6 @@ class Haven:
     material_part = colored(f"{self.material}⛁", "yellow")
     supplies_part = colored(f"{self.supplies}♦", "green")
     secrets_part = colored(render_secrets_dict(self.secrets_dict), "cyan")
+    rituals_part = "-------- RITUALS --------\n" + numbered_list(self.rituals)
     library_part = "-------- LIBRARY --------\n" + numbered_list(self.library)
-    return f"~~~~ HAVEN ({material_part} | {supplies_part}) ~~~~\n{secrets_part}\n{library_part}"
+    return f"~~~~ HAVEN ({material_part} | {supplies_part}) ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"

@@ -27,7 +27,7 @@ class RegionDraft:
   def __init__(self, combat_size, factions, spell_pool, n_options=3, n_spell_picks=3,
                n_enemy_picks=3, skip_reward=8, difficulty=0):
     self.combat_size = combat_size
-    self.factions = factions
+    self.factions = factions # Faction
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
     self.spell_pool = spell_pool
     self.stranded_characters: List[Player] = []
@@ -162,33 +162,3 @@ class RegionDraft:
         player.pursuing_enemysets.append(pick_option.enemyset)
       
       await wait_for_teammates(player.id, f"regiondraft{i}")
-
-
-# Experimental for now...
-class BossRegionDraft:
-  def __init__(self, combat_size, enemy_sets):
-    self.combat_size = combat_size
-    self.enemy_sets = enemy_sets
-    for _ in range(9):
-      random.choice(self.enemy_sets).level_up()
-
-  @property
-  def basic_items(self):
-    return sum([faction_dict[es.faction].basic_items for es in self.enemy_sets], [])
-  
-  @property
-  def special_items(self):
-    return sum([faction_dict[es.faction].special_items for es in self.enemy_sets], [])
-
-  def init(self):
-    pass
-
-  async def play(self, player):
-    # level up enemies
-    prepared_enemy_sets = []
-    for enemy_set in self.enemy_sets:
-      prepared_enemy_set = deepcopy(enemy_set)
-      prepared_enemy_set.obscured = True
-      prepared_enemy_sets.append(prepared_enemy_set)
-    player.pursuing_enemysets += prepared_enemy_sets
-    

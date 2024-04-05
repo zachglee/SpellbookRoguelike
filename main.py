@@ -8,10 +8,9 @@ from model.player import Player
 from model.spellbook import LibrarySpell
 from sound_utils import play_sound
 from termcolor import colored
-from generators import generate_library_spells, generate_spell_pools
-from model.region_draft import BossRegionDraft
+from generators import generate_spell_pools
 from model.haven import Haven
-from utils import party_members, choose_obj, choose_str, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
+from utils import party_members, choose_obj, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
 
 STARTING_EXPLORED = 1
 
@@ -231,7 +230,9 @@ class GameStateV2:
   async def play_setup(self, player_id=None, websocket=None):
     # if a Haven save file doesn't exist, make one
     if not os.path.exists("saves/haven.pkl"):
-      starting_library = random.sample(generate_spell_pools(n_pools=1)[0], 10)
+      starting_library = []
+      while len([ls for ls in starting_library if ls.spell.type == "Producer"]) == 0:
+        starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
       self.haven = Haven(library=starting_library)
     else:
       with open("saves/haven.pkl", "rb") as f:
@@ -301,11 +302,15 @@ class GameStateV2:
       # get a new spell for the haven
       await ws_print(self.haven.render(), websocket)
       choices = random.sample(self.map.region_drafts[0].spell_pool, 3)
-      chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven > ", websocket)
-      self.haven.library.append(chosen_spell)
+      await ws_print("\n" + numbered_list(choices), websocket)
+      chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven library > ", websocket)
+      self.haven.library.append(LibrarySpell(chosen_spell))
     if completed_difficulty == 2:
       # add a new ritual
-      pass
+      ritual_choices = [faction.ritual for faction in self.map.factions]
+      await ws_print("\n" + numbered_list(ritual_choices), websocket)
+      chosen_ritual = await choose_obj(ritual_choices, "Choose a ritual to add to the haven > ", websocket)
+      self.haven.rituals.append(chosen_ritual)
     if completed_difficulty == 3:
       # get an item recipe
       pass

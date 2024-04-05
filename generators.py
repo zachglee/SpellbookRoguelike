@@ -27,7 +27,7 @@ def generate_spell_pools(n_pools=1) -> List[List[Spell]]:
     spell_pools.append(spell_pool)
   return spell_pools
 
-def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions):
+def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions) -> List["Faction"]:
   random.shuffle(faction_pool)
   faction_pool = faction_pool * 2
   pool_size = len(faction_pool)
@@ -62,7 +62,7 @@ def generate_ancient_key_shop_item():
   variance = random.randint(0, 11)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=15 + variance, stock=2, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=20 + variance, stock=2, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)

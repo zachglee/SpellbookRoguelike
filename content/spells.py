@@ -90,8 +90,8 @@ red_first_3_turns = [
   Spell(rules_text="If this has 0 or less charges, gain dig deep 3.", color="red", type="Producer",
         generate_commands_post=if_spell_charges(0, ["dig p 2"], above=False)),
   Spell(rules_text="Call 2. Gain 15 empower.", color="red", type="Converter", conversion_color="gold", raw_commands=["call 2", "empower p 15"]),
-  Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 12 damage to random thrice.", color="red", type="Consumer",
-        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 12"], above=False))]
+  Spell(rules_text="+1 Time. If this has 0 or less charges, gain 3 regen and deal 10 damage to random thrice.", color="red", type="Consumer",
+        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
 ]
 
 red_random_target = [

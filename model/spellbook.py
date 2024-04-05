@@ -95,7 +95,7 @@ class Spell(BaseModel):
     return self.description
 
 class LibrarySpell:
-  def __init__(self, spell: Spell, copies=3, material_cost=5, signature=False):
+  def __init__(self, spell: Spell, copies=1, material_cost=5, signature=False):
     self.spell = spell
     self.signature = signature
     self.copies_remaining = copies
