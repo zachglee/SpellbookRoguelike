@@ -88,6 +88,8 @@ class GameStateV2:
       if cmd == "die":
         await self.player_death(encounter.player)
         return
+      elif cmd == "sound":
+        await ws_print("play_sound:foobar.mp3", websocket=encounter.player.websocket)
       elif cmd == "debug":
         targets = await get_combat_entities(self, cmd_tokens[1], websocket=encounter.player.websocket)
         for target in targets:

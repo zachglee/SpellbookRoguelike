@@ -69,6 +69,15 @@
             term.write('\r\n$ ');
         }
         socket.onmessage = (event) => {
+            // special case: if the server sends a string beginning with play_sound: then play the mp3 file
+            // that is specified in the string
+            if (event.data.startsWith('play_sound:')) {
+                var sound_file = event.data.substring(11);
+                alert(sound_file);
+                var audio = new Audio("https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_100KB_MP3.mp3");
+                audio.play();
+                return;
+            }
             term.write(event.data);
         }
 
