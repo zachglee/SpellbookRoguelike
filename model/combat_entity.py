@@ -6,7 +6,7 @@ from collections import defaultdict
 from termcolor import colored
 from model.event import Event
 from utils import energy_color_map, energy_pip_symbol, faf_print, ws_input
-from sound_utils import play_sound
+from sound_utils import faf_play_sound, play_sound
 
 class CombatEntity(BaseModel):
   max_hp: int
@@ -163,7 +163,7 @@ class CombatEntity(BaseModel):
       faf_print(f"{self.name} attacks it encasement for {damage_to_encase} damage!", self.websocket)
     
     if target.conditions["evade"] > 0:
-      play_sound("attack-evaded.mp3", channel=1)
+      faf_play_sound("attack-evaded.mp3", self.websocket, channel=1)
       faf_print(f"{self.name} attacks {target.name} but they evade!", self.websocket)
       target.conditions["evade"] -= 1
       final_damage = 0
@@ -181,15 +181,15 @@ class CombatEntity(BaseModel):
     # play the proper sound
     if damage_dealt == 0:
       if damage <= 5:
-        play_sound("light-attack-blocked.mp3", channel=1)
+        faf_play_sound("light-attack-blocked.mp3", self.websocket, channel=1)
       else:
-        play_sound("heavy-attack-blocked.mp3", channel=1)
+        faf_play_sound("heavy-attack-blocked.mp3", self.websocket, channel=1)
     elif damage_dealt <= 5:
-      play_sound("light-attack.wav", channel=1)
+      faf_play_sound("light-attack.wav", self.websocket, channel=1)
     elif damage_dealt <= 12:
-      play_sound("medium-attack.mp3", channel=1)
+      faf_play_sound("medium-attack.mp3", self.websocket, channel=1)
     else:
-      play_sound("heavy-attack.mp3", channel=1)
+      faf_play_sound("heavy-attack.mp3", self.websocket, channel=1)
 
     return damage_dealt
 

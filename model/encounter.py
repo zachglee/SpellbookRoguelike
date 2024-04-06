@@ -12,7 +12,7 @@ from content.enemy_actions import AddConditionAction, MultiAction, NothingAction
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
 from content.enemy_factions import faction_dict
 from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
-from sound_utils import play_sound
+from sound_utils import faf_play_sound, play_sound, ws_play_sound
 
 
 class EnemyWave:
@@ -130,9 +130,9 @@ class Encounter:
       idx = self.back.index(enemy)
       self.dead_enemies.append(self.back.pop(idx))
       if enemy.max_hp <= 10:
-        play_sound("enemy-death-small.mp3", channel=2)
+        faf_play_sound("enemy-death-small.mp3", enemy.websocket, channel=2)
       else:
-        play_sound("enemy-death-large.mp3", channel=2)
+        faf_play_sound("enemy-death-large.mp3", enemy.websocket, channel=2)
     except Exception as e:
       print(f"---------------------- {e}")
 
@@ -142,7 +142,6 @@ class Encounter:
     except Exception as e:
       print(f"---------------------- {e}")
 
-    print(f"{enemy.name} died!")
     return enemy
 
   def update_enemy_self_knowledge(self):
@@ -235,21 +234,21 @@ class Encounter:
       target_spawn.turn -= magnitude
 
   async def explore(self):
-    play_sound("explore.mp3")
+    await ws_play_sound("explore.mp3", self.player.websocket)
     self.player.explored += 1
     self.player.experience += 1
     await self.player.gain_material(1)
     r = random.random()
     found_item = None
     if r < 0.02:
-      play_sound("explore-find.mp3")
+      await ws_play_sound("explore-find.mp3", self.player.websocket)
       found_item = deepcopy(random.choice(self.special_items))
       await ws_input(colored("What's this, grasped in the hand of a long dead mage? It hums with magic.", "magenta"), self.player.websocket)
     elif r < 0.08:
       found_item = deepcopy(random.choice(self.basic_items))
       await ws_input(colored("Something useful glints in the torchlight...", "green"), self.player.websocket)
     elif r < 0.16:
-      play_sound("explore-find.mp3")
+      await ws_play_sound("explore-find.mp3", self.player.websocket)
       found_item = deepcopy(random.choice(minor_energy_potions))
       await ws_input(colored("Something useful glints in the torchlight...", "green"), self.player.websocket)
     else:
@@ -295,7 +294,7 @@ class Encounter:
           self.player.spend_time(cost=item.time_cost)
           await item.use(self)
           self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
-          play_sound("inventory.mp3")
+          await ws_play_sound("inventory.mp3", self.player.websocket)
         else:
           await ws_input(colored("Not enough time to use that item!", "red"), self.player.websocket)
       elif cmd in ["explore", "x"]:
@@ -305,20 +304,20 @@ class Encounter:
         self.player.spend_time()
         await self.observe()
       elif cmd == "face?":
-        self.player.switch_face(event=False)
+        await self.player.switch_face(event=False)
       elif cmd == "face!":
-        self.player.switch_face()
+        await self.player.switch_face()
       elif cmd == "face":
         self.player.spend_time()
-        self.player.switch_face()
+        await self.player.switch_face()
       elif cmd == "page":
         self.player.spend_time()
-        self.player.spellbook.switch_page()
+        await self.player.spellbook.switch_page(self.player.websocket)
         self.events.append(Event(["page"]))
       elif cmd == "page?":
-        self.player.spellbook.switch_page()
+        await self.player.spellbook.switch_page(self.player.websocket)
       elif cmd == "page!":
-        self.player.spellbook.switch_page()
+        await self.player.spellbook.switch_page(self.player.websocket)
         self.events.append(Event(["page"]))
       elif cmd_tokens[0] in ["recharge", "re"]:
         target = await get_spell(self, cmd_tokens[1], self.player.websocket)
@@ -364,7 +363,7 @@ class Encounter:
         magnitude = int(cmd_tokens[2])
         for target in targets:
           target.suffer(magnitude)
-        play_sound("suffer.mp3")
+        await ws_play_sound("suffer.mp3", self.player.websocket)
       elif cmd_tokens[0] == "heal":
         targets = await get_combat_entities(self, cmd_tokens[1], websocket=self.player.websocket)
         magnitude = int(cmd_tokens[2])
@@ -405,7 +404,7 @@ class Encounter:
             target.conditions["enduring"] = None
           if condition == "durable" and target.conditions["durable"] == 0:
             target.conditions["durable"] = None
-        play_sound(f"apply-{condition}.mp3", channel=1)
+        await ws_play_sound(f"apply-{condition}.mp3", self.player.websocket, channel=1)
     except (KeyError, IndexError, ValueError, TypeError) as e:
       await ws_print(str(e), self.player.websocket)
     await self.resolve_events()
@@ -501,7 +500,7 @@ class Encounter:
     if (faced := self.faced_enemy_queue) and (searing := self.player.conditions["searing"]):
       damage = faced[0].assign_damage(searing)
       await ws_print(f"{faced[0].name} took {damage} damage from searing presence!", self.player.websocket)
-      play_sound("tick-searing.mp3")
+      await ws_play_sound("tick-searing.mp3", self.player.websocket)
     # add end_turn event
     if self.turn > 0:
       self.events.append(Event(["end_turn"]))
@@ -545,7 +544,7 @@ class Encounter:
       entity.end_round()
 
   async def end_player_turn(self):
-    play_sound("turn-end.mp3")
+    await ws_play_sound("turn-end.mp3", self.player.websocket)
     await self.player_end_phase()
     await self.enemy_phase()
     await self.post_enemy_scheduled_commands()

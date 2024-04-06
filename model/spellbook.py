@@ -3,7 +3,7 @@ from typing import Any, Dict, Literal
 from pydantic import BaseModel
 from termcolor import colored
 from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol, ws_input
-from sound_utils import play_sound
+from sound_utils import play_sound, ws_play_sound
 
 class Spell(BaseModel):
   rules_text: str
@@ -68,7 +68,7 @@ class Spell(BaseModel):
       await encounter.handle_command(cmd)
 
     if sound_file := self.sound_file:
-      play_sound(sound_file, channel=3)
+      await ws_play_sound(sound_file, encounter.player.websocket, channel=3)
 
   @property
   def description(self):
@@ -180,9 +180,9 @@ class Spellbook:
   def current_page(self) -> SpellbookPage:
     return self.pages[self.current_page_idx] if self.pages else SpellbookPage([])
 
-  def switch_page(self):
+  async def switch_page(self, websocket):
     self.current_page_idx = (self.current_page_idx + 1) % len(self.pages)
-    play_sound("page-flip-1.mp3")
+    await ws_play_sound("page-flip-1.mp3", websocket)
 
   def render(self, editing_page_idx=None):
     rendered = ""

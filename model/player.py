@@ -11,7 +11,7 @@ from model.combat_entity import CombatEntity
 from model.spellbook import LibrarySpell, Spell, Spellbook, SpellbookPage
 from model.item import Item
 from utils import choose_binary, choose_str, colorize, numbered_list, choose_obj, energy_colors, render_secrets_dict, ws_input, ws_print
-from sound_utils import play_sound
+from sound_utils import play_sound, ws_play_sound
 from model.event import Event
 from content.enemy_factions import faction_rituals_dict
 from content.items import minor_energy_potions
@@ -270,14 +270,14 @@ class Player(CombatEntity):
       immediate = encounter.back[offset:offset+1]
     return immediate[0] if immediate else None
 
-  def switch_face(self, event=True):
+  async def switch_face(self, event=True):
     if self.facing == "front":
       self.facing = "back"
     elif self.facing == "back":
       self.facing = "front"
     else:
       raise ValueError(f"Facing is: {self.facing}")
-    play_sound("face.mp3")
+    await ws_play_sound("face.mp3", self.websocket)
     if event:
       self.events.append(Event(["face"]))
       self.face_count += 1

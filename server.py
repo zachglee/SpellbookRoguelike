@@ -6,8 +6,10 @@ from pydantic import BaseModel
 import uuid
 
 from fastapi import FastAPI, WebSocket
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from utils import ws_input
+from sound_utils import ws_play_sound
 
 app = FastAPI()
 
@@ -45,6 +47,8 @@ html = """
 </html>
 """
 
+app.mount("/sounds", StaticFiles(directory="assets/sounds"), name="sounds")
+
 runs = {}
 
 @app.get("/")
@@ -54,6 +58,10 @@ async def get():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+
+    await ws_play_sound("apply-poison.mp3", websocket)
+    await ws_play_sound("apply-armor.mp3", websocket)
+    await ws_play_sound("gold-consumer-cast.mp3", websocket)
 
     run_id = await ws_input("run id > ", websocket)
     if run_id not in runs:

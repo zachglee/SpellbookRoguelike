@@ -6,7 +6,7 @@ from model.encounter import Encounter, EnemyWave
 from model.map import Map
 from model.player import Player
 from model.spellbook import LibrarySpell
-from sound_utils import play_sound
+from sound_utils import play_sound, ws_play_sound
 from termcolor import colored
 from generators import generate_spell_pools
 from model.haven import Haven
@@ -89,7 +89,7 @@ class GameStateV2:
         await self.player_death(encounter.player)
         return
       elif cmd == "sound":
-        await ws_print("play_sound:foobar.mp3", websocket=encounter.player.websocket)
+        await ws_print("play_sound:apply-sharp.mp3", websocket=encounter.player.websocket)
       elif cmd == "debug":
         targets = await get_combat_entities(self, cmd_tokens[1], websocket=encounter.player.websocket)
         for target in targets:
@@ -99,7 +99,7 @@ class GameStateV2:
         await command_reference(websocket=encounter.player.websocket)
       elif cmd in ["inventory", "inv", "i"]:
         await ws_print(encounter.player.render_inventory(), encounter.player.websocket)
-        play_sound("inventory.mp3")
+        await ws_play_sound("inventory.mp3", encounter.player.websocket)
         return
       elif cmd in ["ritual", "rituals", "rit"]:
         await ws_print(encounter.player.render_rituals(), encounter.player.websocket)
@@ -108,10 +108,10 @@ class GameStateV2:
         self.show_intents = not self.show_intents
         return
       elif cmd == "face?":
-        encounter.player.switch_face(event=False)
+        await encounter.player.switch_face(event=False)
         return
       elif cmd == "page?":
-        encounter.player.spellbook.switch_page()
+        await encounter.player.spellbook.switch_page(encounter.player.websocket)
         return
       elif cmd[-1] == "?":
         subject = cmd[:-1]
@@ -141,7 +141,7 @@ class GameStateV2:
     self.save()
 
   async def discovery_phase(self, player):
-    play_sound("passage-discovery.mp3")
+    await ws_play_sound("passage-discovery.mp3", player.websocket)
     await ws_print(colored(f"You explored a total of {player.explored} times.", "green"), player.websocket)
     player.explored = STARTING_EXPLORED
     self.save()
@@ -153,7 +153,7 @@ class GameStateV2:
       return
     # player.material = 0
     # death admin
-    play_sound("player-death.mp3")
+    await ws_play_sound("player-death.mp3", player.websocket)
     await ws_print(player.render(), player.websocket)
     await ws_input("Gained 100xp...", player.websocket)
     player.experience += 100

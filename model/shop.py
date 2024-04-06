@@ -1,5 +1,5 @@
 from model.item import Item
-from sound_utils import play_sound
+from sound_utils import play_sound, ws_play_sound
 from termcolor import colored
 from copy import deepcopy
 from utils import choose_obj, numbered_list, ws_input, ws_print
@@ -41,7 +41,7 @@ class Shop:
         continue
 
       if player.material >= chosen_item.cost and player.inventory_weight < player.inventory_capacity:
-        play_sound("inventory.mp3")
+        await ws_play_sound("inventory.mp3", player.websocket)
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
         player.seen_items.append(deepcopy(chosen_item.item))

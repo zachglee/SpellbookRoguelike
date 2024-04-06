@@ -73,8 +73,7 @@
             // that is specified in the string
             if (event.data.startsWith('play_sound:')) {
                 var sound_file = event.data.substring(11);
-                alert(sound_file);
-                var audio = new Audio("https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_100KB_MP3.mp3");
+                var audio = new Audio("http://localhost:8000/sounds/" + sound_file);
                 audio.play();
                 return;
             }

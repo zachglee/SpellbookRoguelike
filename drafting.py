@@ -3,7 +3,7 @@ import random
 from termcolor import colored
 from model.spellbook import Spellbook, SpellbookPage, SpellbookSpell
 from utils import choose_obj, numbered_list, ws_input, ws_print
-from sound_utils import play_sound
+from sound_utils import play_sound, ws_play_sound
 
 async def render_spell_draft(player, editing_page_idx, websocket=None):
     await ws_print("-------- Current Spellbook --------", websocket)
@@ -12,7 +12,7 @@ async def render_spell_draft(player, editing_page_idx, websocket=None):
       await ws_print(player.render_library(), websocket)
 
 async def encounter_draft(player, num_pages=3, page_capacity=3):
-  play_sound("build-spellbook.mp3")
+  await ws_play_sound("build-spellbook.mp3", player.websocket)
   player.spellbook.pages = [SpellbookPage([]) for i in range(num_pages)]
   for ls in player.library:
     ls.copies_remaining = ls.max_copies_remaining
@@ -62,7 +62,7 @@ async def edit_page_from_library(player, page_number, page_capacity=3) -> Spellb
       continue
     active_page.spells.append(SpellbookSpell(library_spell.spell))
     library_spell.copies_remaining -= 1
-    play_sound("write-spell.mp3")
+    await ws_play_sound("write-spell.mp3", player.websocket)
 
 async def haven_library_draft(player, haven):
   for ls in haven.library:
