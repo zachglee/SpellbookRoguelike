@@ -10,7 +10,7 @@
     <body>
       <div id="terminal"></div>
       <script>
-        const socket = new WebSocket("ws://localhost:8000/ws");
+        const socket = new WebSocket("ws://" + window.location.host + "/ws");
 
         var term = new window.Terminal({
             cursorBlink: true,
@@ -73,7 +73,7 @@
             // that is specified in the string
             if (event.data.startsWith('play_sound:')) {
                 var sound_file = event.data.substring(11);
-                var audio = new Audio("http://localhost:8000/sounds/" + sound_file);
+                var audio = new Audio("http://" + window.location.host + "/sounds/" + sound_file);
                 audio.play();
                 return;
             }
