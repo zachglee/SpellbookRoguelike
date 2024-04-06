@@ -1,5 +1,4 @@
-# - implement inventive?
-# - implement dig deep
+
 # - implement actual Condition class so that I can do fleeting
 # - refactor enemy actions so that I can compose targets with effects easier
 # - enemy that steals or strips your conditions?

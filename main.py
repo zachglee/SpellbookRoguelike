@@ -314,9 +314,6 @@ class GameStateV2:
       chosen_ritual = await choose_obj(ritual_choices, "Choose a ritual to add to the haven > ", websocket)
       self.haven.rituals.append(chosen_ritual)
     if completed_difficulty == 3:
-      # get an item recipe
-      pass
-    if completed_difficulty == 4:
       # get a new map
       new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
       new_map.save()

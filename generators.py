@@ -62,7 +62,7 @@ def generate_ancient_key_shop_item():
   variance = random.randint(0, 11)
   def ancient_key_effect(player):
     player.boss_keys += 1
-  return ShopItem(ancient_key, cost=20 + variance, stock=2, immediate_effect=ancient_key_effect)
+  return ShopItem(ancient_key, cost=20 + variance, stock=3, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)

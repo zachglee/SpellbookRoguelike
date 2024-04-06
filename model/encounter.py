@@ -327,6 +327,9 @@ class Encounter:
         if target.spell.type == "Passive":
           await ws_input(colored("Cannot cast passive spells.", "red"), self.player.websocket)
           return
+        if target.charges <= 0 and not self.player.conditions["dig"]:
+          await ws_input(colored("Spell is out of charges!", "red"), self.player.websocket)
+          return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
         await target.cast(self,
