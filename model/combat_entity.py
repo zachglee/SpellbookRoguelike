@@ -107,7 +107,7 @@ class CombatEntity(BaseModel):
     rendered_conditions = rendered_conditions.replace("inventive", colored("inventive", "cyan"))
     rendered_conditions = rendered_conditions.replace("dig", colored("dig", "yellow"))
     rendered_conditions = rendered_conditions.replace("undying", colored("undying", "magenta"))
-    return f"{self.name}: {self.hp}/{self.max_hp}hp ({rendered_conditions})"
+    return f"{colored(self.name, 'light_grey', attrs=['underline'])}: {self.hp}/{self.max_hp}hp ({rendered_conditions})"
 
   # Manipulations
 

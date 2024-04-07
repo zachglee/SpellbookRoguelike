@@ -26,13 +26,15 @@
 
         var term = new window.Terminal({
             cursorBlink: true,
-            cols: 100
+            cols: 100,
+            rows: 35
         });
         term.open(document.getElementById('terminal'));
 
         var secondary_term = new window.Terminal({
             cursorBlink: true,
-            cols: 60
+            cols: 100,
+            rows: 35
         });
         secondary_term.open(document.getElementById('secondary_terminal'));
 

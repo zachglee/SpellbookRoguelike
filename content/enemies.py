@@ -28,7 +28,7 @@ enemies = {
   "Faerie Assassin": Enemy.make(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
   "Knifehand": Enemy.make(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy.make(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
-  "Creeping Shadow": Enemy.make(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 2, "self"), exp=10),
+  "Creeping Shadow": Enemy.make(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 3, "self"), exp=10),
   "Stoneguard": Enemy.make(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
   "Conniving Impfiend": Enemy.make(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
@@ -228,24 +228,24 @@ doombringers = [
   EnemySet("Doom of Blades", [
     EnemySpawn(4, "b", make_enemy("Blade Forger")),
     EnemySpawn(6, "f", make_enemy("Doom of Blades")),
-  ], faction="Doombringers", description="Late-spawning enemy that attacks everyone."),
+  ], faction="Doombringers", description="Late-spawning enemy, heavy attacks to everything."),
   EnemySet("Doom of Plagues", [
     EnemySpawn(3, "b", make_enemy("Wandering Healer")),
     EnemySpawn(5, "f", make_enemy("Doom of Plagues")),
-  ], faction="Doombringers", description="Late-spawning enemy that adds poison."),
+  ], faction="Doombringers", description="Late-spawning enemy, adds heavy poison."),
   EnemySet("Doom of Waves", [
     EnemySpawn(3, "b", make_enemy("Defiant Survivor")),
     EnemySpawn(4, "f", make_enemy("Wave of Doom")),
     EnemySpawn(5, "f", make_enemy("Wave of Doom")),
     EnemySpawn(6, "f", make_enemy("Wave of Doom")),
-  ], faction="Doombringers", description="3 late spawning enemies with slow attacks and retaliate."),
+  ], faction="Doombringers", description="3 late spawning enemies, slow attacks and retaliate."),
   EnemySet("Doom of Hordes", [
     EnemySpawn(4, "b", make_enemy("Grizzled Armorer")),
     EnemySpawn(6, "f", make_enemy("Horde Beast")),
     EnemySpawn(6, "f", make_enemy("Horde Beast")),
     EnemySpawn(6, "b", make_enemy("Horde Beast")),
     EnemySpawn(6, "b", make_enemy("Horde Beast")),
-  ], faction="Doombringers", description="4 enemies that spawn all at once and have Overwhelm.")
+  ], faction="Doombringers", description="4 enemies, all spawn at once. Stronger in numbers.")
 ]
 
 the_collectors = [
@@ -269,7 +269,7 @@ the_collectors = [
     EnemySpawn(2, "f", make_enemy("Collector's Cage")),
     EnemySpawn(3, "b", make_enemy("Grasping Hand")),
     EnemySpawn(3, "f", make_enemy("Grasping Hand"))
-  ], faction="The Collectors", description="6 small minions that call enemies, slow you, and encase you.")
+  ], faction="The Collectors", description="6 small minions that call enemies, slow, and doom you.")
 ]
 
 undying_legion = [
@@ -316,16 +316,16 @@ saik_collective = [
   ], faction="Sa'ik Collective", description="Trio, they deal more damage from behind."),
   EnemySet("Evasive Skydancer", [
     EnemySpawn(2, "f", make_enemy("Evasive Skydancer"))
-  ], faction="Sa'ik Collective", description="When attacked, doesn't attack, but gains sharp instead."),
+  ], faction="Sa'ik Collective", description="When attacked, doesn't attack -- gains sharp instead."),
   EnemySet("Sa'ik Descenders", [
     EnemySpawn(3, "f", make_enemy("Cocky Descender")),
     EnemySpawn(3, "b", make_enemy("Cocky Descender")),
     EnemySpawn(3, "f", make_enemy("Cocky Descender")),
     EnemySpawn(3, "b", make_enemy("Cocky Descender")),
-  ], faction="Sa'ik Collective", description="4 enemies, spawn all at once, high damage while at full health."),
+  ], faction="Sa'ik Collective", description="4 enemies, spawn all at once, high damage while at full hp."),
   EnemySet("Screeching Fury", [
     EnemySpawn(3, "b", make_enemy("Screeching Fury")),
-  ], faction="Sa'ik Collective", description="High damage while not at full health."),
+  ], faction="Sa'ik Collective", description="High damage while not at full hp."),
 ]
 
 house_of_imir = [
@@ -343,10 +343,10 @@ house_of_imir = [
     EnemySpawn(1, "b", make_enemy("Lurking Scavenger")),
     EnemySpawn(3, "b", make_enemy("Lurking Scavenger")),
     EnemySpawn(5, "b", make_enemy("Lurking Scavenger")),
-  ], faction="House of Imir", description="Trio, if you're surrounded they lifesteal attack, otherwise they regen."),
+  ], faction="House of Imir", description="Trio, lifesteal attack if you're surrounded, otherwise regen."),
   EnemySet("Vampire Lord", [
     EnemySpawn(3, "f", make_enemy("Vampire Lord")),
-  ], faction="House of Imir", description="Starts damaged, can lifesteal. If you let him heal to full, he'll help you."),
+  ], faction="House of Imir", description="Starts damaged, can lifesteal. If he heals to full, he'll help you."),
 ]
 
 movs_horde = [
@@ -368,7 +368,7 @@ movs_horde = [
     EnemySpawn(5, "b", make_enemy("Skitterer")),
     EnemySpawn(6, "f", make_enemy("Skitterer")),
     EnemySpawn(6, "b", make_enemy("Skitterer")),
-  ], faction="Mov's Horde", description="Swarm of low hp enemies. Attacks get stronger when many enemies present."),
+  ], faction="Mov's Horde", description="Swarm of low hp enemies. Stronger in large numbers."),
   EnemySet("Necromancer Apprentice", [
     EnemySpawn(4, "f", make_enemy("Necromancer Apprentice")),
   ], faction="Mov's Horde", description="Gives enemies undying and regen."),
@@ -379,11 +379,11 @@ company_of_blades = [
   EnemySet("Bandit Ambush", [
     EnemySpawn(2, "f", make_enemy("Bandit")),
     EnemySpawn(2, "b", make_enemy("Bandit"))
-  ], faction="Company of Blades", description="Duo, they attack as long as there is a same or higher max hp enemy."),
+  ], faction="Company of Blades", description="Duo, they attack as long as there's an enemy with >= their hp."),
   EnemySet("Hunter and Hawk", [
     EnemySpawn(3, "b", make_enemy("Hawk")),
     EnemySpawn(4, "f", make_enemy("Hunter"))
-  ], faction="Company of Blades", description="Hawk inflicts vulnerable, hunter has heavy attacks from backline."),
+  ], faction="Company of Blades", description="Hawk inflicts vulnerable, hunter heavy attacks from backline."),
   EnemySet("Insistent Duelist", [
     EnemySpawn(1, "f", make_enemy("Insistent Duelist"))
   ], faction="Company of Blades", description="Only attacks if he's alone on his side, otherwise powers up."),
@@ -398,7 +398,7 @@ giantkin = [
   # Giantkin
   EnemySet("Charging Ogre", [
     EnemySpawn(4, "f", make_enemy("Charging Ogre"))
-  ], faction="Giantkin", description="Charges to front and powers up, once in front does heavy attacks."),
+  ], faction="Giantkin", description="Charges to front and powers up, once in front, heavy attacks."),
   EnemySet("Injured Troll", [
     EnemySpawn(2, "f", make_enemy("Injured Troll"))
   ], faction="Giantkin", description="Starts damaged but with heavy regen."),
@@ -424,11 +424,11 @@ fae_realm = [
   ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise attack."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))
-  ], faction="Fae Realm", description="Poisons you on entry. If you leave her be, she'll cure and heal you."),
+  ], faction="Fae Realm", description="Poisons you on entry. Leave her be and she'll cure you."),
   EnemySet("Tithetaker", [
       EnemySpawn(1, "b", make_enemy("Generous Sprite")),
       EnemySpawn(5, "f", make_enemy("Tithetaker"))
-  ], faction="Fae Realm", description="Spawns late, does heavy attacks unless you have lots of energy."),
+  ], faction="Fae Realm", description="Spawns late, heavy attacks unless you have lots of energy."),
 ]
 
 kingdom_of_amar = [
@@ -462,7 +462,7 @@ infernal_plane = [
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
-  ], faction="Infernal Plane", description="Trio, if you're Overwhelmed, they burn you, otherwise just attack."),
+  ], faction="Infernal Plane", description="Trio, in high numbers, they burn you, otherwise just attack."),
   EnemySet("Cult of the Inferno", [
     EnemySpawn(1, "b", make_enemy("Cultist")),
     EnemySpawn(2, "b", make_enemy("Cultist")),
@@ -501,7 +501,7 @@ spirits = [
   # Spirits
   EnemySet("Lightning Elemental", [
     EnemySpawn(1, "f", make_enemy("Lightning Elemental"))
-  ], faction="Spirits", description="Strong attacks, but they give you gold energy and empower."),
+  ], faction="Spirits", description="Strong attacks, but gives you gold energy and empower."),
   EnemySet("Frost Elemental", [
     EnemySpawn(2, "f", make_enemy("Frost Elemental"))
   ], faction="Spirits", description="Inflicts slow, but gives you blue energy."),
@@ -550,10 +550,10 @@ ancient_horrors = [
     EnemySpawn(3, "b", make_enemy("Incubated Fleshling")),
     EnemySpawn(4, "b", make_enemy("Incubated Fleshling")),
     EnemySpawn(5, "b", make_enemy("Corrupting Spire")),
-  ], faction="Ancient Horrors", description="Trio of minions. All get empowered by the spire."),
+  ], faction="Ancient Horrors", description="Trio of minions. All get buffed by the spire."),
   EnemySet("Mindless Maw", [
     EnemySpawn(4, "f", make_enemy("Mindless Maw")),
-  ], faction="Ancient Horrors", description="Attacks whatever's in front of it and gets stronger every time."),
+  ], faction="Ancient Horrors", description="Attacks whatever's in front of it and gets stronger."),
   EnemySet("The Vulture", [
     EnemySpawn(6, "b", make_enemy("The Vulture"))
   ], faction="Ancient Horrors", description="Consumes all enemies on entry, to strengthen itself."),

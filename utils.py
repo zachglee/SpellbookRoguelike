@@ -80,6 +80,12 @@ def aligned_line(line_items, column_width=30):
 def render_secrets_dict(secrets_dict):
   return numbered_list([f"{f}: {n}" for f, n in secrets_dict.items()])
 
+async def ws_update_player_state_reference(player):
+  await ws_print("\n\n\n\n\n", player.websocket, secondary=True)
+  await ws_print(player.render_inventory() + "\n", player.websocket, secondary=True)
+  await ws_print("-------- SPELLBOOK --------", player.websocket, secondary=True)
+  await ws_print(player.spellbook.render(), player.websocket, secondary=True)
+
 # choosing
 
 async def choose_str(choices: List[str], prompt, websocket: WebSocket):

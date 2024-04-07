@@ -57,7 +57,7 @@ red_big_attack = [
 ]
 
 red_hit_big_enemy = [
-  [Spell(rules_text="The 1st time you damage each enemy in a turn, inflict 5 burn if at least 10hp remains.", color="red", type="Passive",
+  [Spell(rules_text="1st time you attack each enemy in a turn: inflict 5 burn if >= 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["burn ^ 5"]),
   Spell(rules_text="Deal 4 to immediate.", color="red", type="Producer", raw_commands=["damage i 4"]),
   Spell(rules_text="Apply 2 poison. Apply extra 1 poison for every 4 hp the target has.", color="red", type="Converter", conversion_color="blue",
@@ -65,7 +65,7 @@ red_hit_big_enemy = [
   Spell(rules_text="Target loses half its remaining health.", color="red", type="Consumer",
         targets=["_"], generate_commands_pre=for_enemy_remaining_hp("_", 2, ["suffer _ *"]))],
   #
-  [Spell(rules_text="The 1st time you damage each enemy in a turn, gain 3 regen if at least 10hp remains.", color="red", type="Passive",
+  [Spell(rules_text="1st time you damage each enemy in a turn: gain 3 regen if >= 10hp remains.", color="red", type="Passive",
          triggers_on=passive_first_damage_10hp_remains, raw_commands=["regen p 3"]),
   Spell(rules_text="Deal 8 to a target at or above 10 health.", color="red", type="Producer",
         targets=["_"], generate_commands_pre=if_enemy_hp("_", 10, ["damage _ 8"], above=True)),
@@ -88,8 +88,8 @@ red_first_3_turns = [
   Spell(rules_text="If this has 0 or more charges, gain dig deep 2.", color="red", type="Producer",
         generate_commands_post=if_spell_charges(0, ["dig p 2"], above=True)),
   Spell(rules_text="Call 2. Gain 15 empower.", color="red", type="Converter", conversion_color="gold", raw_commands=["call 2", "empower p 15"]),
-  Spell(rules_text="+1 Time. If this has <= 0 charges: gain 3 regen, deal 10 to random thrice.", color="red", type="Consumer",
-        raw_commands=["time -1"], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 10"], above=False))]
+  Spell(rules_text="If this has <= 0 charges: gain 3 regen, deal 12 to random thrice.", color="red", type="Consumer",
+        raw_commands=[], generate_commands_post=if_spell_charges(0, ["regen p 3", "repeat 3 damage r 12"], above=False))]
 ]
 
 red_random_target = [
@@ -146,14 +146,14 @@ blue_turn_3 = [
 ]
 
 blue_3_enemies = [
-  [Spell(rules_text="At start of your turn if there are 3 or more enemies, stun 2 of them at random.", color="blue", type="Passive",
+  [Spell(rules_text="At turn start, if there are >= 3 enemies, stun 2 of them at random.", color="blue", type="Passive",
          triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["stun r 1", "stun r 1"]),
   Spell(rules_text="gain 1 block and Break: stun 1.", color="blue", type="Producer", raw_commands=["block p 1", "break stun ^ 1"]),
   Spell(rules_text="Gain retaliate 4.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 4"]),
   # FIXME: FIX THIS -- doesn't damage all
   Spell(rules_text="Deal 6 to all stunned enemies. Stun 1 all enemies.", color="blue", type="Consumer", raw_commands=["stun a 1"])],
   #
-  [Spell(rules_text="At start of your turn, if there are 3 or more enemies, deal 15 damage to a random enemy.", color="blue", type="Passive",
+  [Spell(rules_text="At turn start, if there >= 3 enemies, deal 15 to random.", color="blue", type="Passive",
          triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["damage r 15"]),
   Spell(rules_text="deal 6, call 1", color="blue", type="Producer", raw_commands=["damage _ 6", "call 1"]),
   Spell(rules_text="Gain retaliate 8 this turn.", color="blue", type="Converter", conversion_color="gold",

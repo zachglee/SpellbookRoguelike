@@ -11,7 +11,7 @@ from model.enemy import EnemySpawn
 from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
 from content.enemy_factions import faction_dict
-from utils import choose_obj, choose_str, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
+from utils import choose_obj, choose_str, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print, ws_update_player_state_reference
 from sound_utils import faf_play_sound, play_sound, ws_play_sound
 
 
@@ -258,6 +258,7 @@ class Encounter:
       await ws_print(f"Found: {found_item.render()}", self.player.websocket)
       self.player.inventory.append(deepcopy(found_item))
       self.player.seen_items.append(deepcopy(found_item))
+      await ws_update_player_state_reference(self.player)
 
   async def observe(self):
     self.player.experience += 2
@@ -294,6 +295,7 @@ class Encounter:
           self.player.spend_time(cost=item.time_cost)
           await item.use(self)
           await ws_play_sound("inventory.mp3", self.player.websocket)
+          await ws_update_player_state_reference(self.player)
         else:
           await ws_input(colored("Not enough time / charges to use that item!", "red"), self.player.websocket)
       elif cmd in ["explore", "x"]:
@@ -495,6 +497,8 @@ class Encounter:
     await self.render_combat()
     await self.ritual_upkeep()
     await self.player_upkeep()
+    # update the helper UI pane
+    await ws_update_player_state_reference(self.player)
 
   async def player_end_phase(self):
     # collapse spent items in inventory
@@ -617,11 +621,11 @@ class Encounter:
 
   async def render_combat(self, show_intents=False):
     await ws_print(self.player.spellbook.render_current_page() + "\n", self.player.websocket)
-    await ws_print(f"-------- Front --------", self.player.websocket)
-    for i, enemy in enumerate(reversed(self.front), start=1):
+    await ws_print(colored(f"-------- Front --------", "light_green"), self.player.websocket)
+    for i, enemy in reversed(list(enumerate(self.front, start=1))):
       render_str = f"[f{i}] - {enemy.render()}"
       if show_intents:
-        render_str += f" | {enemy.action}"
+        render_str += f"\n       {colored(enemy.action, 'dark_grey')}"
       await ws_print(render_str, self.player.websocket)
 
     turn_str = f"(T{self.turn})"
@@ -634,9 +638,9 @@ class Encounter:
     for i, enemy in enumerate(self.back, start=1):
       render_str = f"[b{i}] - {enemy.render()}"
       if show_intents:
-        render_str += f" | {enemy.action}"
+        render_str += f"\n       {colored(enemy.action, 'dark_grey')}"
       await ws_print(render_str, self.player.websocket)
-    await ws_print(f"-------- Back --------", self.player.websocket)
+    await ws_print(colored(f"-------- Back --------", "light_red"), self.player.websocket)
     
 
   

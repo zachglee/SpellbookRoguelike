@@ -245,7 +245,7 @@ class HealthThresholdAction(Action):
   
   def __repr__(self):
     threshold_part = f"{self.threshold} hp" if self.threshold > 1 else f"{self.threshold * 100}% hp"
-    return f"If below {threshold_part}: {self.below_threshold_action} otherwise {self.meet_threshold_action}"
+    return f"If below {threshold_part}: {self.below_threshold_action} else {self.meet_threshold_action}"
 
 class EnergyThresholdAction(Action):
   def __init__(self, meet_threshold_action, below_threshold_action, threshold,
@@ -262,7 +262,7 @@ class EnergyThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If you have >= {self.threshold} [{', '.join(self.colors)}]: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+    return f"If you have >= {self.threshold} [{', '.join(self.colors)}]: {self.meet_threshold_action} else {self.below_threshold_action}"
 
 class SpellcastThresholdAction(Action):
   def __init__(self, meet_threshold_action, below_threshold_action, threshold):
@@ -277,7 +277,7 @@ class SpellcastThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If player cast >= {self.threshold} spells this turn: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+    return f"If player cast >= {self.threshold} spells this turn: {self.meet_threshold_action} else {self.below_threshold_action}"
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):
@@ -292,7 +292,7 @@ class BackstabAction(Action):
       return self.non_backstab_action.act(actor, enc)
 
   def __repr__(self):
-    return f"If player facing away: {self.backstab_action} otherwise {self.non_backstab_action}"
+    return f"If player facing away: {self.backstab_action} else {self.non_backstab_action}"
 
 class PackTacticsAction(Action):
   def __init__(self, pack_action, non_pack_action):
@@ -307,7 +307,7 @@ class PackTacticsAction(Action):
       return self.non_pack_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If surrounded: {self.pack_action} otherwise {self.non_pack_action}"
+    return f"If surrounded: {self.pack_action} else {self.non_pack_action}"
 
 class NearFarAction(Action):
   def __init__(self, near_action, far_action):
@@ -322,7 +322,7 @@ class NearFarAction(Action):
       return self.far_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If near: {self.near_action} otherwise {self.far_action}"
+    return f"If near: {self.near_action} else {self.far_action}"
 
 class CowardlyAction(Action):
   def __init__(self, cowardly_action, non_cowardly_action, hp_threshold=None):
@@ -340,7 +340,7 @@ class CowardlyAction(Action):
       return self.cowardly_action.act(actor, enc)
 
   def __repr__(self):
-    return f"If another enemy with max hp >= {self.hp_threshold} is present: {self.non_cowardly_action} otherwise {self.cowardly_action}"
+    return f"If there is another enemy with max hp >= {self.hp_threshold}: {self.non_cowardly_action} else {self.cowardly_action}"
 
 class CautiousAction(Action):
   def __init__(self, cautious_action, non_cautious_action):
@@ -354,7 +354,7 @@ class CautiousAction(Action):
       return self.non_cautious_action.act(actor, enc)
   
   def __repr__(self):
-    return f"If took damage this turn: {self.cautious_action} otherwise {self.non_cautious_action}"
+    return f"If took damage this turn: {self.cautious_action} else {self.non_cautious_action}"
 
 class OverwhelmAction(Action):
   def __init__(self, overwhelm_action, non_overwhelm_action, threshold):
@@ -369,7 +369,7 @@ class OverwhelmAction(Action):
       return self.non_overwhelm_action.act(actor, enc)
   
   def __repr__(self):
-    return f"If >= {self.threshold} enemies present: {self.overwhelm_action} otherwise {self.non_overwhelm_action}"
+    return f"If >= {self.threshold} enemies present: {self.overwhelm_action} else {self.non_overwhelm_action}"
 
 class SideOverwhelmAction(Action):
   def __init__(self, overwhelm_action, non_overwhelm_action, threshold):
@@ -385,7 +385,7 @@ class SideOverwhelmAction(Action):
       return self.non_overwhelm_action.act(actor, enc)
   
   def __repr__(self):
-    return f"If >= {self.threshold} enemies on this side: {self.overwhelm_action} otherwise {self.non_overwhelm_action}"
+    return f"If >= {self.threshold} enemies on this side: {self.overwhelm_action} else {self.non_overwhelm_action}"
 
 # Multi Actions
 

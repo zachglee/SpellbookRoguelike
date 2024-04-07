@@ -190,9 +190,10 @@ class Spellbook:
       header = f"Page {i + 1}:"
       if editing_page_idx is not None and i == editing_page_idx:
         header = header + colored(" [EDITING]", "magenta")
-      rendered += f"{header}\n" + page.render() + "\n"
+      rendered += f"{header}\n" + page.render() + "\n\n"
     return rendered
   
   def render_current_page(self):
-    return f"Current Page ({self.current_page_idx + 1}):\n" + self.current_page.render()
+    header_part = colored(f"Current Page ({self.current_page_idx + 1}):", "cyan", attrs=["underline"])
+    return f"{header_part}\n" + self.current_page.render()
 
