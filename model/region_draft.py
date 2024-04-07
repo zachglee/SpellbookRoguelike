@@ -146,7 +146,7 @@ class RegionDraft:
       await ws_print("\n", player.websocket)
       pick_options = self.draft_picks[i]
       skip_reward_str = colored(f"{self.skip_reward}⛁", "yellow") if pick_options[0].enemyset is None else ""
-      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ({skip_reward_str} for skipping) ~~~", player.websocket)
+      await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
       player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
       if pick_option.character:

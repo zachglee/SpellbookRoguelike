@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel
 
 from utils import colorize
-from model.spellbook import SpellbookSpell
+from termcolor import colored
   
 class Item(BaseModel):
   name: str
@@ -43,4 +43,5 @@ class Item(BaseModel):
 
   def render(self):
     belonged_to_str = f"{self.belonged_to}'s " if self.belonged_to else ""
-    return colorize(f"{belonged_to_str}{self.name} ({self.charges}): {self.description}")
+    charges_str = f"({self.charges})" if self.max_charges > 0 else colored(f"({self.charges})", "red")
+    return colorize(f"{belonged_to_str}{self.name} {charges_str}: {self.description}")

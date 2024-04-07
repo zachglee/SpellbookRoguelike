@@ -33,8 +33,10 @@ async def ws_input(prompt, websocket: WebSocket):
     data = await websocket.receive_text()
     return data
 
-async def ws_print(s, websocket: WebSocket):
+async def ws_print(s, websocket: WebSocket, secondary=False):
     s = s.replace("\n", "\n\r")
+    if secondary:
+      s = f"secondary:{s}"
     await websocket.send_text(f"{s}\n\r")
 
 def faf_print(s, websocket: WebSocket):

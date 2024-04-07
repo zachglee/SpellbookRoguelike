@@ -11,7 +11,7 @@ from model.enemy import EnemySpawn
 from content.enemy_actions import AddConditionAction, MultiAction, NothingAction, involves_add_undying
 from content.items import starting_weapons, minor_energy_potions, minor_energy_potions_dict
 from content.enemy_factions import faction_dict
-from utils import choose_obj, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
+from utils import choose_obj, choose_str, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print
 from sound_utils import faf_play_sound, play_sound, ws_play_sound
 
 
@@ -290,13 +290,12 @@ class Encounter:
         item_index = int(cmd_tokens[1])
         item_idx = item_index - 1
         item = self.player.inventory[item_idx]
-        if self.player.time >= item.time_cost:
+        if self.player.time >= item.time_cost and item.charges > 0:
           self.player.spend_time(cost=item.time_cost)
           await item.use(self)
-          self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
           await ws_play_sound("inventory.mp3", self.player.websocket)
         else:
-          await ws_input(colored("Not enough time to use that item!", "red"), self.player.websocket)
+          await ws_input(colored("Not enough time / charges to use that item!", "red"), self.player.websocket)
       elif cmd in ["explore", "x"]:
         self.player.spend_time()
         await self.explore()
@@ -343,6 +342,9 @@ class Encounter:
       elif cmd_tokens[0] in energy_colors and cmd_tokens[1] == "to" and cmd_tokens[2] in energy_colors:
         self.player.conditions[cmd_tokens[0]] -= 1
         self.player.conditions[cmd_tokens[2]] += 1
+      elif cmd_tokens[0] == "wild":
+        color = await choose_str(energy_colors, "Choose a color to gain > ", self.player.websocket)
+        await self.handle_command(f"{color} p 1")
       elif cmd_tokens[0] == "call":
         magnitude = int(cmd_tokens[1])
         self.call(magnitude)
@@ -495,7 +497,8 @@ class Encounter:
     await self.player_upkeep()
 
   async def player_end_phase(self):
-    # self.resolve_events()
+    # collapse spent items in inventory
+    self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
     # player end step
     for entity in self.combat_entities:
       entity.execute_conditions()
@@ -615,8 +618,8 @@ class Encounter:
   async def render_combat(self, show_intents=False):
     await ws_print(self.player.spellbook.render_current_page() + "\n", self.player.websocket)
     await ws_print(f"-------- Front --------", self.player.websocket)
-    for enemy in reversed(self.front):
-      render_str = f"- {enemy.render()}"
+    for i, enemy in enumerate(reversed(self.front), start=1):
+      render_str = f"[f{i}] - {enemy.render()}"
       if show_intents:
         render_str += f" | {enemy.action}"
       await ws_print(render_str, self.player.websocket)
@@ -628,8 +631,8 @@ class Encounter:
     face_character = "↑" if self.player.facing == "front" else "↓"
     bookend = colored(f"{face_character*8} ", "green" if self.player.facing == "front" else "red")
     await ws_print(f"\n {bookend}" + f"{self.player.render()} {turn_str}" + f"{bookend} \n", self.player.websocket)
-    for enemy in self.back:
-      render_str = f"- {enemy.render()}"
+    for i, enemy in enumerate(self.back, start=1):
+      render_str = f"[b{i}] - {enemy.render()}"
       if show_intents:
         render_str += f" | {enemy.action}"
       await ws_print(render_str, self.player.websocket)

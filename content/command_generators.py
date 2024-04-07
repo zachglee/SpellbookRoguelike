@@ -71,6 +71,17 @@ def if_spell_charges(spell_charges, commands, above=True):
     return []
   return if_spell_charges_generator
 
+def if_player_energy(energy, commands, above=True):
+  def if_player_energy_generator(encounter, targets_dict):
+    if above:
+      if encounter.player.total_energy() >= energy:
+        return commands
+    else:
+      if encounter.player.total_energy() <= energy:
+        return commands
+    return []
+  return if_player_energy_generator
+
 # scalers
 
 def for_dead_enemies(commands, magnitude_func=lambda x: x):

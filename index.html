@@ -6,17 +6,35 @@
       <!-- <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" /> -->
       <!-- <script src="node_modules/xterm/lib/xterm.js"></script> -->
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script> -->
+      <style>
+        .container {
+           display: flex;
+        }
+        .div-flex {
+           flex: 1; /* Adjust the flex value as needed */
+           margin-right: 10px;
+        }
+      </style>
     </head>
     <body>
-      <div id="terminal"></div>
+      <div class="container">
+        <div id="terminal" class="div-flex"></div>
+        <div id="secondary_terminal" class="div-flex"></div>
+      </div>
       <script>
         const socket = new WebSocket("ws://" + window.location.host + "/ws");
 
         var term = new window.Terminal({
             cursorBlink: true,
-            cols: 200
+            cols: 100
         });
         term.open(document.getElementById('terminal'));
+
+        var secondary_term = new window.Terminal({
+            cursorBlink: true,
+            cols: 60
+        });
+        secondary_term.open(document.getElementById('secondary_terminal'));
 
         function init() {
             if (term._initialized) {
@@ -75,6 +93,12 @@
                 var sound_file = event.data.substring(11);
                 var audio = new Audio("http://" + window.location.host + "/sounds/" + sound_file);
                 audio.play();
+                return;
+            }
+            if (event.data.startsWith('secondary:')) {
+                var data = event.data.substring(10);
+                // FIXME: write to a second terminal
+                secondary_term.write(data);
                 return;
             }
             term.write(event.data);

@@ -233,7 +233,7 @@ class GameStateV2:
     # if a Haven save file doesn't exist, make one
     if not os.path.exists("saves/haven.pkl"):
       starting_library = []
-      while len([ls for ls in starting_library if ls.spell.type == "Producer"]) == 0:
+      while len([ls for ls in starting_library if ls.spell.type == "Producer"]) < 2:
         starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
       self.haven = Haven(library=starting_library)
     else:
@@ -303,7 +303,7 @@ class GameStateV2:
     if completed_difficulty in [0, 1]:
       # get a new spell for the haven
       await ws_print(self.haven.render(), websocket)
-      choices = random.sample(self.map.region_drafts[0].spell_pool, 3)
+      choices = random.sample(self.map.region_drafts[0].spell_pool, 4)
       await ws_print("\n" + numbered_list(choices), websocket)
       chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven library > ", websocket)
       self.haven.library.append(LibrarySpell(chosen_spell))

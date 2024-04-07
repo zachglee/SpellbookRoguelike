@@ -152,7 +152,7 @@ class CallAction(Action):
       return []
   
   def __repr__(self):
-    return f"Call {self.call_name} {self.call_amount}"
+    return f"Call {self.call_name if self.call_name else 'next enemy'} {self.call_amount}"
 
 class AddConditionAction(Action):
   def __init__(self, condition, magnitude, target: Literal["self", "player", "all_enemies", "all", "immediate", "side"]):
@@ -225,7 +225,7 @@ class WindupAction(Action):
       return self.payoff_action.act(actor, enc)
     
   def __repr__(self):
-    return f"Windup {self.windup}: {self.payoff_action} otherwise {self.windup_action}"
+    return f"Charge up for {self.windup} turns, then: {self.payoff_action}"
 
 class HealthThresholdAction(Action):
   def __init__(self, meet_threshold_action, below_threshold_action, threshold):
@@ -244,7 +244,8 @@ class HealthThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
   
   def __repr__(self):
-    return f"If below {self.threshold}: {self.below_threshold_action} otherwise {self.meet_threshold_action}"
+    threshold_part = f"{self.threshold} hp" if self.threshold > 1 else f"{self.threshold * 100}% hp"
+    return f"If below {threshold_part}: {self.below_threshold_action} otherwise {self.meet_threshold_action}"
 
 class EnergyThresholdAction(Action):
   def __init__(self, meet_threshold_action, below_threshold_action, threshold,
@@ -261,7 +262,7 @@ class EnergyThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If player has {self.threshold} or more ({', '.join(self.colors)}) energy: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+    return f"If you have >= {self.threshold} [{', '.join(self.colors)}]: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
 
 class SpellcastThresholdAction(Action):
   def __init__(self, meet_threshold_action, below_threshold_action, threshold):
@@ -276,7 +277,7 @@ class SpellcastThresholdAction(Action):
       return self.below_threshold_action.act(actor, enc)
     
   def __repr__(self):
-    return f"If player has cast {self.threshold} or more spells this turn: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
+    return f"If player cast >= {self.threshold} spells this turn: {self.meet_threshold_action} otherwise {self.below_threshold_action}"
 
 class BackstabAction(Action):
   def __init__(self, backstab_action, non_backstab_action):
@@ -291,7 +292,7 @@ class BackstabAction(Action):
       return self.non_backstab_action.act(actor, enc)
 
   def __repr__(self):
-    return f"If backstab: {self.backstab_action} otherwise {self.non_backstab_action}"
+    return f"If player facing away: {self.backstab_action} otherwise {self.non_backstab_action}"
 
 class PackTacticsAction(Action):
   def __init__(self, pack_action, non_pack_action):
@@ -416,7 +417,6 @@ class TheVultureEntryAction(Action):
       total_sacrificed_health += enemy.hp
       events.append(Event(["enemy_death"], enemy, enc, lambda a, e: e.move_to_grave(a)))
     
-    # events += AttackAction(len(other_enemies) * 3).act(actor, enc)
     events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
     return events
   

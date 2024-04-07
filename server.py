@@ -5,7 +5,7 @@ import uuid
 from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
-from utils import ws_input
+from utils import ws_input, ws_print
 from sound_utils import ws_play_sound
 
 app = FastAPI()
@@ -21,6 +21,9 @@ runs = {}
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+
+    # FIXME: delete, testing
+    await ws_print("secondary:Testing 1 2 3", websocket)
 
     run_id = await ws_input("run id > ", websocket)
     if run_id not in runs:

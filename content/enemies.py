@@ -118,7 +118,7 @@ enemies = {
                               EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(2), 1)),
   "Tithetaker": Enemy.make(26, "Tithetaker",
                       EnergyThresholdAction(
-                          MultiAction([AddConditionAction("regen", 1, "player"), SetConditionAction("green", 0, "player")]),
+                          AddConditionAction("regen", 1, "player"),
                           AttackAction(13, lifesteal=True), 6)),
   "Generous Sprite": Enemy.make(1, "Generous Sprite",
                          BackstabAction(
@@ -175,7 +175,7 @@ enemies = {
     ]),
     entry=AddConditionAction("undying", 1, "self")),
   "Inquisitive Eye": Enemy.make(4, "Inquisitive Eye", CallAction(None, 1)),
-  "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(MultiAction([AddConditionAction("doom", 1, "player"), AddConditionAction("encase", 4, "player")]), 1)),
+  "Collector's Cage": Enemy.make(4, "Collector's Cage", WindupAction(AddConditionAction("doom", 1, "player"), 1)),
   "Grasping Hand": Enemy.make(4, "Grasping Hand", AddConditionAction("slow", 1, "player")),
   "Cagemaster": Enemy.make(16, "Cagemaster", AddConditionAction("doom", 1, "player"),
                                entry=AddConditionAction("encase", 16, "player")),

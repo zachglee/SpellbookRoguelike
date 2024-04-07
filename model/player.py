@@ -249,7 +249,7 @@ class Player(CombatEntity):
     inventory += (
       [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
       Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
-      + [deepcopy(p) for p in minor_energy_potions])
+      + [deepcopy(random.choice(minor_energy_potions))])
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"
@@ -306,11 +306,6 @@ class Player(CombatEntity):
     material_str = colored(f"{self.material}⛁", "yellow")
     render_str = f"-------- PLAYER LIBRARY ({material_str}) --------\n"
     render_str += numbered_list(self.library)
-    return render_str
-
-  def render_archive(self):
-    render_str = "-------- PLAYER ARCHIVE --------\n"
-    render_str += numbered_list(self.archived_pages, use_headers=True)
     return render_str
 
   def render_pursuing_enemysets(self):
