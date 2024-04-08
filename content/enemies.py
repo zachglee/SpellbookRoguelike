@@ -58,8 +58,7 @@ enemies = {
   "Fire Elemental": Enemy.make(20, "Fire Elemental",
                       MultiAction([
                         AddConditionAction("burn", 3, "player"),
-                        AddConditionAction("red", 1, "player"),
-                        SetConditionAction("burn", 0, "self")])),
+                        AddConditionAction("red", 1, "player")])),
   "Frost Elemental": Enemy.make(25, "Frost Elemental",
                        MultiAction([
                           AddConditionAction("slow", 2, "player"),
