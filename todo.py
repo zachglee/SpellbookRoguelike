@@ -68,11 +68,11 @@
 #   This can only be done at cities.
 # - The only time pressure will be that the story of the world is progressing as more runs pass, so you want to use your time wisely.
 
-# Playtest with Nicole:
-# - exploring / discovery aspect is nice
-# - lifesteal has a bug
-# - healing hard to come by
-# - rez downed members
-# - item drop rate should be higher
-# - drafting focus was more on the spells than the enemies
-# - option to try to steal from the shop???
+# --------
+
+# Multiplayer notes:
+# - play_setup() has some components which need to be shared by players, and some which don't...
+#   So there are 3 bits of state: the haven, the map, the player, and temporarily their encounter.
+# - The haven and map are shared by players in a run, but player stuff ofc is not shared.
+# - Ah ok so there is one GameState per run id. The game state has the map, and a reference to the haven.
+# - Need to move the wait_for_teammate() to the GameState. 

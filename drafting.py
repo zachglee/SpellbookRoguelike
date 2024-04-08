@@ -64,7 +64,8 @@ async def edit_page_from_library(player, page_number, page_capacity=3) -> Spellb
     library_spell.copies_remaining -= 1
     await ws_play_sound("write-spell.mp3", player.websocket)
 
-async def haven_library_draft(player, haven):
+async def haven_library_draft(player, game_state):
+  haven = game_state.haven
   for ls in haven.library:
     ls.copies_remaining = ls.max_copies_remaining
 
@@ -89,6 +90,8 @@ async def haven_library_draft(player, haven):
     chosen_spells.append(choice)
     player.material -= choice.material_cost
     choice.copies_remaining -= 1
+
+  await game_state.wait_for_teammates(player.id, f"havenlibrarydraft")
     
   
   # Do admin to adjust spell costs

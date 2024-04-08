@@ -46,7 +46,7 @@ class Map:
     with open(f"saves/maps/{self.name}.pkl", "wb") as f:
       dill.dump(self, f)
 
-  def init(self, player):
+  def init(self):
     # init shops
     self.region_shops = [generate_shop(5, ((region_draft.basic_items + region_draft.special_items +
                                            minor_energy_potions)*2) + health_potions,

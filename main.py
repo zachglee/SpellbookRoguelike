@@ -1,16 +1,18 @@
+import asyncio
 import random
 import dill
 import os
 from drafting import encounter_draft, haven_library_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import Map
+from model.party_member_state import PartyMemberState
 from model.player import Player
 from model.spellbook import LibrarySpell
 from sound_utils import play_sound, ws_play_sound
 from termcolor import colored
 from generators import generate_spell_pools
 from model.haven import Haven
-from utils import party_members, choose_obj, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
+from utils import choose_obj, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
 
 STARTING_EXPLORED = 1
 
@@ -36,6 +38,7 @@ class GameStateV2:
     self.show_intents = False
     self.run_length = 3
     self.started = False
+    self.party_member_states = {} # Dict of player id to PartyMemberState
 
   # Properties
 
@@ -47,9 +50,22 @@ class GameStateV2:
 
   def save(self):
     self.map.save()
-    for player in party_members.values():
+    for player in [pms.player for pms in self.party_member_states.values()]:
       player.save()
     self.haven.save()
+
+  async def wait_for_teammates(self, my_id, choice_id, teammate_ids=None):
+    player_state = self.party_member_states[my_id]
+    player_state.completed_choices.append(choice_id)
+
+    if teammate_ids is None:
+      teammate_ids = [id for id in self.party_member_states if id != my_id]
+    teammate_states = [self.party_member_states[tid] for tid in teammate_ids]
+    await ws_print(f"Waiting for {teammate_ids} to be finished with choice {choice_id}...", player_state.player.websocket)
+    while True:
+      if all(len(player_state.completed_choices) <= len(teammate_state.completed_choices) for teammate_state in teammate_states):
+        break
+      await asyncio.sleep(0.5)
 
   # Generators
 
@@ -231,29 +247,33 @@ class GameStateV2:
 
   async def play_setup(self, player_id=None, websocket=None):
     # if a Haven save file doesn't exist, make one
-    if not os.path.exists("saves/haven.pkl"):
+    print(os.path.exists("saves/haven.pkl"))
+    print(self.haven)
+    if not os.path.exists("saves/haven.pkl") and not self.haven:
       starting_library = []
       while len([ls for ls in starting_library if ls.spell.type == "Producer"]) < 2:
         starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
       self.haven = Haven(library=starting_library)
-    else:
+    elif not self.haven:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
 
     # Choose Character
     player = await self.choose_character(websocket)
-    # self.player = player
-    party_members[player_id] = player
+    self.party_member_states[player_id] = PartyMemberState(player)
     player.id = player_id
     player.websocket = websocket
 
     # Do the character haven draft
-    await haven_library_draft(player, self.haven)
+    await haven_library_draft(player, self)
 
-    # Choose Map
-    map = await self.choose_map(websocket)
-    self.map = map
-    map.init(player)
+    # Player 1 makes the choice about map
+    if player_id == "1":
+      # Choose Map
+      map = await self.choose_map(websocket)
+      self.map = map
+      map.init()
+    await self.wait_for_teammates(player_id, "mapchoice")
 
     return player, map
 
@@ -264,15 +284,15 @@ class GameStateV2:
 
   async def play(self, player_id, websocket=None):
     player, map = await self.play_setup(player_id=player_id, websocket=websocket)
-    await self.haven.pre_embark(player)
     self.started = True
+    await self.haven.pre_embark(player) # FIXME: make this not a method but a function (controller pattern)
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
 
       await ws_input(colored(f"You will fight {region_draft.combat_size} enemy sets next combat!", "red"), websocket)
-      await region_draft.play(player)
-      await region_shop.play(player)
+      await region_draft.play(player, self)
+      await region_shop.play(player, self) # FIXME: refactor to be a function, controller pattern
       encounter = self.generate_encounter(player, combat_size=region_draft.combat_size)
       await self.play_encounter(player, encounter, num_pages=3)
 

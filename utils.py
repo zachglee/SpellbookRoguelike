@@ -292,22 +292,3 @@ async def help_reference(subject, websocket=None):
   else:
     help_text = (f"Sorry, there is no help entry for '{subject}'")
   await ws_input(help_text, websocket)
-
-# Waiting for teammates
-
-# dict of Player
-party_members = {}
-# dict mapping choice to bool
-waiting_at = {}
-
-async def wait_for_teammates(my_id, choice_id, teammate_ids=None):
-  waiting_at[choice_id] = True
-  player = party_members[my_id]
-  player.done = True
-  if teammate_ids is None:
-    teammate_ids = [id for id in party_members if id != my_id]
-  await ws_print(f"Waiting for {teammate_ids} to be finished...", player.websocket)
-  while (not all(party_members[teammate_id].done for teammate_id in teammate_ids)) and waiting_at[choice_id]:
-    await asyncio.sleep(0.5)
-  waiting_at[choice_id] = False
-  player.done = False

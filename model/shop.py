@@ -25,7 +25,7 @@ class Shop:
     render_str += numbered_list(self.shop_items)
     return render_str
   
-  async def play(self, player):
+  async def play(self, player, game_state):
     while True:
       await ws_print(player.render_state(), player.websocket)
       await ws_print("\n", player.websocket)

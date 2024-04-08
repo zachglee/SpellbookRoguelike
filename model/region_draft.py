@@ -6,7 +6,7 @@ from termcolor import colored
 
 from model.enemy import EnemySet
 from model.spellbook import LibrarySpell, Spell
-from utils import choose_obj, numbered_list, wait_for_teammates, ws_print
+from utils import choose_obj, numbered_list, ws_print
 from content.enemy_factions import faction_dict
 
 class DraftPickOption:
@@ -140,12 +140,11 @@ class RegionDraft:
 
     return choice
   
-  async def play(self, player):
+  async def play(self, player, game_state):
     for i in range(self.n_picks):
       await ws_print(player.render_state(), player.websocket)
       await ws_print("\n", player.websocket)
       pick_options = self.draft_picks[i]
-      skip_reward_str = colored(f"{self.skip_reward}⛁", "yellow") if pick_options[0].enemyset is None else ""
       await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
       player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
@@ -161,4 +160,4 @@ class RegionDraft:
       if pick_option.enemyset:
         player.pursuing_enemysets.append(pick_option.enemyset)
       
-      await wait_for_teammates(player.id, f"regiondraft{i}")
+      await game_state.wait_for_teammates(player.id, f"regiondraft{i}")
