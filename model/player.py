@@ -25,6 +25,7 @@ class Player(CombatEntity):
   time: int = 4
   facing: str = "front"
   explored: int = 0
+  revive_cost: Optional[int] = None
 
   # Meta state
   signature_spell: Optional[LibrarySpell] = None

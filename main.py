@@ -8,11 +8,11 @@ from model.map import Map
 from model.party_member_state import PartyMemberState
 from model.player import Player
 from model.spellbook import LibrarySpell
-from sound_utils import play_sound, ws_play_sound
+from sound_utils import ws_play_sound
 from termcolor import colored
 from generators import generate_spell_pools
 from model.haven import Haven
-from utils import choose_obj, command_reference, get_combat_entities, help_reference, numbered_list, render_secrets_dict, ws_input, ws_print
+from utils import choose_obj, choose_number, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
 STARTING_EXPLORED = 1
 
@@ -65,15 +65,12 @@ class GameStateV2:
     while True:
       if all(len(player_state.completed_choices) <= len(teammate_state.completed_choices) for teammate_state in teammate_states):
         break
-      await asyncio.sleep(0.5)
+      await asyncio.sleep(1)
 
   # Generators
 
   async def generate_new_character(self, spell_pool, websocket=None):
     await ws_print("Starting a new character...", websocket)
-    # signature_spell_options = generate_library_spells(3, spell_pool=spell_pool)
-    # await ws_print(numbered_list(signature_spell_options), websocket)
-    # chosen_spell = await choose_obj(signature_spell_options, colored("Choose signature spell > ", "red"), websocket)
     name = await ws_input("What shall they be called? > ", websocket)
     library = [] # [LibrarySpell(chosen_spell.spell, copies=2, signature=True)]
     player = Player.make(hp=30, name=name,
@@ -101,11 +98,12 @@ class GameStateV2:
   async def handle_command(self, cmd, encounter):
     cmd_tokens = cmd.split(" ")
     try:
-      if cmd == "die":
-        await self.player_death(encounter.player)
+      if cmd == "win":
+        encounter.win = True
         return
-      elif cmd == "sound":
-        await ws_print("play_sound:apply-sharp.mp3", websocket=encounter.player.websocket)
+      elif cmd == "die":
+        await self.player_death(encounter.player, encounter)
+        return
       elif cmd == "debug":
         targets = await get_combat_entities(self, cmd_tokens[1], websocket=encounter.player.websocket)
         for target in targets:
@@ -154,6 +152,21 @@ class GameStateV2:
       await self.run_encounter_round(encounter)
     await encounter.render_combat()
     await encounter.end_encounter()
+
+    await self.wait_for_teammates(encounter.player.id, "postcombat")
+
+    # if the player wasn't just revived, give the option to revive a dead teammate
+    if self.party_member_states[encounter.player.id].completed_choices[-1] != "revive":
+      revivable_teammates = [pms.player for pms in self.party_member_states.values()
+                            if pms.player.revive_cost is not None]
+      for teammate in revivable_teammates:
+        await ws_input(colored(f"You revive {teammate.name} for {teammate.revive_cost}hp...", "red"), encounter.player.websocket)
+        encounter.player.hp -= teammate.revive_cost
+        teammate.hp = 3
+        if encounter.player.hp <= 0:
+          raise GameOver()
+      await self.wait_for_teammates(encounter.player.id, "revive")
+
     self.save()
 
   async def discovery_phase(self, player):
@@ -162,26 +175,33 @@ class GameStateV2:
     player.explored = STARTING_EXPLORED
     self.save()
 
-  async def player_death(self, player):
+  async def player_death(self, player, encounter):
     if player.conditions["undying"] > 0:
       player.hp = 3
       player.conditions["undying"] -= 1
       return
-    # player.material = 0
-    # death admin
     await ws_play_sound("player-death.mp3", player.websocket)
-    await ws_print(player.render(), player.websocket)
+    await encounter.render_combat()
+
+    await self.wait_for_teammates(encounter.player.id, "postcombat")
+
+    # Wait to see if the player will be revived
+    player.revive_cost = 6 + (10 - encounter.turn)
+    await ws_input(colored(f"You have died. It will cost {player.revive_cost} to revive you...", "red"), player.websocket)
+    await self.wait_for_teammates(player.id, "revive")
+    if player.hp > 0:
+      await encounter.handle_command("win")
+      return
+
+    # Death admin
     await ws_input("Gained 100xp...", player.websocket)
     player.experience += 100
     await self.discovery_phase(player)
     await player.check_level_up()
     player.wounds += 1
-    player.location = 0
     player.hp = 0
-    # player.stranded = True
     
     await self.end_run(player)
-    # random.choice(self.map.region_drafts).stranded_characters.append(player)
     self.save()
     raise GameOver()
 
@@ -190,10 +210,6 @@ class GameStateV2:
     await player.memorize()
     await player.learn_rituals()
 
-    # await ws_print(render_secrets_dict(player.secrets_dict), player.websocket)
-    # chosen_faction = await choose_str(list(player.secrets_dict.keys()), "Choose a faction whose secrets to record > ", player.websocket)
-    # if chosen_faction:
-    #   self.haven.secrets_dict[chosen_faction] += player.secrets_dict[chosen_faction]
     for faction, secrets in player.secrets_dict.items():
       self.haven.secrets_dict[faction] += secrets
 
@@ -209,15 +225,11 @@ class GameStateV2:
     for fname in os.listdir("saves/characters"):
       with open(f"saves/characters/{fname}", "rb") as f:
         character = dill.load(f)
-        if not character.stranded and character.supplies > 0:
-          available_characters.append(character)
+        available_characters.append(character)
     await ws_print(numbered_list([c.name for c in available_characters]), websocket)
     character_choice = await ws_input("Choose a character ('new' to make a new character) > ", websocket)
     if character_choice == "new":
-      # signature_spell_pool = [sp for sp in self.map.region_drafts[0].spell_pool # sum([rd.spell_pool for rd in self.map.region_drafts], [])
-      #                         if sp.type in ["Producer", "Passive", "Converter"]]
       player = await self.generate_new_character([], websocket)
-      # player = await self.generate_new_character(generate_spell_pools()[0], websocket)
     else:
       character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
@@ -240,7 +252,7 @@ class GameStateV2:
       await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
 
     # choose difficulty
-    difficulty = int(await ws_input(f"Choose a difficulty > ", websocket))
+    difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
     map.difficulty = difficulty
 
     return map
@@ -273,6 +285,8 @@ class GameStateV2:
       map = await self.choose_map(websocket)
       self.map = map
       map.init()
+    else:
+      map = self.map
     await self.wait_for_teammates(player_id, "mapchoice")
 
     return player, map

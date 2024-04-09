@@ -134,6 +134,14 @@ async def choose_binary(prompt, websocket: WebSocket, choices=["y", "n"]) -> boo
     except (ValueError, TypeError, IndexError) as e:
       await ws_print(str(e), websocket)
 
+async def choose_number(prompt, websocket) -> int:
+  while True:
+    try:
+      choice = await ws_input(f"{prompt}", websocket)
+      return int(choice)
+    except Exception as e:
+      await ws_print(str(e), websocket)
+
 async def get_spell(enc, target_string, websocket=None):
   if target_string == "r":
     spell_idx = random.choice(range(len(enc.player.spellbook.current_page.spells)))

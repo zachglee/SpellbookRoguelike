@@ -50,6 +50,7 @@ class Encounter:
     self.scheduled_commands = []
     self.spells_cast_this_turn = []
     self.dropped_items = []
+    self.win = False
 
   # -------- @properties --------
 
@@ -102,6 +103,8 @@ class Encounter:
 
   @property
   def overcome(self):
+    if self.win:
+      return True
     all_defeated = all(es.enemy.spawned and es.enemy in self.dead_enemies for es in self.enemy_spawns)
     no_undying = not any(enemy.conditions["undying"] > 0 for enemy in self.dead_enemies)
     return (self.turn > self.escape_turn or (all_defeated and no_undying)) and self.player.hp > 0
@@ -279,9 +282,7 @@ class Encounter:
     await ws_print(f"Handling command '{cmd}' ...", self.player.websocket)
     cmd_tokens = cmd.split(" ")
     try:
-      if cmd == "win":
-        self.turn = 10
-      elif cmd_tokens[0] == "experience":
+      if cmd_tokens[0] == "experience":
         magnitude = int(cmd_tokens[1])
         self.player.experience += magnitude
       elif cmd_tokens[0] == "time":
@@ -555,6 +556,8 @@ class Encounter:
 
   async def end_player_turn(self):
     await ws_play_sound("turn-end.mp3", self.player.websocket)
+    if self.win:
+      return
     await self.player_end_phase()
     await self.enemy_phase()
     await self.post_enemy_scheduled_commands()

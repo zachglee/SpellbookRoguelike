@@ -95,6 +95,7 @@ class RegionDraft:
         enemyset.obscured = True
         material += 3
       material += self.level_enemyset(enemyset)
+      # TODO: remove this stranded logic once we're more sure we're not going this direction
       if self.stranded_characters and random.random() < 0.6:
         character = random.choice(self.stranded_characters)
         enemyset.level_up()

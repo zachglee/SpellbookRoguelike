@@ -32,15 +32,15 @@ class Shop:
       await ws_print(self.render(), player.websocket)
       await ws_print("\n", player.websocket)
       await ws_print(colored(f"You have {player.material}⛁", "yellow"), player.websocket)
-      # FIXME: we need some way to update the shop output if shop state has changed (teammate bought something)
-      # - Maybe we reimplement shop so that once a slot is emptied the rest of the list doesn't collapse.
       chosen_item = await choose_obj(self.shop_items, "Choose an item to buy > ", player.websocket)
       if chosen_item is None:
         break
       elif chosen_item == "~":
         continue
 
-      if player.material >= chosen_item.cost and player.inventory_weight < player.inventory_capacity:
+      if (player.material >= chosen_item.cost and
+          player.inventory_weight < player.inventory_capacity and
+          chosen_item.stock > 0):
         await ws_play_sound("inventory.mp3", player.websocket)
         player.material -= chosen_item.cost
         player.inventory.append(deepcopy(chosen_item.item))
