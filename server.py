@@ -25,7 +25,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     run_id = await ws_input("run id > ", websocket)
     if run_id not in runs:
-        runs[run_id] = GameStateV2()
+        runs[run_id] = GameStateV2() # foobar
     game_state = runs[run_id]
     if game_state.started == True:
         await websocket.send_text(f"Run {run_id} already started! Cannot join.")
