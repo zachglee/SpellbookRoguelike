@@ -140,6 +140,10 @@ class GameStateV2:
   async def run_encounter_round(self, encounter):
     while True:
       await encounter.render_combat(show_intents=self.show_intents)
+      # check if the player died
+      if self.player.hp <= 0:
+        await self.handle_command("die", encounter)
+        return
       cmd = await ws_input("> ", encounter.player.websocket)
       if cmd == "done":
         await encounter.end_player_turn()
@@ -153,10 +157,10 @@ class GameStateV2:
     await encounter.render_combat()
     await encounter.end_encounter()
 
-    await self.wait_for_teammates(encounter.player.id, "postcombat")
+    # if the player didn't just die, give the option to revive a dead teammate
+    if encounter.player.revive_cost is not None:
+      await self.wait_for_teammates(encounter.player.id, "postcombat")
 
-    # if the player wasn't just revived, give the option to revive a dead teammate
-    if self.party_member_states[encounter.player.id].completed_choices[-1] != "revive":
       revivable_teammates = [pms.player for pms in self.party_member_states.values()
                             if pms.player.revive_cost is not None]
       for teammate in revivable_teammates:
@@ -166,6 +170,7 @@ class GameStateV2:
         if encounter.player.hp <= 0:
           raise GameOver()
       await self.wait_for_teammates(encounter.player.id, "revive")
+      encounter.player.revive_cost = None
 
     self.save()
 
@@ -276,18 +281,23 @@ class GameStateV2:
     player.id = player_id
     player.websocket = websocket
 
+    await ws_input(f"Once all party members have joined, press enter.", websocket)
+
     # Do the character haven draft
-    await haven_library_draft(player, self)
+    print(f"--------------- {list(self.party_member_states.keys())}")
+    for pid in list(self.party_member_states.keys()):
+      if pid == player.id:
+        await haven_library_draft(player, self)
+      await self.wait_for_teammates(player.id, f"{pid}-havenlibrarydraft")
 
     # Player 1 makes the choice about map
-    if player_id == "1":
+    if player_id == "p1":
       # Choose Map
       map = await self.choose_map(websocket)
       self.map = map
       map.init()
-    else:
-      map = self.map
     await self.wait_for_teammates(player_id, "mapchoice")
+    map = self.map # If you're not player 1 you need to pick up the map from the game state
 
     return player, map
 

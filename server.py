@@ -31,8 +31,9 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(f"Run {run_id} already started! Cannot join.")
         return
 
-    player_id = str(app.state.player_id_counter)
+    player_id = "p" + str(app.state.player_id_counter)
     app.state.player_id_counter += 1
+
     print(f"----------- BEGINNING {player_id} on run {run_id}!")
     ret = await game_state.play(player_id, websocket)
     print(ret)

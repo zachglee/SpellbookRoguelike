@@ -90,9 +90,6 @@ async def haven_library_draft(player, game_state):
     chosen_spells.append(choice)
     player.material -= choice.material_cost
     choice.copies_remaining -= 1
-
-  await game_state.wait_for_teammates(player.id, f"havenlibrarydraft")
-    
   
   # Do admin to adjust spell costs
   increase_cost_spells = random.sample(chosen_spells, 3) if len(chosen_spells) > 3 else chosen_spells
