@@ -10,7 +10,7 @@ from model.player import Player
 from model.spellbook import LibrarySpell
 from sound_utils import ws_play_sound
 from termcolor import colored
-from generators import generate_spell_pools
+from generators import generate_spell_pools, generate_starting_haven_library
 from model.haven import Haven
 from utils import choose_obj, choose_number, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
@@ -25,6 +25,9 @@ def load_maps_from_files():
   return sorted(maps, key=lambda m: m.difficulty)
 
 class GameOver(Exception):
+  pass
+
+class WinEncounter(Exception):
   pass
 
 class GameStateV2:
@@ -99,8 +102,7 @@ class GameStateV2:
     cmd_tokens = cmd.split(" ")
     try:
       if cmd == "win":
-        encounter.win = True
-        return
+        raise WinEncounter()
       elif cmd == "die":
         await self.player_death(encounter.player, encounter)
         return
@@ -141,7 +143,7 @@ class GameStateV2:
     while True:
       await encounter.render_combat(show_intents=self.show_intents)
       # check if the player died
-      if self.player.hp <= 0:
+      if encounter.player.hp <= 0:
         await self.handle_command("die", encounter)
         return
       cmd = await ws_input("> ", encounter.player.websocket)
@@ -152,17 +154,22 @@ class GameStateV2:
         await self.handle_command(cmd, encounter)
 
   async def encounter_phase(self, encounter):
+    encounter.player.revive_cost = None
     while not encounter.overcome:
-      await self.run_encounter_round(encounter)
+      try:
+        await self.run_encounter_round(encounter)
+      except WinEncounter:
+        break
     await encounter.render_combat()
     await encounter.end_encounter()
 
     # if the player didn't just die, give the option to revive a dead teammate
-    if encounter.player.revive_cost is not None:
+    if encounter.player.revive_cost is None:
       await self.wait_for_teammates(encounter.player.id, "postcombat")
 
       revivable_teammates = [pms.player for pms in self.party_member_states.values()
                             if pms.player.revive_cost is not None]
+      print(f"-------------- Revivable teammates: {revivable_teammates}")
       for teammate in revivable_teammates:
         await ws_input(colored(f"You revive {teammate.name} for {teammate.revive_cost}hp...", "red"), encounter.player.websocket)
         encounter.player.hp -= teammate.revive_cost
@@ -170,7 +177,6 @@ class GameStateV2:
         if encounter.player.hp <= 0:
           raise GameOver()
       await self.wait_for_teammates(encounter.player.id, "revive")
-      encounter.player.revive_cost = None
 
     self.save()
 
@@ -188,15 +194,13 @@ class GameStateV2:
     await ws_play_sound("player-death.mp3", player.websocket)
     await encounter.render_combat()
 
-    await self.wait_for_teammates(encounter.player.id, "postcombat")
-
     # Wait to see if the player will be revived
     player.revive_cost = 6 + (10 - encounter.turn)
     await ws_input(colored(f"You have died. It will cost {player.revive_cost} to revive you...", "red"), player.websocket)
+    await self.wait_for_teammates(encounter.player.id, "postcombat")
     await self.wait_for_teammates(player.id, "revive")
     if player.hp > 0:
-      await encounter.handle_command("win")
-      return
+      raise WinEncounter()
 
     # Death admin
     await ws_input("Gained 100xp...", player.websocket)
@@ -267,9 +271,7 @@ class GameStateV2:
     print(os.path.exists("saves/haven.pkl"))
     print(self.haven)
     if not os.path.exists("saves/haven.pkl") and not self.haven:
-      starting_library = []
-      while len([ls for ls in starting_library if ls.spell.type == "Producer"]) < 2:
-        starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
+      starting_library = generate_starting_haven_library()
       self.haven = Haven(library=starting_library)
     elif not self.haven:
       with open("saves/haven.pkl", "rb") as f:
