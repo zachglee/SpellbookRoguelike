@@ -33,8 +33,8 @@ enemies = {
   "Conniving Impfiend": Enemy.make(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
                               SideOverwhelmAction(
-                                MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("retaliate", 2, "self"), AddConditionAction("armor", 2, "self")]),
-                                MultiAction([SetConditionAction("armor", 0, "self"), SetConditionAction("retaliate", 0, "self"), AttackAction(3), AttackAction(3)]), 2
+                                MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("retaliate", 2, "self")]),
+                                MultiAction([SetConditionAction("retaliate", 0, "self"), AttackAction(3), AttackAction(3)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy.make(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
@@ -570,7 +570,9 @@ factions = [
     dominion_of_drael,
     spirits,
     shadow_realm,
-    ancient_horrors
+    ancient_horrors,
+    # doombringers,
+    # the_collectors
 ]
 
 enemy_sets = (
@@ -586,4 +588,5 @@ enemy_sets = (
     spirits +
     shadow_realm +
     ancient_horrors
+    # + doombringers + the_collectors
 )

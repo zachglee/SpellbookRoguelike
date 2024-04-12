@@ -343,8 +343,9 @@ class GameStateV2:
     completed_difficulty = None
     if num_keys >= self.map.completed_difficulties[self.map.difficulty]:
       completed_difficulty = self.map.difficulty
-      self.map.completed_difficulties[self.map.difficulty] += 1
       await ws_print(colored(f"You've completed difficulty {self.map.difficulty}!", "green"), websocket)
+    else:
+      await ws_print(colored(f"You needed {self.map.completed_difficulties[self.map.difficulty]} keys to complete difficulty {self.map.difficulty}...", "red"), websocket)
 
     if completed_difficulty in [0, 1]:
       # get a new spell for the haven
@@ -365,6 +366,7 @@ class GameStateV2:
       new_map.save()
       await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
 
+    self.map.completed_difficulties[self.map.difficulty] += 1
     await self.end_run(player)
     await ws_print(self.haven.render(), websocket)
 

@@ -45,10 +45,10 @@ def generate_spellbook_spells(size, spell_pool=spells):
 
 def generate_starting_haven_library():
   while True:
-    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
-    # The library must have at least 2 producers of distinct colors
+    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 12)]
+    # The library must have at least 3 producers with 2 distinct colors among them
     producers = [ls for ls in starting_library if ls.spell.type == "Producer"]
-    if len(producers) >= 2 and len(set([ls.spell.color for ls in producers])) >= 2:
+    if len(producers) >= 3 and len(set([ls.spell.color for ls in producers])) >= 2:
       break
   return starting_library
 

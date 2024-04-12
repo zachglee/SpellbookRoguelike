@@ -35,32 +35,32 @@ factions = [
     map_name_adjectives=["Ochre", "Glorious", "Eternal", "Immortal", "Undying", "Deathless", "Everlasting", "Gladiator's", "Triumphant"],
     map_name_nouns=["Bastion", "Arena", "Citadel", "Marches", "Training Grounds", "Colosseum", "Tomb", "Pyramid"]
   ),
-  Faction("The Collectors", the_collectors, "⚷",
-    basic_items=[
-      Item.make("Beast Cage", 1, "Encase 12 an enemy.", ["encase _ 12"]),
-      Item.make("Stun Rod", 3, "Stun 1 an enemy.", ["stun _ 1"])
-    ],
-    special_items=[
-      Item.make("Conservator's Casket", 1, "Gain 20 encase", ["encase p 20"], rare=True)
-    ],
-    ritual=Ritual("Arcane Entrapment", "Encase 6 and stun 1 an enemy on turns 2 and 4.", "The Collectors", RITUAL_PROGRESS,
-                  [ritual_event([2, 4], ["encase _ 6", "stun _ 1"])]),
-    map_name_adjectives=["Glass", "Captivating", "Mysterious", "Sterile", "Eerie", "Watchful", "Preserved", "Curated", "Ensnaring"],
-    map_name_nouns=["Museum", "Exhibit", "Gallery", "Collection", "Archive", "Vault", "Library", "Laboratory"]
-  ),
-  Faction("Doombringers", doombringers, "⚶",
-    basic_items=[
-      Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor, 1 searing presence.", ["sharp p 1", "armor p 1", "searing p 1"]),
-      Item.make("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
-    ],
-    special_items=[
-      Item.make("Omen of Doom", 2, "Inflict doom 4.", ["doom _ 4"], rare=True)
-    ],
-    ritual=Ritual("Cursed Footsteps", "Inflict 3 doom on turns 1, 2, 3.", "Doombringers", RITUAL_PROGRESS,
-                  [ritual_event([1, 2, 3], ["doom _ 3"])]),
-    map_name_adjectives=["Gray", "Doomed", "Cursed", "Forsaken", "Ruined", "Lifeless", "Plague-ridden", "Overrun", "Shattered"],
-    map_name_nouns=["Wastes", "Desolation", "Ruins", "Wreckage", "Calamity", "End", "Bunker", "Ashes"]
-  ),
+  # Faction("The Collectors", the_collectors, "⚷",
+  #   basic_items=[
+  #     Item.make("Beast Cage", 1, "Encase 12 an enemy.", ["encase _ 12"]),
+  #     Item.make("Stun Rod", 3, "Stun 1 an enemy.", ["stun _ 1"])
+  #   ],
+  #   special_items=[
+  #     Item.make("Conservator's Casket", 1, "Gain 20 encase", ["encase p 20"], rare=True)
+  #   ],
+  #   ritual=Ritual("Arcane Entrapment", "Encase 6 and stun 1 an enemy on turns 2 and 4.", "The Collectors", RITUAL_PROGRESS,
+  #                 [ritual_event([2, 4], ["encase _ 6", "stun _ 1"])]),
+  #   map_name_adjectives=["Glass", "Captivating", "Mysterious", "Sterile", "Eerie", "Watchful", "Preserved", "Curated", "Ensnaring"],
+  #   map_name_nouns=["Museum", "Exhibit", "Gallery", "Collection", "Archive", "Vault", "Library", "Laboratory"]
+  # ),
+  # Faction("Doombringers", doombringers, "⚶",
+  #   basic_items=[
+  #     Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor, 1 searing presence.", ["sharp p 1", "armor p 1", "searing p 1"]),
+  #     Item.make("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
+  #   ],
+  #   special_items=[
+  #     Item.make("Omen of Doom", 2, "Inflict doom 4.", ["doom _ 4"], rare=True)
+  #   ],
+  #   ritual=Ritual("Cursed Footsteps", "Inflict 3 doom on turns 1, 2, 3.", "Doombringers", RITUAL_PROGRESS,
+  #                 [ritual_event([1, 2, 3], ["doom _ 3"])]),
+  #   map_name_adjectives=["Gray", "Doomed", "Cursed", "Forsaken", "Ruined", "Lifeless", "Plague-ridden", "Overrun", "Shattered"],
+  #   map_name_nouns=["Wastes", "Desolation", "Ruins", "Wreckage", "Calamity", "End", "Bunker", "Ashes"]
+  # ),
   Faction("Sa'ik Collective", saik_collective, "⚚",
     basic_items=[
       Item.make("Soaring Javelin", 1, "Deal 6 damage.", ["damage _ 6"]),

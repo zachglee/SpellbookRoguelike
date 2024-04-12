@@ -324,6 +324,9 @@ class Encounter:
       elif cmd_tokens[0] in ["recharge", "re"]:
         target = await get_spell(self, cmd_tokens[1], self.player.websocket)
         target.recharge()
+      elif cmd_tokens[0] in ["refresh", "rf"]:
+        target = await get_spell(self, cmd_tokens[1], self.player.websocket)
+        target.exhausted = False
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
         if target.spell.type == "Passive":
@@ -331,6 +334,9 @@ class Encounter:
           return
         if target.charges <= 0 and not self.player.conditions["dig"]:
           await ws_input(colored("Spell is out of charges!", "red"), self.player.websocket)
+          return
+        if target.exhausted:
+          await ws_input(colored("Spell is exhausted, can't cast it again this turn!", "red"), self.player.websocket)
           return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
