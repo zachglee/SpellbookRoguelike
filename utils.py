@@ -40,7 +40,7 @@ async def ws_print(s, websocket: WebSocket, secondary=False):
     await websocket.send_text(f"{s}\n\r")
 
 def faf_print(s, websocket: WebSocket):
-  asyncio.create_task(ws_print(s, websocket))
+  asyncio.create_task(ws_print("\n" + s, websocket))
 
 # rendering
 
@@ -81,7 +81,7 @@ def render_secrets_dict(secrets_dict):
   return numbered_list([f"{f}: {n}" for f, n in secrets_dict.items()])
 
 async def ws_update_player_state_reference(player):
-  await ws_print("\n\n\n\n\n", player.websocket, secondary=True)
+  await ws_print("\n"*10, player.websocket, secondary=True)
   await ws_print(player.render_inventory() + "\n", player.websocket, secondary=True)
   await ws_print("-------- SPELLBOOK --------", player.websocket, secondary=True)
   await ws_print(player.spellbook.render(), player.websocket, secondary=True)

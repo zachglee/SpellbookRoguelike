@@ -45,9 +45,9 @@ class Haven:
 
 
   def render(self):
-    material_part = colored(f"{self.material}⛁", "yellow")
-    supplies_part = colored(f"{self.supplies}♦", "green")
+    # material_part = colored(f"{self.material}⛁", "yellow")
+    # supplies_part = colored(f"{self.supplies}♦", "green")
     secrets_part = colored(render_secrets_dict(self.secrets_dict), "cyan")
-    rituals_part = "-------- RITUALS --------\n" + numbered_list(self.rituals)
-    library_part = "-------- LIBRARY --------\n" + numbered_list(self.library)
-    return f"~~~~ HAVEN ({material_part} | {supplies_part}) ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"
+    rituals_part = "-------- HAVEN RITUALS --------\n" + numbered_list(self.rituals)
+    library_part = "-------- HAVEN LIBRARY --------\n" + numbered_list(self.library)
+    return f"~~~~ HAVEN ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"

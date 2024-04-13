@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 from pydantic import BaseModel
 from termcolor import colored
 from utils import Color, numbered_list, get_combat_entities, energy_color_map, energy_pip_symbol, ws_input
@@ -71,6 +71,15 @@ class Spell(BaseModel):
       await ws_play_sound(sound_file, encounter.player.websocket, channel=3)
 
   @property
+  def output_color(self) -> Optional[Color]:
+    if self.type == "Producer":
+      return self.color
+    if self.type == "Converter":
+      return self.conversion_color
+    return None
+    
+
+  @property
   def description(self):
     color_pip = colored(energy_pip_symbol, energy_color_map[self.color.lower()])
     if self.type == "Consumer":
@@ -103,7 +112,7 @@ class LibrarySpell:
     self.material_cost = material_cost
     
   
-  def render(self):
+  def render(self, show_cost=True):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
     rendered_str = rendered_str.replace("Gold", colored("Gold", "yellow"))
     rendered_str = rendered_str.replace("Blue", colored("Blue", "blue"))
@@ -113,8 +122,8 @@ class LibrarySpell:
     rendered_str = rendered_str.replace("Producer", colored("Producer", "green"))
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
     rendered_str = rendered_str.replace("Passive", colored("Passive", "yellow"))
-    copies_remaining_part = f"[{self.copies_remaining}/{self.max_copies_remaining}]"
-    material_cost_part = colored(f"({self.material_cost}⛁)", "yellow")
+    copies_remaining_part = colored("~", "red") if self.copies_remaining == 0 else ""
+    material_cost_part = colored(f"({self.material_cost}⛁)", "yellow") if show_cost else ""
     if self.signature:
       copies_remaining_part = colored(copies_remaining_part, "magenta")
     if self.copies_remaining <= 0:

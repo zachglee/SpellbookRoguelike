@@ -146,12 +146,15 @@ class GameStateV2:
       if encounter.player.hp <= 0:
         await self.handle_command("die", encounter)
         return
-      cmd = await ws_input("> ", encounter.player.websocket)
+      cmd = await ws_input(colored("-- cast | use | face | page | explore --", "dark_grey") + "\n> ", encounter.player.websocket)
       if cmd == "done":
         await encounter.end_player_turn()
         break
       if cmd:
         await self.handle_command(cmd, encounter)
+        if encounter.player.time == 0:
+          await encounter.end_player_turn()
+          break
 
   async def encounter_phase(self, encounter):
     encounter.player.revive_cost = None

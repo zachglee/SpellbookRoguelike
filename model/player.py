@@ -306,7 +306,7 @@ class Player(CombatEntity):
   def render_library(self):
     material_str = colored(f"{self.material}⛁", "yellow")
     render_str = f"-------- PLAYER LIBRARY ({material_str}) --------\n"
-    render_str += numbered_list(self.library)
+    render_str += numbered_list(self.library, show_cost=False)
     return render_str
 
   def render_pursuing_enemysets(self):

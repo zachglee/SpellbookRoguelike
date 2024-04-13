@@ -86,4 +86,4 @@ def passive_on_face(encounter, event):
   return event.has_tag("face")
 
 def passive_use_last_charge(encounter, event):
-  return event.has_tag("spell_cast") and event.metadata["spell"].charges <= 0
+  return event.has_tag("spell_cast") and event.metadata["spell"].charges == 0

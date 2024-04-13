@@ -1,5 +1,6 @@
 from typing import Any, Dict, Literal, Optional
 from content.trigger_functions import trigger_player_defense_break
+from model.combat_entity import CombatEntity
 from model.triggers import EventTrigger
 from termcolor import colored
 import time
@@ -13,6 +14,17 @@ from content.items import starting_weapons, minor_energy_potions, minor_energy_p
 from content.enemy_factions import faction_dict
 from utils import choose_obj, choose_str, energy_colors, colorize, get_combat_entities, choose_idx, get_spell, numbered_list, ws_input, ws_print, ws_update_player_state_reference
 from sound_utils import faf_play_sound, play_sound, ws_play_sound
+
+
+# --------- Helpers
+
+def render_event(self) -> str:
+  source_part = f"From: {self.source.name}" if self.source and isinstance(self.source, CombatEntity) else ""
+  target_part = f"To: {self.target.name}" if self.target and isinstance(self.target, CombatEntity) else ""
+  description_part = f" - {', '.join([source_part, target_part])}" if (source_part and target_part) else ""
+  return f"{self.tags}{description_part}"
+
+# -------- Classes
 
 
 class EnemyWave:
@@ -170,7 +182,7 @@ class Encounter:
                       if spell.spell.type == "Passive"]
     for passive_spell in passive_spells:
       if trigger_output := passive_spell.triggers_on(self, event):
-        print(f"-------------- TRIGGERED! {passive_spell.description} --------------")
+        await ws_print(f"Passive triggered: {passive_spell.description}")
         await passive_spell.cast(self, trigger_output=trigger_output)
 
     # run player triggers
@@ -190,10 +202,10 @@ class Encounter:
       # resolve every event
       event = self.events.pop(0)
       if event.blocking:
-        await ws_input(f"Resolving event {event}...", self.player.websocket)
-      else:
-        # await ws_print(f"Resolving event {event}...", self.player.websocket)
-        print(f"Resolving event {event}...")
+        await ws_input(f"Resolving event: {render_event(event)}", self.player.websocket)
+      elif event.description:
+        await ws_print(f"Resolving event: {render_event(event)}", self.player.websocket)
+        # ws_print(f"Resolving event {event.render()}...")
       event.resolve()
       # run triggers based on this event
       await self.run_event_triggers(event)
@@ -629,6 +641,7 @@ class Encounter:
       f"Ambient {self.ambient_energy}")
 
   async def render_combat(self, show_intents=False):
+    await ws_print("\n"*20, self.player.websocket)
     await ws_print(self.player.spellbook.render_current_page() + "\n", self.player.websocket)
     await ws_print(colored(f"-------- Front --------", "light_green"), self.player.websocket)
     for i, enemy in reversed(list(enumerate(self.front, start=1))):

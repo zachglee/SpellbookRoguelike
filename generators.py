@@ -8,6 +8,7 @@ from content.spells import (spells, red_pages, blue_pages, gold_pages,
                             red_page_sets, blue_page_sets, gold_page_sets)
 from content.items import ancient_key
 from content.enemy_factions import factions
+from utils import Color
 
 
 def generate_enemy_set_pool(n=10):
@@ -44,12 +45,32 @@ def generate_spellbook_spells(size, spell_pool=spells):
   return [SpellbookSpell(sp) for sp in spell_pool[:size]]
 
 def generate_starting_haven_library():
+  def reachable_colors(spells: List[LibrarySpell]):
+    return set([ls.spell.output_color for ls in spells if ls.spell.output_color is not None])
+
+  def reachable_spells(spells: List[LibrarySpell], colors: List[Color]):
+    return [ls for ls in spells if ls.spell.input_color in colors]
+
+  def all_reachable(spells: List[LibrarySpell]) -> bool:
+    reachable = [ls for ls in spells if ls.spell.type == ["Producer"]]
+    remaining = [ls for ls in spells if ls.spell.type in ["Converter", "Consumer"]]
+    while True:
+      new_reachable_colors = reachable_colors(reachable)
+      new_reachable_spells = reachable_spells(remaining, new_reachable_colors)
+      if len(new_reachable_spells) == 0:
+        return False
+      if len(new_reachable_spells) == len(remaining):
+        return True
+      reachable += new_reachable_spells
+
   while True:
-    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 12)]
+    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
     # The library must have at least 3 producers with 2 distinct colors among them
+    # and all spells must be castable with the energies available
     producers = [ls for ls in starting_library if ls.spell.type == "Producer"]
-    if len(producers) >= 3 and len(set([ls.spell.color for ls in producers])) >= 2:
+    if len(producers) >= 3 and len(set([ls.spell.color for ls in producers])) >= 2 and all_reachable(starting_library):
       break
+      
   return starting_library
 
 def generate_shop_item(item):
