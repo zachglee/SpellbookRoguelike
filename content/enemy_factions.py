@@ -133,7 +133,7 @@ factions = [
       Item.make("Sleeper Darts", 2, "Inflict 1 stun and 3 poison.", ["stun _ 1", "poison _ 3"])
     ],
     special_items=[
-      Item.make("Fae Favor", 1, "Banish 1 all. Gain 4 regen.", ["banish a 1", "regen p 4"], rare=True)
+      Item.make("Fae Favor", 1, "Banish 1 all.", ["banish a 1"], rare=True)
     ],
     ritual=Ritual("Fae Fortunes", "Gain 2 regen or poison an enemy 2, alternating for turns 1-6.", "Fae Realm", RITUAL_PROGRESS,
                   [ritual_event([1, 3, 5], ["regen p 2"]), ritual_event([2, 4, 6], ["poison _ 2"])]),

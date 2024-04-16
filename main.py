@@ -90,7 +90,7 @@ class GameStateV2:
     for enemyset in encounter_enemysets:
       enemyset.obscured = False
     player.pursuing_enemysets = player.pursuing_enemysets[combat_size:] 
-    encounter = Encounter([EnemyWave(encounter_enemysets)], player,
+    encounter = Encounter([EnemyWave(encounter_enemysets)], player, self.map.difficulty,
                           basic_items=self.current_region.basic_items,
                           special_items=self.current_region.special_items,
                           boss=boss)
@@ -152,7 +152,8 @@ class GameStateV2:
         break
       if cmd:
         await self.handle_command(cmd, encounter)
-        if encounter.player.time == 0:
+        await encounter.render_combat(show_intents=self.show_intents)
+        if encounter.player.time <= 0:
           await encounter.end_player_turn()
           break
 
@@ -254,18 +255,29 @@ class GameStateV2:
   
   async def choose_map(self, websocket):
     existing_maps = load_maps_from_files()
-    await ws_print(numbered_list(existing_maps), websocket)
-    map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
-    if map_choice:
-      map = map_choice
-      await ws_print(f"You embark on {map.render()}...", websocket)
-    else:
-      map = Map(name=None, n_regions=self.run_length)
-      await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
+    while True:
+      await ws_print(numbered_list(existing_maps), websocket)
+      map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
+      if map_choice:
+        map = map_choice
+        await ws_print(f"You embark on {map.render()}...", websocket)
+        break
+      elif map_choice is None and self.haven.keys >= 3:
+        self.haven.keys -= 3
+        map = Map(name=None, n_regions=self.run_length)
+        await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
+        break
+      else:
+        await ws_input(f"You don't have enough keys to unlock a new map ({self.haven.keys}/3) ...", websocket)
 
     # choose difficulty
-    difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
-    map.difficulty = difficulty
+    while True:
+      difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
+      if map.completed_difficulties[difficulty] == 0:
+        map.difficulty = difficulty
+        break
+      else:
+        await ws_input(colored("You've already completed this difficulty. Choose another.", "red"), websocket)
 
     return map
 
@@ -314,7 +326,7 @@ class GameStateV2:
   async def play(self, player_id, websocket=None):
     player, map = await self.play_setup(player_id=player_id, websocket=websocket)
     self.started = True
-    await self.haven.pre_embark(player) # FIXME: make this not a method but a function (controller pattern)
+    await self.haven.pre_embark(player)
     for i, region_draft in enumerate(self.map.region_drafts[:self.run_length]):
       self.current_region_idx = i
       region_shop = self.map.region_shops[i]
@@ -341,33 +353,22 @@ class GameStateV2:
     # End of run rewards
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
     player.experience += 50 * num_keys
+    self.haven.keys += num_keys
     await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
 
-    completed_difficulty = None
-    if num_keys >= self.map.completed_difficulties[self.map.difficulty]:
-      completed_difficulty = self.map.difficulty
-      await ws_print(colored(f"You've completed difficulty {self.map.difficulty}!", "green"), websocket)
-    else:
-      await ws_print(colored(f"You needed {self.map.completed_difficulties[self.map.difficulty]} keys to complete difficulty {self.map.difficulty}...", "red"), websocket)
-
-    if completed_difficulty in [0, 1]:
+    if self.map.difficulty in [0, 1, 3, 4]:
       # get a new spell for the haven
       await ws_print(self.haven.render(), websocket)
       choices = random.sample(self.map.region_drafts[0].spell_pool, 4)
       await ws_print("\n" + numbered_list(choices), websocket)
       chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven library > ", websocket)
       self.haven.library.append(LibrarySpell(chosen_spell))
-    if completed_difficulty == 2:
+    if self.map.difficulty in [2, 5]:
       # add a new ritual
       ritual_choices = [faction.ritual for faction in self.map.factions]
       await ws_print("\n" + numbered_list(ritual_choices), websocket)
       chosen_ritual = await choose_obj(ritual_choices, "Choose a ritual to add to the haven > ", websocket)
       self.haven.rituals.append(chosen_ritual)
-    if completed_difficulty == 3:
-      # get a new map
-      new_map = Map(name=None, n_regions=self.run_length, difficulty=0)
-      new_map.save()
-      await ws_input(f"You've discovered a new land... {colored(new_map.name, 'magenta')}", websocket)
 
     self.map.completed_difficulties[self.map.difficulty] += 1
     await self.end_run(player)

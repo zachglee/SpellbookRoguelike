@@ -38,9 +38,8 @@ class Player(CombatEntity):
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
   recipes: list[Recipe] = []
-  material: int = 30
+  material: int = 40
   secrets_dict: dict[str, int] = defaultdict(int)
-  boss_keys: int = 0 # TODO get rid of this in a few iterations if no longer used
 
   inventory_capacity: int = 10
   library_capacity: int = 10

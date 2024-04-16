@@ -42,11 +42,11 @@ class EnemyWave:
     return enemy_spawns
 
 class Encounter:
-  def __init__(self, waves, player, ambient_energy=None, basic_items=[], special_items=[], unique_items=[], boss=False):
+  def __init__(self, waves, player, difficulty, basic_items=[], special_items=[], unique_items=[], boss=False):
     self.waves = waves
     self.rituals = []
-    self.ambient_energy = ambient_energy or random.choice(["red", "blue", "gold"])
     self.boss = boss
+    self.difficulty = difficulty
     self.enemy_spawns = []
     self.basic_items = basic_items
     self.special_items = special_items
@@ -109,9 +109,10 @@ class Encounter:
   @property
   def escape_turn(self):
     last_enemy_spawn_turn = max(es.original_turn for es in self.enemy_spawns if es.turn <= self.max_turns)
+    difficulty_modifier = 1 if self.difficulty >= 3 else 0
     # you can escape 2 turns after the last enemy spawned,
     # but not earlier than turn 6, nor later than turn 9
-    return min(max(last_enemy_spawn_turn + 2, self.min_turns), self.max_turns)
+    return min(max(last_enemy_spawn_turn + 2, self.min_turns), self.max_turns) + difficulty_modifier
 
   @property
   def overcome(self):
@@ -182,7 +183,7 @@ class Encounter:
                       if spell.spell.type == "Passive"]
     for passive_spell in passive_spells:
       if trigger_output := passive_spell.triggers_on(self, event):
-        await ws_print(f"Passive triggered: {passive_spell.description}")
+        await ws_input(f"Passive triggered: {passive_spell.description}", self.player.websocket)
         await passive_spell.cast(self, trigger_output=trigger_output)
 
     # run player triggers

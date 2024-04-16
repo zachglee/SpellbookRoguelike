@@ -16,7 +16,7 @@ enemies = {
   "Zombie": Enemy.make(16, "Zombie", NearFarAction(AttackAction(6), MoveAction(-1))),
   "Bandit": Enemy.make(15, "Bandit", CowardlyAction(MoveAction(1), AttackAction(4))),
   "Bat": Enemy.make(3, "Bat", AttackAction(1)),
-  "Vampire": Enemy.make(20, "Vampire", AttackAction(8, lifesteal=True)),
+  "Vampire": Enemy.make(20, "Vampire", AttackAction(9, lifesteal=True)),
   "Hawk": Enemy.make(3, "Hawk", AddConditionAction("vulnerable", 1, "player"), entry=AddConditionAction("vulnerable", 1, "player")),
   "Hunter": Enemy.make(20, "Hunter", NearFarAction(MoveAction(1), AttackAction(10))),
   "Charging Ogre": Enemy.make(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
@@ -34,7 +34,7 @@ enemies = {
   "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
                               SideOverwhelmAction(
                                 MultiAction([AddConditionAction("sharp", 2, "self"), AddConditionAction("retaliate", 2, "self")]),
-                                MultiAction([SetConditionAction("retaliate", 0, "self"), AttackAction(3), AttackAction(3)]), 2
+                                MultiAction([SetConditionAction("retaliate", 0, "self"), AttackAction(4), AttackAction(4)]), 2
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy.make(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
@@ -227,24 +227,24 @@ doombringers = [
   EnemySet("Doom of Blades", [
     EnemySpawn(4, "b", make_enemy("Blade Forger")),
     EnemySpawn(6, "f", make_enemy("Doom of Blades")),
-  ], faction="Doombringers", description="Late-spawning enemy, heavy attacks to everything."),
+  ], faction="Doombringers", description="Heavy attacks to everything."),
   EnemySet("Doom of Plagues", [
     EnemySpawn(3, "b", make_enemy("Wandering Healer")),
     EnemySpawn(5, "f", make_enemy("Doom of Plagues")),
-  ], faction="Doombringers", description="Late-spawning enemy, adds heavy poison."),
+  ], faction="Doombringers", description="Adds heavy poison."),
   EnemySet("Doom of Waves", [
     EnemySpawn(3, "b", make_enemy("Defiant Survivor")),
     EnemySpawn(4, "f", make_enemy("Wave of Doom")),
     EnemySpawn(5, "f", make_enemy("Wave of Doom")),
     EnemySpawn(6, "f", make_enemy("Wave of Doom")),
-  ], faction="Doombringers", description="3 late spawning enemies, slow attacks and retaliate."),
+  ], faction="Doombringers", description="Slow attacks and retaliate."),
   EnemySet("Doom of Hordes", [
     EnemySpawn(4, "b", make_enemy("Grizzled Armorer")),
     EnemySpawn(6, "f", make_enemy("Horde Beast")),
     EnemySpawn(6, "f", make_enemy("Horde Beast")),
     EnemySpawn(6, "b", make_enemy("Horde Beast")),
     EnemySpawn(6, "b", make_enemy("Horde Beast")),
-  ], faction="Doombringers", description="4 enemies, all spawn at once. Stronger in numbers.")
+  ], faction="Doombringers", description="Stronger in numbers.")
 ]
 
 the_collectors = [
@@ -268,7 +268,7 @@ the_collectors = [
     EnemySpawn(2, "f", make_enemy("Collector's Cage")),
     EnemySpawn(3, "b", make_enemy("Grasping Hand")),
     EnemySpawn(3, "f", make_enemy("Grasping Hand"))
-  ], faction="The Collectors", description="6 small minions that call enemies, slow, and doom you.")
+  ], faction="The Collectors", description="Minions that call enemies, slow, and doom you.")
 ]
 
 undying_legion = [
@@ -277,10 +277,10 @@ undying_legion = [
     EnemySpawn(2, "f", make_enemy("Relentless Legionnaire")),
     EnemySpawn(3, "b", make_enemy("Relentless Legionnaire")),
     EnemySpawn(4, "f", make_enemy("Relentless Legionnaire"))
-  ], faction="Undying Legion", description="3 enemies start with empower and undying."),
+  ], faction="Undying Legion", description="Start with empower and undying."),
   EnemySet("Eternal Berserker", [
     EnemySpawn(1, "f", make_enemy("Eternal Berserker")),
-  ], faction="Undying Legion", description="One enemy with lots of undying and regen"),
+  ], faction="Undying Legion", description="Undying, scaling attacks and regen."),
   EnemySet("Risen Warrior", [
     EnemySpawn(1, "b", make_enemy("Risen Warrior"))
   ], faction="Undying Legion", description="Starts encased, has heavy attacks."),
@@ -312,16 +312,16 @@ saik_collective = [
     EnemySpawn(1, "b", make_enemy("Harpy Harrier")),
     EnemySpawn(2, "f", make_enemy("Harpy Harrier")),
     EnemySpawn(3, "b", make_enemy("Harpy Harrier"))
-  ], faction="Sa'ik Collective", description="Trio, they deal more damage from behind."),
+  ], faction="Sa'ik Collective", description="Deal more damage from behind."),
   EnemySet("Evasive Skydancer", [
     EnemySpawn(2, "f", make_enemy("Evasive Skydancer"))
-  ], faction="Sa'ik Collective", description="When attacked, doesn't attack -- gains sharp instead."),
+  ], faction="Sa'ik Collective", description="When damaged, doesn't attack -- gains sharp instead."),
   EnemySet("Sa'ik Descenders", [
     EnemySpawn(3, "f", make_enemy("Cocky Descender")),
     EnemySpawn(3, "b", make_enemy("Cocky Descender")),
     EnemySpawn(3, "f", make_enemy("Cocky Descender")),
     EnemySpawn(3, "b", make_enemy("Cocky Descender")),
-  ], faction="Sa'ik Collective", description="4 enemies, spawn all at once, high damage while at full hp."),
+  ], faction="Sa'ik Collective", description="High damage at full hp, weak otherwise"),
   EnemySet("Screeching Fury", [
     EnemySpawn(3, "b", make_enemy("Screeching Fury")),
   ], faction="Sa'ik Collective", description="High damage while not at full hp."),
@@ -333,7 +333,7 @@ house_of_imir = [
     EnemySpawn(2, "f", make_enemy("Ravenous Hound")),
     EnemySpawn(3, "b", make_enemy("Ravenous Hound")),
     EnemySpawn(4, "f", make_enemy("Ravenous Hound"))
-  ], faction="House of Imir", description="Trio, they deal more damage if you're surrounded."),
+  ], faction="House of Imir", description="Deal more damage if you're surrounded."),
   EnemySet("Wanton Vampire", [
     EnemySpawn(3, "b", make_enemy("Bat")),
     EnemySpawn(4, "f", make_enemy("Vampire"))
@@ -342,10 +342,10 @@ house_of_imir = [
     EnemySpawn(1, "b", make_enemy("Lurking Scavenger")),
     EnemySpawn(3, "b", make_enemy("Lurking Scavenger")),
     EnemySpawn(5, "b", make_enemy("Lurking Scavenger")),
-  ], faction="House of Imir", description="Trio, lifesteal attack if you're surrounded, otherwise regen."),
+  ], faction="House of Imir", description="Lifesteal if you're surrounded, otherwise regen."),
   EnemySet("Vampire Lord", [
     EnemySpawn(3, "f", make_enemy("Vampire Lord")),
-  ], faction="House of Imir", description="Starts damaged, can lifesteal. If he heals to full, he'll help you."),
+  ], faction="House of Imir", description="Starts damaged, can lifesteal. If healed to full, he'll help."),
 ]
 
 movs_horde = [
@@ -354,10 +354,10 @@ movs_horde = [
     EnemySpawn(3, "f", make_enemy("Zombie")),
     EnemySpawn(4, "f", make_enemy("Zombie")),
     EnemySpawn(5, "f", make_enemy("Zombie"))
-  ], faction="Mov's Horde", description="Trio, first in line attacks you."),
+  ], faction="Mov's Horde", description="First in line attacks you."),
   EnemySet("Decaying Corpse", [
     EnemySpawn(1, "f", make_enemy("Decaying Corpse"))
-  ], faction="Mov's Horde", description="Early spawn, strong attacks, but starts poisoned."),
+  ], faction="Mov's Horde", description="Strong attacks, but starts poisoned."),
   EnemySet("Skittering Swarm", [
     EnemySpawn(1, "f", make_enemy("Skitterer")),
     EnemySpawn(2, "f", make_enemy("Skitterer")),
@@ -367,7 +367,7 @@ movs_horde = [
     EnemySpawn(5, "b", make_enemy("Skitterer")),
     EnemySpawn(6, "f", make_enemy("Skitterer")),
     EnemySpawn(6, "b", make_enemy("Skitterer")),
-  ], faction="Mov's Horde", description="Swarm of low hp enemies. Stronger in large numbers."),
+  ], faction="Mov's Horde", description="Stronger in large numbers."),
   EnemySet("Necromancer Apprentice", [
     EnemySpawn(4, "f", make_enemy("Necromancer Apprentice")),
   ], faction="Mov's Horde", description="Gives enemies undying and regen."),
@@ -378,7 +378,7 @@ company_of_blades = [
   EnemySet("Bandit Ambush", [
     EnemySpawn(2, "f", make_enemy("Bandit")),
     EnemySpawn(2, "b", make_enemy("Bandit"))
-  ], faction="Company of Blades", description="Duo, they attack as long as there's an enemy with >= their hp."),
+  ], faction="Company of Blades", description="Attack as long as there's an enemy with >= their hp."),
   EnemySet("Hunter and Hawk", [
     EnemySpawn(3, "b", make_enemy("Hawk")),
     EnemySpawn(4, "f", make_enemy("Hunter"))
@@ -390,7 +390,7 @@ company_of_blades = [
     EnemySpawn(2, "b", make_enemy("Crossbow Deadeye")),
     EnemySpawn(4, "f", make_enemy("Crossbow Deadeye")),
     EnemySpawn(6, "b", make_enemy("Crossbow Deadeye")),
-  ], faction="Company of Blades", description="Trio, slow but heavy attacks."),
+  ], faction="Company of Blades", description="Slow but heavy attacks."),
 ]
 
 giantkin = [
@@ -407,7 +407,7 @@ giantkin = [
   EnemySet("The Executioner", [
     EnemySpawn(4, "b", make_enemy("Herald of Doom")),
     EnemySpawn(6, "f", make_enemy("The Executioner")),
-  ], faction="Giantkin", description="Late spawning enemy with slow massive attacks."),
+  ], faction="Giantkin", description="Slow massive attacks."),
 ]
 
 fae_realm = [
@@ -416,35 +416,35 @@ fae_realm = [
     EnemySpawn(2, "b", make_enemy("Faerie Assassin")),
     EnemySpawn(4, "b", make_enemy("Faerie Assassin")),
     EnemySpawn(6, "b", make_enemy("Faerie Assassin")),
-  ], faction="Fae Realm", description="Trio, poison you from behind, otherwise small attacks."),
+  ], faction="Fae Realm", description="Poison you from behind, otherwise attacks."),
   EnemySet("Midnight Court", [
       EnemySpawn(2, "f", make_enemy("Imperious Seelie")),
       EnemySpawn(3, "b", make_enemy("Imperious Seelie")),
-  ], faction="Fae Realm", description="Duo, poison you if you have <2 energy, otherwise attack."),
+  ], faction="Fae Realm", description="Poison you if you have <3 energy, otherwise attack."),
   EnemySet("Fickle Witch-Queen", [
       EnemySpawn(2, "f", make_enemy("Fickle Witch-Queen"))
   ], faction="Fae Realm", description="Poisons you on entry. Leave her be and she'll cure you."),
   EnemySet("Tithetaker", [
       EnemySpawn(1, "b", make_enemy("Generous Sprite")),
       EnemySpawn(5, "f", make_enemy("Tithetaker"))
-  ], faction="Fae Realm", description="Spawns late, heavy attacks unless you have lots of energy."),
+  ], faction="Fae Realm", description="Heavy attacks unless you have lots of energy."),
 ]
 
 kingdom_of_amar = [
   # Kingdom of Amar
   EnemySet("Knifehand", [
     EnemySpawn(5, "f", make_enemy("Knifehand"))
-  ], faction="Kingdom of Amar", description="Spawns late, does a triple attack."),
+  ], faction="Kingdom of Amar", description="Triple attack."),
   EnemySet("Stoneguard Patrol", [
     EnemySpawn(3, "f", make_enemy("Stoneguard")),
     EnemySpawn(3, "f", make_enemy("Stoneguard")),
     EnemySpawn(5, "b", make_enemy("Stoneguard")),
     EnemySpawn(5, "b", make_enemy("Stoneguard")),
-  ], faction="Kingdom of Amar", description="4 small enemies that start with armor."),
+  ], faction="Kingdom of Amar", description="Minions that start with armor."),
   EnemySet("Cloud of Daggers", [
     EnemySpawn(3, "f", make_enemy("Cloud of Daggers")),
     EnemySpawn(3, "b", make_enemy("Cloud of Daggers")),
-  ], faction="Kingdom of Amar", description="Duo, multiple small attacks to everything."),
+  ], faction="Kingdom of Amar", description="Multiple small attacks to everything."),
   EnemySet("Princess' Entourage", [
     EnemySpawn(2, "f", make_enemy("Stoneguard")),
     EnemySpawn(2, "f", make_enemy("Stoneguard")),
@@ -461,13 +461,13 @@ infernal_plane = [
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
     EnemySpawn(4, "b", make_enemy("Conniving Impfiend")),
-  ], faction="Infernal Plane", description="Trio, in high numbers, they burn you, otherwise just attack."),
+  ], faction="Infernal Plane", description="In high numbers, inflict burn, otherwise attack."),
   EnemySet("Cult of the Inferno", [
     EnemySpawn(1, "b", make_enemy("Cultist")),
     EnemySpawn(2, "b", make_enemy("Cultist")),
     EnemySpawn(3, "b", make_enemy("Cultist")),
     EnemySpawn(11, "f", make_enemy("Demon of the Inferno")),
-  ], faction="Infernal Plane", description="Trio of minions call the demon. If it spawns, you're probably dead."),
+  ], faction="Infernal Plane", description="Minions call the demon. If it spawns, you're probably dead."),
   EnemySet("Witch-Burner Devil", [
       EnemySpawn(2, "f", make_enemy("Witch-Burner Devil"))
   ], faction="Infernal Plane", description="If you have energy, inflicts heavy burn."),
@@ -478,22 +478,22 @@ dominion_of_drael = [
   EnemySet("Zealous Battlemages", [
     EnemySpawn(1, "f", make_enemy("Zealous Battlemage")),
     EnemySpawn(2, "f", make_enemy("Zealous Battlemage")),
-  ], faction="Dominion of Drael", description="Duo, start with heavy block and empower."),
+  ], faction="Dominion of Drael", description="Start with heavy block and empower."),
   EnemySet("Draelish Patrol", [
     EnemySpawn(2, "f", make_enemy("Conscript")),
     EnemySpawn(3, "f", make_enemy("Conscript")),
     EnemySpawn(4, "f", make_enemy("Conscript")),
     EnemySpawn(5, "f", make_enemy("Draelish Captain"))
-  ], faction="Dominion of Drael", description="Trio of minions, one leader that gives block and empower."),
+  ], faction="Dominion of Drael", description="3 of minions, one leader that gives block and empower."),
   EnemySet("Draelish Bombsquad", [
     EnemySpawn(2, "f", make_enemy("Bomber Zealot")),
     EnemySpawn(4, "b", make_enemy("Bomber Zealot")),
-  ], faction="Dominion of Drael", description="Duo, explode after one turn, damaging everything."),
+  ], faction="Dominion of Drael", description="Explode after one turn, damaging everything."),
   EnemySet("Shieldmage Squad", [
     EnemySpawn(3, "f", make_enemy("Grizzled Shieldmage")),
     EnemySpawn(4, "f", make_enemy("Grizzled Shieldmage")),
     EnemySpawn(5, "f", make_enemy("Grizzled Shieldmage")),
-  ], faction="Dominion of Drael", description="Trio, give shield and retaliate to those in front."),
+  ], faction="Dominion of Drael", description="Give shield and retaliate to those in front."),
 ]
 
 spirits = [
@@ -512,7 +512,7 @@ spirits = [
       EnemySpawn(4, "f", make_enemy("Red Spirit-Hunter")),
       EnemySpawn(4, "f", make_enemy("Gold Spirit-Hunter")),
       EnemySpawn(5, "b", make_enemy("Font of Magic"))
-  ], faction="Spirits", description="Trio of minions who attack you if you have energy of their color."),
+  ], faction="Spirits", description="Minions attack you if you have energy of their color."),
 ]
 
 shadow_realm = [

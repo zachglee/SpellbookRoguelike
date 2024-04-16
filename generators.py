@@ -52,7 +52,7 @@ def generate_starting_haven_library():
     return [ls for ls in spells if ls.spell.input_color in colors]
 
   def all_reachable(spells: List[LibrarySpell]) -> bool:
-    reachable = [ls for ls in spells if ls.spell.type == ["Producer"]]
+    reachable = [ls for ls in spells if ls.spell.type == "Producer"]
     remaining = [ls for ls in spells if ls.spell.type in ["Converter", "Consumer"]]
     while True:
       new_reachable_colors = reachable_colors(reachable)
@@ -65,10 +65,10 @@ def generate_starting_haven_library():
 
   while True:
     starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
-    # The library must have at least 3 producers with 2 distinct colors among them
+    # The library must have at least 2 producers with 2 distinct colors among them
     # and all spells must be castable with the energies available
     producers = [ls for ls in starting_library if ls.spell.type == "Producer"]
-    if len(producers) >= 3 and len(set([ls.spell.color for ls in producers])) >= 2 and all_reachable(starting_library):
+    if len(producers) >= 2 and len(set([ls.spell.color for ls in producers])) >= 2 and all_reachable(starting_library):
       break
       
   return starting_library
@@ -89,10 +89,10 @@ def generate_shop_item(item):
   return ShopItem(item, cost=cost, stock=stock)
 
 def generate_ancient_key_shop_item():
-  variance = random.randint(0, 11)
+  variance = random.randint(0, 16)
   def ancient_key_effect(player):
-    player.boss_keys += 1
-  return ShopItem(ancient_key, cost=20 + variance, stock=3, immediate_effect=ancient_key_effect)
+    pass
+  return ShopItem(ancient_key, cost=15 + variance, stock=1, immediate_effect=ancient_key_effect)
 
 def generate_shop(n_items, item_pool, key=False) -> Shop:
   random.shuffle(item_pool)

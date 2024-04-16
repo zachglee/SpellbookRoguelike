@@ -21,7 +21,7 @@ class DraftPickOption:
     enemyset_str = self.enemyset.render(show_rules_text=show_rules_text) if self.enemyset else ""
     spell_str = self.spell.render() if self.spell else ""
     material_str = colored(f"{self.material}⛁", "yellow")
-    return f"{material_str} | {enemyset_str} | {spell_str}"
+    return f"{material_str}  {enemyset_str}{spell_str}"
 
 class RegionDraft:
   def __init__(self, combat_size, factions, spell_pool, n_options=3, n_spell_picks=3,
@@ -58,7 +58,7 @@ class RegionDraft:
 
   def level_enemyset(self, enemyset):
     material = 0
-    if random.random() < (0.0 + (0.20 * min(self.difficulty, 3))):
+    if random.random() < (0.0 + (0.20 * min(self.difficulty, 4))):
       level_distribution = [1, 1, 1, 2, 2, 3]
       
       for i in range(random.choice(level_distribution)):

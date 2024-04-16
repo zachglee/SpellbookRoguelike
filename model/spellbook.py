@@ -78,6 +78,13 @@ class Spell(BaseModel):
       return self.conversion_color
     return None
     
+  @property
+  def input_color(self) -> Optional[Color]:
+    if self.type == "Consumer":
+      return self.color
+    if self.type == "Converter":
+      return self.color
+    return None
 
   @property
   def description(self):

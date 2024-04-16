@@ -43,7 +43,6 @@ class EnemySet:
 
     self.pickable = True
     self.obscured = False
-    self.persistent = False
   
   @property
   def instantiated_enemy_spawns(self):
@@ -63,8 +62,6 @@ class EnemySet:
   def render(self, show_rules_text=False):
     if self.obscured:
       return_str = colored(f"???", "red")
-      if self.persistent:
-        return_str += colored(f" (Persistent)", "red")
       if self.level > 0:
         return_str += colored(f" (Lv{self.level})", "red")
       return return_str
@@ -72,8 +69,6 @@ class EnemySet:
     return_str = colored(f"{self.name}", "red")
     if self.level > 0:
       return_str += colored(f" (Lv{self.level})", "red")
-    if self.persistent:
-      return_str += colored(f" (Persistent)", "red")
     if show_rules_text:
       spawn_turns_str = "Spawn " + "".join([f"{es.turn}" for es in self.enemy_spawns])
       reference_enemy = self.enemy_spawns[-1].enemy
@@ -82,7 +77,10 @@ class EnemySet:
       description_str = f"{spawn_turns_str} : {hp_str} : {intent_str}"
     else:
       description_str = self.description
+
+    spawn_schedule_part = colored(str([es.turn for es in self.enemy_spawns]), "light_grey")
     return_str += colored(f" - {description_str}", "magenta")
+    return_str += f" {spawn_schedule_part}"
     return return_str
 
   def __repr__(self):

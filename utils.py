@@ -197,11 +197,12 @@ async def get_combat_entities(enc, target_string, websocket=None):
 
     input_target_string = await ws_input(colored("Choose a target > ", "green"), websocket)
     targets = await get_combat_entities(enc, input_target_string, websocket=websocket)
-    while is_valid is not None and not is_valid(targets[0], enc):
+    while is_valid is not None and len(targets) > 0 and not is_valid(targets[0], enc):
       await ws_print(colored("Invalid target!", "red"), websocket)
       input_target_string = await ws_input(colored("Choose a target > ", "green"), websocket)
-      targets[0] = await get_combat_entities(enc, input_target_string, websocket=websocket)
+      targets = await get_combat_entities(enc, input_target_string, websocket=websocket)
     return targets
+  return [] # If the user specifies gibberish or empty string, interpret it as them choosing no targets
       
   
 async def command_reference(websocket=None):
@@ -288,15 +289,32 @@ async def help_reference(subject, websocket=None):
     help_text = ("Slow is a condition. A player with slow loses 1 time at the start of every turn. "
                  "Reduces by 1 every turn.")
   elif subject == "dig":
-    help_text = ("Dig is a condition. The spells of a player with dig may go to -1 charge. "
-                 "Reduces by 1 every turn.")
+    help_text = ("Dig is a condition. The spells of a player with dig can be used even at 0 or less charges, "
+                 "progressing into negative charges. Reduces by 1 every turn.")
   elif subject == "enduring":
     help_text = ("Enduring is a condition. An entity with x enduring may lose up to, but no more than, x hp in a turn.")
   elif subject == "vulnerable":
     help_text = ("Vulnerable is a condition. An entity with vulnerable takes 50% more damage from all attacks.")
   elif subject == "durable":
     help_text = ("Durable is a condition. An entity with x durable cannot lose more than x hp in a single attack.")
-  # TODO: encase, undying, evade
+  elif subject == "immediate":
+    help_text = ("Immediate is a targeting word describing the entity directly in front of an actor. "
+                 "For players, this is the closest enemy on the faced side. "
+                 "For enemies, this is the enemy ahead of them in line on their side, or the player if they're at the front of the line.")
+  elif subject == "undying":
+    help_text = ("Undying is a condition. After an entity with undying dies, it respawns at the start of the next turn, "
+                 " on the back side with 3hp.")
+  elif subject == "encase":
+    help_text = ("Encase is a condition. Encase prevents incoming damage from attacks and outgoing damage from attacks. "
+                 "1 point of encase prevents 1 point of damage.")
+  elif subject == "evade":
+    help_text = ("Evade is a condition. It lasts for only one turn. "
+                 "When an entity with evade is attacked, it will consume 1 evade and prevent all of that attack's damage.")
+  elif subject == "fleeting":
+    help_text = ("Fleeting is a condition modifier. It means the condition it's describing will be removed at the end of the turn.")
+  elif subject == "call":
+    help_text = ("Call is an action that enemies or spells can cause. To 'call x' means to take the next enemy in the spawn queue "
+                 "and move it up x turns. Certain enemies may call a specific enemy, rather than the next one.")
   else:
     help_text = (f"Sorry, there is no help entry for '{subject}'")
   await ws_input(help_text, websocket)

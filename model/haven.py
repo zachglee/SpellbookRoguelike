@@ -5,12 +5,12 @@ from termcolor import colored
 from utils import choose_str, numbered_list, render_secrets_dict, ws_print
 from content.enemy_factions import faction_rituals_dict
 
-RITUAL_PROGRESS_PRICE = 50
+RITUAL_PROGRESS_PRICE = 30
 
 class Haven:
   def __init__(self, library):
     self.material = 0
-    self.supplies = 0
+    self.keys = 3
     self.secrets_dict = defaultdict(int)
     self.items = []
     self.rituals = []
@@ -39,6 +39,7 @@ class Haven:
           prepared_rituals[choice].progress += prepared_rituals[choice].required_progress
 
         self.secrets_dict[choice] -= RITUAL_PROGRESS_PRICE
+        player.rituals = list(prepared_rituals.values())
         await ws_print(player.render_rituals(), player.websocket)
       else:
         await ws_print(colored(f"Not enough secrets to progress ritual of faction {choice}!", "red"), player.websocket)
@@ -46,8 +47,8 @@ class Haven:
 
   def render(self):
     # material_part = colored(f"{self.material}⛁", "yellow")
-    # supplies_part = colored(f"{self.supplies}♦", "green")
+    keys_part = colored(f"{self.keys}♦", "green")
     secrets_part = colored(render_secrets_dict(self.secrets_dict), "cyan")
     rituals_part = "-------- HAVEN RITUALS --------\n" + numbered_list(self.rituals)
     library_part = "-------- HAVEN LIBRARY --------\n" + numbered_list(self.library)
-    return f"~~~~ HAVEN ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"
+    return f"~~~~ HAVEN {keys_part} ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"
