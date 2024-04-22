@@ -11,7 +11,7 @@ middling_health_potion = Item.make("Middling Health Potion", 2, "Heal 4", ["heal
 major_health_potion = Item.make("Major Health Potion", 5, "Heal 3", ["heal p 3"], material_cost=15)
 health_potions = [minor_health_potion, middling_health_potion, major_health_potion]
 
-ancient_key = Item.make("Ancient Key", 1, "A key to a door long forgotten.", [], weight=0, rare=True, craftable=False)
+ancient_key = Item.make("Ancient Key", 1, "A key to a door long forgotten.", [], weight=0, rare=True, craftable=False, useable=False)
 
 minor_energy_potions = [red_potion, blue_potion, gold_potion]
 minor_energy_potions_dict = {"red": red_potion, "blue": blue_potion, "gold": gold_potion}

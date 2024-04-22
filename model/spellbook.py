@@ -117,9 +117,8 @@ class LibrarySpell:
     self.copies_remaining = copies
     self.max_copies_remaining = copies
     self.material_cost = material_cost
-    
   
-  def render(self, show_cost=True):
+  def render(self, in_player_library=False):
     rendered_str = self.spell.description.replace("Red", colored("Red", "red"))
     rendered_str = rendered_str.replace("Gold", colored("Gold", "yellow"))
     rendered_str = rendered_str.replace("Blue", colored("Blue", "blue"))
@@ -130,12 +129,11 @@ class LibrarySpell:
     rendered_str = rendered_str.replace("Converter", colored("Converter", "cyan"))
     rendered_str = rendered_str.replace("Passive", colored("Passive", "yellow"))
     copies_remaining_part = colored("~", "red") if self.copies_remaining == 0 else ""
-    material_cost_part = colored(f"({self.material_cost}⛁)", "yellow") if show_cost else ""
-    if self.signature:
-      copies_remaining_part = colored(copies_remaining_part, "magenta")
+    # material_cost_part = colored(f"({self.material_cost}⛁)", "yellow") if show_cost else ""
+    signature_part = colored("S ", "magenta") if self.signature and not in_player_library else ""
     if self.copies_remaining <= 0:
       copies_remaining_part = colored(copies_remaining_part, "red")
-    return f"{copies_remaining_part} {material_cost_part} {rendered_str}"
+    return f"{signature_part}{copies_remaining_part} {rendered_str}"
 
 class SpellbookSpell:
   def __init__(self, spell: Spell):
@@ -144,6 +142,21 @@ class SpellbookSpell:
     self.max_charges = 3
     self.echoing = None
     self.exhausted = False
+
+  async def castable_by(self, player) -> bool:
+    if self.spell.type == "Passive":
+      await ws_input(colored("Cannot cast passive spells.", "red"), player.websocket)
+      return False
+    if self.charges <= 0 and not player.conditions["dig"]:
+      await ws_input(colored("Spell is out of charges!", "red"), player.websocket)
+      return False
+    if self.exhausted:
+      await ws_input(colored("Spell is exhausted, can't cast it again this turn!", "red"), player.websocket)
+      return False
+    if self.spell.input_color and player.energy[self.spell.input_color] <= 0:
+      await ws_input(colored("Not enough energy to cast this spell!", "red"), player.websocket)
+      return False
+    return True
 
   def recharge(self):
     self.charges = min(self.charges + 1, self.max_charges)

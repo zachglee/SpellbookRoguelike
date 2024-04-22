@@ -2,15 +2,16 @@ import asyncio
 import random
 import dill
 import os
-from drafting import encounter_draft, haven_library_draft
+from drafting import draft_ritual_for_haven, draft_spell_for_haven, encounter_draft, haven_library_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import Map
 from model.party_member_state import PartyMemberState
 from model.player import Player
+from model.region_draft import RegionDraft
 from model.spellbook import LibrarySpell
 from sound_utils import ws_play_sound
 from termcolor import colored
-from generators import generate_spell_pools, generate_starting_haven_library
+from generators import generate_endgame_enemy_composition, generate_faction_sets, generate_spell_pools, generate_starting_haven_library
 from model.haven import Haven
 from utils import choose_obj, choose_number, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
@@ -220,14 +221,19 @@ class GameStateV2:
 
   async def end_run(self, player):
     self.map.end_run()
-    await player.memorize()
-    await player.learn_rituals()
+    await ws_print(self.haven.render(), player.websocket)
+    await player.discover_spells()
 
     for faction, secrets in player.secrets_dict.items():
       self.haven.secrets_dict[faction] += secrets
 
     player.age += 1
+    # End of run rewards
     num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
+    player.experience += 50 * num_keys
+    self.haven.keys += num_keys
+    await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), player.websocket)
+
     player.inventory = []
 
     player.websocket = None
@@ -262,8 +268,8 @@ class GameStateV2:
         map = map_choice
         await ws_print(f"You embark on {map.render()}...", websocket)
         break
-      elif map_choice is None and self.haven.keys >= 3:
-        self.haven.keys -= 3
+      elif map_choice is None and self.haven.keys >= 1:
+        self.haven.keys -= 1
         map = Map(name=None, n_regions=self.run_length)
         await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
         break
@@ -271,7 +277,7 @@ class GameStateV2:
         await ws_input(f"You don't have enough keys to unlock a new map ({self.haven.keys}/3) ...", websocket)
 
     # choose difficulty
-    while True:
+    while map.name != "Endgame":
       difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
       if map.completed_difficulties[difficulty] == 0:
         map.difficulty = difficulty
@@ -282,15 +288,24 @@ class GameStateV2:
     return map
 
   async def play_setup(self, player_id=None, websocket=None):
-    # if a Haven save file doesn't exist, make one
-    print(os.path.exists("saves/haven.pkl"))
-    print(self.haven)
+    # Load Haven or create one if it doesn't exist
     if not os.path.exists("saves/haven.pkl") and not self.haven:
       starting_library = generate_starting_haven_library()
       self.haven = Haven(library=starting_library)
     elif not self.haven:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
+
+    # If endgame map doesn't exist create one and save it
+    if not os.path.exists("saves/maps/Endgame.pkl"):
+      region_drafts = []
+      factions = generate_faction_sets(n_sets=1, set_size=3, overlap=1)[0]
+      base_enemy_composition = generate_endgame_enemy_composition(factions)
+      region_draft = RegionDraft(combat_size=6, factions=factions, spell_pool=[],
+                                 n_spell_picks=0, n_enemy_picks=0, mandatory_enemysets=base_enemy_composition)
+      region_drafts.append(region_draft)
+      endgame_map = Map(name="Endgame", n_regions=1, region_drafts=region_drafts, difficulty=4)
+      endgame_map.save()
 
     # Choose Character
     player = await self.choose_character(websocket)
@@ -338,37 +353,37 @@ class GameStateV2:
       await self.play_encounter(player, encounter, num_pages=3)
 
       # Persistent enemy sets
-      escaped_enemyset = random.choice(encounter.enemy_sets)
-      await ws_input(colored(f"You've escaped {escaped_enemyset.name}...", "green"), websocket)
-      persistent_enemysets = [es for es in encounter.enemy_sets if es != escaped_enemyset]
+      for _ in range(self.map.num_escapes):
+        escaped_enemyset = random.choice(encounter.enemy_sets)
+        await ws_input(colored(f"You've escaped {escaped_enemyset.name}...", "green"), websocket)
+        persistent_enemysets = [es for es in encounter.enemy_sets if es != escaped_enemyset]
+        escaped_enemyset.level = 0
+
       player.pursuing_enemysets += persistent_enemysets
       stronger_enemysets = [random.choice(persistent_enemysets)]
       for enemyset in stronger_enemysets:
         enemyset.level_up()
         await ws_input(colored(f"{enemyset.name} still follows you, stronger...", "red"), websocket)
-      escaped_enemyset.level = 0
 
       await self.discovery_phase(player)
 
-    # End of run rewards
-    num_keys = len([item for item in player.inventory if item.name == "Ancient Key"])
-    player.experience += 50 * num_keys
-    self.haven.keys += num_keys
-    await ws_print(colored(f"You gained {50 * num_keys} experience from keys!", "green"), websocket)
+    if self.map.difficulty in [0]:
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+    if self.map.difficulty in [1]:
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+    if self.map.difficulty in [2]:
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+      await draft_ritual_for_haven(self, websocket)
+    if self.map.difficulty in [3]:
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+      await draft_spell_for_haven(self, websocket)
+      await draft_ritual_for_haven(self, websocket)
 
-    if self.map.difficulty in [0, 1, 3, 4]:
-      # get a new spell for the haven
-      await ws_print(self.haven.render(), websocket)
-      choices = random.sample(self.map.region_drafts[0].spell_pool, 4)
-      await ws_print("\n" + numbered_list(choices), websocket)
-      chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven library > ", websocket)
-      self.haven.library.append(LibrarySpell(chosen_spell))
-    if self.map.difficulty in [2, 5]:
-      # add a new ritual
-      ritual_choices = [faction.ritual for faction in self.map.factions]
-      await ws_print("\n" + numbered_list(ritual_choices), websocket)
-      chosen_ritual = await choose_obj(ritual_choices, "Choose a ritual to add to the haven > ", websocket)
-      self.haven.rituals.append(chosen_ritual)
 
     self.map.completed_difficulties[self.map.difficulty] += 1
     await self.end_run(player)

@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from generators import generate_recipe
+from generators import generate_library_spells, generate_recipe
 from model.recipe import Recipe
 from model.ritual import Ritual
 from termcolor import colored
@@ -28,7 +28,7 @@ class Player(CombatEntity):
   revive_cost: Optional[int] = None
 
   # Meta state
-  signature_spell: Optional[LibrarySpell] = None
+  personal_spells: list[LibrarySpell] = []
   library: list[LibrarySpell]
   known_rituals: list[Ritual] = []
 
@@ -38,7 +38,7 @@ class Player(CombatEntity):
   seen_spells: list[LibrarySpell] = []
   starting_inventory: list[Item] = []
   recipes: list[Recipe] = []
-  material: int = 40
+  material: int = 10
   secrets_dict: dict[str, int] = defaultdict(int)
 
   inventory_capacity: int = 10
@@ -56,9 +56,7 @@ class Player(CombatEntity):
   seen_items: list[Item] = []
   pursuing_enemysets: list[list[str]] = []
 
-  memorizations_pending: int = 0
-  ritual_learnings_pending: int = 0
-  personal_item: Item = None
+  spell_discoveries_pending: int = 0
 
   done: bool = False
   id: Optional[str] = None
@@ -125,39 +123,33 @@ class Player(CombatEntity):
     else:
       raise ValueError(colored("Not enough time!", "red"))
 
-  def memorize_spell(self, spell: Spell):
-    duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == spell.rules_text and ls.signature]
-    in_library_spell = duplicate_spells[0] if duplicate_spells else None
+  # def memorize_spell(self, spell: Spell):
+  #   duplicate_spells = [ls for ls in self.library if ls.spell.rules_text == spell.rules_text and ls.signature]
+  #   in_library_spell = duplicate_spells[0] if duplicate_spells else None
 
-    if in_library_spell:
-      in_library_spell.max_copies_remaining += 1
-      in_library_spell.signature = True
-    else:
-      new_library_spell = LibrarySpell(spell, copies=1, signature=True)
-      self.library.append(new_library_spell)
+  #   if in_library_spell:
+  #     in_library_spell.max_copies_remaining += 1
+  #     in_library_spell.signature = True
+  #   else:
+  #     new_library_spell = LibrarySpell(spell, copies=1, signature=True)
+  #     self.library.append(new_library_spell)
 
-  async def memorize_seen_spell(self):
-    # TODO turn an existing library spell into signature?
-    await ws_print(self.render_library(), self.websocket)
-    memorization_spell_pool = self.seen_spells + [ls.spell for ls in self.archive]
-    choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 6))
-    await ws_print("---", self.websocket)
-    await ws_print(numbered_list(choices), self.websocket)
-    chosen_spell = deepcopy(await choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan"), self.websocket))
-    self.memorize_spell(chosen_spell)
+  # async def memorize_seen_spell(self):
+  #   # TODO turn an existing library spell into signature?
+  #   await ws_print(self.render_library(), self.websocket)
+  #   memorization_spell_pool = self.seen_spells + [ls.spell for ls in self.archive]
+  #   choices = random.sample(memorization_spell_pool, min(len(self.seen_spells), 6))
+  #   await ws_print("---", self.websocket)
+  #   await ws_print(numbered_list(choices), self.websocket)
+  #   chosen_spell = deepcopy(await choose_obj(choices, colored("Choose a seen spell to memorize > ", "cyan"), self.websocket))
+  #   self.memorize_spell(chosen_spell)
 
   async def level_up(self):
     self.level += 1
     self.max_hp += 1
     self.hp += 1
-    # if self.level > 0 and self.level % 2 == 0:
-    #   self.memorizations_pending += 1
-    #   await self.memorize()
-    # if self.level > 0 and self.level % 3 == 0:
-    #   await self.learn_recipe()
-    # if self.level > 0 and self.level % 5 == 0:
-    #   self.ritual_learnings_pending += 1
-    #   await self.learn_rituals()
+    if self.level > 0 and self.level % 3 == 0:
+      self.spell_discoveries_pending += 1
     await ws_input(colored(f"You leveled up! You are now level {self.level} and your max hp is {self.max_hp}", "green"), self.websocket)
 
   async def check_level_up(self):
@@ -176,22 +168,6 @@ class Player(CombatEntity):
       self.ritual_learnings_pending -= 1
       await ws_print(f"-------- Known Rituals --------", self.websocket)
       await ws_print(numbered_list(self.known_rituals), self.websocket)
-    # while True:
-    # for _ in range(1):
-    #   await ws_print(render_secrets_dict(self.secrets_dict), self.websocket)
-    #   await ws_print(numbered_list(self.rituals), self.websocket)
-    #   ritual = await choose_obj(self.rituals, "Choose a ritual to work on > ", self.websocket)
-    #   if ritual is None:
-    #     break
-
-    #   # xp_needed = ritual.next_level_xp - ritual.experience
-    #   # contributed_xp = min(self.secrets_dict[ritual.faction], xp_needed)
-    #   ritual.experience += self.secrets_dict[ritual.faction]
-    #   self.secrets_dict[ritual.faction] = 0
-    #   while ritual.experience >= ritual.next_level_xp:
-    #     ritual.experience -= ritual.next_level_xp
-    #     ritual.level += 1
-    #     await ws_print(colored(f"You've gained a deeper understanding of {ritual.faction}'s ritual. (Now level {ritual.level})", "magenta"), self.websocket)
 
   async def learn_recipe(self):
     item_options = (random.sample([item for item in self.seen_items if item.craftable], 3)
@@ -204,16 +180,26 @@ class Player(CombatEntity):
     self.recipes.append(chosen_recipe)
     await ws_print(colored(f"You've learned the recipe for {chosen_recipe.item.name}!", "green"), self.websocket)
 
-  async def memorize(self):
-    while self.memorizations_pending > 0:
-      # Mark an existing library spell as signature spell
-      await ws_print(self.render_library(), self.websocket)
-      chosen_spell = await choose_obj(self.library, "Choose a spell to memorize > ", self.websocket)
-      if chosen_spell is None:
+  async def discover_spells(self):
+    while self.spell_discoveries_pending > 0:
+      spell_choices = [ls.spell for ls in generate_library_spells(4)]
+      await ws_print(numbered_list(spell_choices) + "\n", self.websocket)
+      spell = await choose_obj(spell_choices, "Choose a spell you've personally discovered > ", self.websocket)
+      if spell is None:
         break
-      chosen_spell.signature = True
-      # await self.memorize_seen_spell() # FOR NOW BYPASSING THIS
-      self.memorizations_pending -= 1
+      self.personal_spells.append(LibrarySpell(spell, copies=1, material_cost=5, signature=True))
+      self.spell_discoveries_pending -= 1
+
+  # async def memorize(self):
+  #   while self.memorizations_pending > 0:
+  #     # Mark an existing library spell as signature spell
+  #     await ws_print(self.render_library(), self.websocket)
+  #     chosen_spell = await choose_obj(self.library, "Choose a spell to memorize > ", self.websocket)
+  #     if chosen_spell is None:
+  #       break
+  #     chosen_spell.signature = True
+  #     # await self.memorize_seen_spell() # FOR NOW BYPASSING THIS
+  #     self.memorizations_pending -= 1
 
   def prompt_personal_destination(self):
     region_idx, layer_idx, node_idx = self.personal_destination
@@ -234,7 +220,7 @@ class Player(CombatEntity):
     self.pursuing_enemysets = []
 
     starting_spellbook = Spellbook(pages=[])
-    self.library = [ls for ls in self.library if ls.signature]
+    self.library = []
 
     # recharge signature spells to max
     for library_spell in self.library:
@@ -305,7 +291,7 @@ class Player(CombatEntity):
   def render_library(self):
     material_str = colored(f"{self.material}⛁", "yellow")
     render_str = f"-------- PLAYER LIBRARY ({material_str}) --------\n"
-    render_str += numbered_list(self.library, show_cost=False)
+    render_str += numbered_list(self.library, in_player_library=True)
     return render_str
 
   def render_pursuing_enemysets(self):

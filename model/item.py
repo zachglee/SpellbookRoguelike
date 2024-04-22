@@ -19,18 +19,18 @@ class Item(BaseModel):
   craftable: bool = True
   personal: bool = False
   belonged_to: Optional[str] = None
+  useable: bool = True
 
   class Config:
     arbitrary_types_allowed = True
 
   @classmethod
   def make(cls, name, charges, description, use_commands,
-           generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, weight=1, rare=False, faction="", personal=False, craftable=True):
+           generate_commands_pre=lambda e, t: [], time_cost=1, material_cost=None, weight=1, rare=False, faction="", personal=False, craftable=True, useable=True):
     """Literally just exists to make so we can pass one arg for charges and max charges."""
     return cls(name=name, charges=charges, max_charges=charges, description=description, use_commands=use_commands,
                generate_commands_pre=generate_commands_pre, time_cost=time_cost, material_cost=material_cost, weight=weight,
-               rare=rare, faction=faction, personal=personal, craftable=craftable)
-    
+               rare=rare, faction=faction, personal=personal, craftable=craftable, useable=useable)
 
   async def use(self, encounter):
     # generate commands pre-execution

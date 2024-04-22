@@ -72,7 +72,7 @@ class Encounter:
   
   @property
   def max_turns(self):
-    return 8 + len(self.waves)
+    return 8 + len(self.waves) + (1 if self.difficulty >= 3 else 0)
 
   @property
   def enemy_sets(self):
@@ -215,16 +215,6 @@ class Encounter:
       self.run_state_triggers()
       self.gather_events_from_combat_entities()
 
-  # This seems to not be used anywhere?
-  # def use_item(self, idx=None):
-  #   if idx:
-  #     item_idx = idx - 1
-  #   else:
-  #     item_idx = choose_idx(self.player.inventory, "use item > ")
-  #   item = self.player.inventory[item_idx]
-  #   item.use(self)
-  #   self.player.inventory = [item for item in self.player.inventory if item.charges > 0]
-
   def banish(self, target, ward=0):
     if target is None:
       return
@@ -305,7 +295,7 @@ class Encounter:
         item_index = int(cmd_tokens[1])
         item_idx = item_index - 1
         item = self.player.inventory[item_idx]
-        if self.player.time >= item.time_cost and item.charges > 0:
+        if self.player.time >= item.time_cost and item.charges > 0 and item.useable:
           self.player.spend_time(cost=item.time_cost)
           await item.use(self)
           await ws_play_sound("inventory.mp3", self.player.websocket)
@@ -342,14 +332,7 @@ class Encounter:
         target.exhausted = False
       elif cmd_tokens[0] in ["cast", "ecast", "ccast"]:
         target = self.player.spellbook.current_page.spells[int(cmd_tokens[1]) - 1]
-        if target.spell.type == "Passive":
-          await ws_input(colored("Cannot cast passive spells.", "red"), self.player.websocket)
-          return
-        if target.charges <= 0 and not self.player.conditions["dig"]:
-          await ws_input(colored("Spell is out of charges!", "red"), self.player.websocket)
-          return
-        if target.exhausted:
-          await ws_input(colored("Spell is exhausted, can't cast it again this turn!", "red"), self.player.websocket)
+        if not await target.castable_by(self.player):
           return
         self.player.spend_time()
         self.spells_cast_this_turn.append(target)
@@ -497,10 +480,10 @@ class Encounter:
     front_spawns = [(es.enemy, self.front) for es in to_spawn if es.side == "f"]
     for enemy, destination in (front_spawns + back_spawns):
       if self.player.conditions["ward"] > 0:
-        await ws_print(f"{enemy.name} was warded!", self.player.websocket)
+        await ws_input(f"{enemy.name} was warded!", self.player.websocket)
         self.player.conditions["ward"] -= 1
       elif enemy.conditions["ward"] > 0:
-        await ws_print(f"{enemy.name} was warded!", self.player.websocket)
+        await ws_input(f"{enemy.name} was warded!", self.player.websocket)
         enemy.conditions["ward"] -= 1
       else:
         destination.append(enemy)

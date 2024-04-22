@@ -11,11 +11,11 @@ RITUAL_PROGRESS = 10
 factions = [
   Faction("Freed Automata", freed_automata, "⚙",
     basic_items=[
-      Item.make("Heavy Plating", 1, "Gain 3 armor. (takes 4 actions)", ["armor p 3"], time_cost=4),
+      Item.make("Heavy Plating", 1, "Gain 2 armor. (takes 3 actions)", ["armor p 2"], time_cost=3),
       Item.make("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
-      Item.make("Rebellious Core", 5, "Gain 2 retaliate.", ["retaliate p 2"], rare=True)
+      Item.make("Rebellious Core", 4, "Gain 3 retaliate.", ["retaliate p 3"], rare=True)
     ],
     ritual=Ritual("Automatic Armor", "Gain 1 armor on turn 1. Gain 1 shield every turn.", "Freed Automata", RITUAL_PROGRESS,
                   [ritual_event([1], ["armor p 1"]), ritual_event(list(range(1, 10)), ["shield p 1"])]),
@@ -24,11 +24,11 @@ factions = [
   ),
   Faction("Undying Legion", undying_legion, "⚱",
     basic_items=[
-      Item.make("Regrowing Shield", 2, "Gain 3 block and break: 3 block.", ["block p 3", "break block p 3"]),
+      Item.make("Regrowing Shield", 2, "Gain 3 block and break: 4 block.", ["block p 3", "break block p 4"]),
       Item.make("Embalming Wraps", 2, "Gain 4 encase and 4 empower", ["encase p 4", "empower p 4"])
     ],
     special_items=[
-      Item.make("Ambrosia of the Undying", 2, "Gain 1 undying.", ["undying p 1"], rare=True)
+      Item.make("Ambrosia of the Undying", 1, "Gain 4 encase and 4 regen.", ["encase p 4", "regen p 4"], rare=True)
     ],
     ritual=Ritual("Ritual of Mummification", "Gain 8 encase on turn 1. Gain 2 empower every turn.", "Undying Legion", RITUAL_PROGRESS,
                   [ritual_event([1], ["encase p 8"]), ritual_event(list(range(1, 10)), ["empower p 2"])]),
@@ -67,7 +67,7 @@ factions = [
       Item.make("Harrier's Cloak", 2, "Gain 1 evade.", ["evade p 1"]),
     ],
     special_items=[
-      Item.make("Skydancer's Talon", 3, "Deal 3 damage to a single target twice.", ["repeat 2 damage _ 3"], rare=True)
+      Item.make("Skydancer's Talon", 3, "Deal 3 damage twice.", ["repeat 2 damage _ 3"], rare=True)
     ],
     # Evade and fleeting sharp on turns 1, 2, 3
     ritual=Ritual("Skydancer's Prowess", "For first 3 turns, gain 1 evade and 3 fleeting sharp.", "Sa'ik Collective", RITUAL_PROGRESS,
@@ -91,7 +91,7 @@ factions = [
   Faction("Mov's Horde", movs_horde, "☠",
     basic_items=[
       Item.make("Reaper's Scythe", 2, "Deal 3 damage to immediate two enemies.", ["damage i1 3", "damage i2 3"]),
-      Item.make("Ichor of Undeath", 1, "Gain 4 enduring this turn.", ["enduring p 4", "delay 0 enduring p -4"]),
+      Item.make("Ichor of Undeath", 1, "Gain 1 undying.", ["undying p 1"]),
     ],
     special_items=[
       Item.make("Soul-Catcher Siphon", 1, "Gain regen equal to # of dead enemies.", [], generate_commands_pre=for_dead_enemies(["regen p *"]), rare=True) # effect per dead enemies

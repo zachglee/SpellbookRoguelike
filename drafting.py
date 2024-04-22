@@ -1,8 +1,8 @@
 from copy import deepcopy
 import random
 from termcolor import colored
-from model.spellbook import SpellbookPage, SpellbookSpell
-from utils import choose_obj, ws_print
+from model.spellbook import LibrarySpell, SpellbookPage, SpellbookSpell
+from utils import choose_obj, numbered_list, ws_input, ws_print
 from sound_utils import ws_play_sound
 
 async def render_spell_draft(player, editing_page_idx, websocket=None):
@@ -18,10 +18,6 @@ async def encounter_draft(player, num_pages=3, page_capacity=3):
     ls.copies_remaining = ls.max_copies_remaining
   for i in range(num_pages):
     await add_page(player, i+1, page_capacity=page_capacity)
-  # remove spent spells from library
-  # NOTE: keep spells when they go to 0 charges, because your library is persistent across
-  # combats now
-  # player.library = [ls for ls in player.library if ls.copies_remaining > 0 or ls.signature]
   player.spellbook.pages = [page for page in player.spellbook.pages if page.spells]
 
 async def add_page(player, page_number, page_capacity=3):
@@ -59,9 +55,10 @@ async def haven_library_draft(player, game_state):
 
   chosen_spells = []
   while True:
-    await ws_print(haven.render(), player.websocket)
+    drafting_library = haven.library + player.personal_spells
+    await ws_print(haven.render(player=player), player.websocket)
     await ws_print(player.render_library(), player.websocket)
-    choice = await choose_obj(haven.library, "Choose a spell to add to library > ", player.websocket)
+    choice = await choose_obj(drafting_library, "Choose a spell to add to library > ", player.websocket)
 
     if choice is None and len(chosen_spells) > 0:
       break
@@ -70,30 +67,53 @@ async def haven_library_draft(player, game_state):
       await ws_print(colored("This spell is out of copies.", "red"), player.websocket)
       continue
 
-    if player.material < choice.material_cost:
-      await ws_print(colored("Not enough material!", "red"), player.websocket)
-      continue
+    # if player.material < choice.material_cost:
+    #   await ws_print(colored("Not enough material!", "red"), player.websocket)
+    #   continue
 
     player.library.append(deepcopy(choice))
     chosen_spells.append(choice)
-    player.material -= choice.material_cost
+    # player.material -= choice.material_cost
     choice.copies_remaining -= 1
   
+  # NOTE: We're not doing material cost adjustment right now
   # Do admin to adjust spell costs
-  increase_cost_spells = random.sample(chosen_spells, 3) if len(chosen_spells) > 3 else chosen_spells
-  for spell in increase_cost_spells:
-    spell.material_cost += 3
-  no_recharge_spell = random.choice(chosen_spells)
-  unchosen_spells = [ls for ls in haven.library if ls not in chosen_spells]
-  total_discounts = 0
-  while total_discounts < 6:
-    spell_to_discount = random.choice(unchosen_spells)
-    if spell_to_discount.material_cost > 0:
-      spell_to_discount.material_cost -= 1
-      total_discounts += 1
+  # increase_cost_spells = random.sample(chosen_spells, 3) if len(chosen_spells) > 3 else chosen_spells
+  # for spell in increase_cost_spells:
+  #   spell.material_cost += 3
+  # no_recharge_spell = random.choice(chosen_spells)
+  # unchosen_spells = [ls for ls in drafting_library if ls not in chosen_spells]
+  # total_discounts = 0
+  # while total_discounts < 6:
+  #   spell_to_discount = random.choice(unchosen_spells)
+  #   if spell_to_discount.material_cost > 0:
+  #     spell_to_discount.material_cost -= 1
+  #     total_discounts += 1
 
-  for ls in haven.library:
-    if ls is not no_recharge_spell:
-      ls.copies_remaining = ls.max_copies_remaining
+  # Remove two chosen spells from the haven library
+  spells_to_remove = random.sample([ls for ls in chosen_spells if ls in haven.library], 2)
+  for ls in spells_to_remove:
+    await ws_input(colored("This spell is now spent: ", "red") + f"{ls.spell.description}.", player.websocket)
+    haven.library.remove(ls)
 
-  await ws_print(haven.render(), player.websocket)
+  for ls in drafting_library:
+    # if ls is not no_recharge_spell:
+    ls.copies_remaining = ls.max_copies_remaining
+
+  await ws_print(haven.render(player=player), player.websocket)
+
+async def draft_spell_for_haven(game_state, websocket):
+    # get a new spell for the haven
+    await ws_print(game_state.haven.render(), websocket)
+    choices = random.sample(game_state.map.region_drafts[game_state.map.difficulty].spell_pool, 3)
+    await ws_print("\n" + numbered_list(choices), websocket)
+    chosen_spell = await choose_obj(choices, "Choose a spell to add to the haven library > ", websocket)
+    game_state.haven.library.append(LibrarySpell(chosen_spell))
+
+async def draft_ritual_for_haven(game_state, websocket):
+    # add a new ritual to the haven
+    ritual_choices = [faction.ritual for faction in game_state.map.factions]
+    await ws_print(game_state.haven.render(), websocket)
+    await ws_print("\n" + numbered_list(ritual_choices), websocket)
+    chosen_ritual = await choose_obj(ritual_choices, "Choose a ritual to add to the haven > ", websocket)
+    game_state.haven.rituals.append(chosen_ritual)

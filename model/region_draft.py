@@ -25,16 +25,15 @@ class DraftPickOption:
 
 class RegionDraft:
   def __init__(self, combat_size, factions, spell_pool, n_options=3, n_spell_picks=3,
-               n_enemy_picks=3, skip_reward=8, difficulty=0):
+               n_enemy_picks=3, difficulty=0, mandatory_enemysets=[]):
     self.combat_size = combat_size
     self.factions = factions # Faction
     self.enemyset_pool = sum([faction.enemy_sets for faction in factions], []) * 2
     self.spell_pool = spell_pool
-    self.stranded_characters: List[Player] = []
     self.n_options = n_options
     self.n_spell_picks = n_spell_picks
     self.n_enemy_picks = n_enemy_picks
-    self.skip_reward = skip_reward
+    self.mandatory_enemysets = mandatory_enemysets
     self.difficulty = difficulty
 
     self.enemyset_pool_idx = 0
@@ -58,7 +57,7 @@ class RegionDraft:
 
   def level_enemyset(self, enemyset):
     material = 0
-    if random.random() < (0.0 + (0.20 * min(self.difficulty, 4))):
+    if random.random() < (0.0 + (0.33 * min(self.difficulty, 3))):
       level_distribution = [1, 1, 1, 2, 2, 3]
       
       for i in range(random.choice(level_distribution)):
@@ -95,11 +94,6 @@ class RegionDraft:
         enemyset.obscured = True
         material += 3
       material += self.level_enemyset(enemyset)
-      # TODO: remove this stranded logic once we're more sure we're not going this direction
-      if self.stranded_characters and random.random() < 0.6:
-        character = random.choice(self.stranded_characters)
-        enemyset.level_up()
-        spell = character.signature_spell.spell
       self.enemyset_pool_idx += 1
 
     if type == "spell":
@@ -127,10 +121,7 @@ class RegionDraft:
       # choose pick
       choice = await choose_obj(pick_options, "pick one > ", websocket)
       if choice is None:
-        if all(po.enemyset is None for po in pick_options): # You can only skip if this is not an enemy pick
-          return DraftPickOption(None, None, self.skip_reward)
-        else:
-          continue
+        continue
 
       if choice == "rules":
         show_rules_text = not show_rules_text
@@ -142,6 +133,7 @@ class RegionDraft:
     return choice
   
   async def play(self, player, game_state):
+    player.pursuing_enemysets += deepcopy(self.mandatory_enemysets)
     for i in range(self.n_picks):
       await ws_print(player.render_state(), player.websocket)
       await ws_print("\n", player.websocket)
@@ -149,10 +141,6 @@ class RegionDraft:
       await ws_print(f"~~~ Pick {i + 1} of {self.n_picks} ~~~", player.websocket)
       player.seen_spells += [pick_option.spell for pick_option in pick_options if pick_option.spell]
       pick_option = await self.draft_pick(pick_options, websocket=player.websocket)
-      if pick_option.character:
-        pick_option.character.stranded = False
-        self.stranded_characters.remove(pick_option.character)
-        pick_option.character.save()
       if pick_option.spell:
         chosen_library_spell = LibrarySpell(pick_option.spell, copies=1)
         player.library.append(chosen_library_spell)

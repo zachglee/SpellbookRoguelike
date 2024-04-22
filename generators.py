@@ -10,7 +10,6 @@ from content.items import ancient_key
 from content.enemy_factions import factions
 from utils import Color
 
-
 def generate_enemy_set_pool(n=10):
   random.shuffle(enemy_sets)
   return enemy_sets[:n]
@@ -28,13 +27,21 @@ def generate_spell_pools(n_pools=1) -> List[List[Spell]]:
     spell_pools.append(spell_pool)
   return spell_pools
 
-def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions) -> List["Faction"]:
+def generate_faction_sets(n_sets=1, set_size=2, overlap=0, faction_pool=factions) -> List[List["Faction"]]:
   random.shuffle(faction_pool)
   faction_pool = faction_pool * 2
   pool_size = len(faction_pool)
   return [factions[((i * set_size) - (i * overlap)) % pool_size:
                    (((i+1) * set_size) - (i * overlap)) % (pool_size+1)]
                    for i in range(n_sets)]
+
+def generate_endgame_enemy_composition(factions) -> List["EnemySet"]:
+  enemy_composition = random.sample(sum([f.enemy_sets for f in factions], []), 3)
+  random.shuffle(enemy_composition)
+  for l, enemyset in zip([0, 0, 1, 1, 1, 2, 2, 3], enemy_composition):
+    for _ in range(l):
+      enemyset.level_up()
+  return enemy_composition
 
 def generate_library_spells(size, spell_pool=spells, copies=1):
   sampled_spells = random.sample(spell_pool, size)

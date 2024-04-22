@@ -56,7 +56,7 @@ def passive_block_and_shield_at_end(encounter, event):
 
 def passive_first_damage_10hp_remains(encounter, event):
   if (event.has_tag("attack") and not event.metadata["target"].is_player() and
-      event.metadata["target"].hp >= 10 and event.metadata["damage_dealt"] == event.metadata["target"].damage_taken_this_turn):
+      event.metadata["target"].hp >= 10):
     return event.metadata["target"].get_target_string(encounter)
   return False
 
