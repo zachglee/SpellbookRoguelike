@@ -21,14 +21,14 @@ enemies = {
   "Hunter": Enemy.make(20, "Hunter", NearFarAction(MoveAction(1), AttackAction(10))),
   "Charging Ogre": Enemy.make(30, "Charging Ogre", NearFarAction(AttackAction(8), MultiAction([MoveAction(-10), AddConditionAction("empower", 8, "self")]))),
   "Evasive Skydancer": Enemy.make(15, "Evasive Skydancer", CautiousAction(AddConditionAction("sharp", 5, "self"), AttackAction(5)), entry=AddConditionAction("enduring", 5, "self")),
-  "The Vulture": Enemy.make(40, "The Vulture", AttackAction(3), entry=TheVultureEntryAction()),
+  "The Vulture": Enemy.make(40, "The Vulture", AttackAction(5), entry=TheVultureEntryAction()),
   #
   "Skitterer": Enemy.make(3, "Skitterer", OverwhelmAction(AttackAction(3), AttackAction(1), 4)),
   "Decaying Corpse": Enemy.make(20, "Decaying Corpse", AttackAction(6), entry=AddConditionAction("poison", 4, "self")),
   "Faerie Assassin": Enemy.make(6, "Faerie Assassin", BackstabAction(AddConditionAction("poison", 3, "player"), AttackAction(3))),
   "Knifehand": Enemy.make(20, "Knifehand", MultiAction([AttackAction(4), AttackAction(5), AttackAction(6)])),
   "Blazing Eye": Enemy.make(16, "Blazing Eye", BackstabAction(AddConditionAction("burn", 1, "player"), AddConditionAction("burn", 5, "player"))),
-  "Creeping Shadow": Enemy.make(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 3, "self"), exp=10),
+  "Creeping Shadow": Enemy.make(10, "Creeping Shadow", BackstabAction(AddConditionAction("sharp", 5, "self"), AttackAction(1)), entry=AddConditionAction("durable", 3, "self"), exp=15),
   "Stoneguard": Enemy.make(6, "Stoneguard", AttackAction(3), entry=AddConditionAction("armor", 3, "self")),
   "Conniving Impfiend": Enemy.make(6, "Conniving Impfiend", OverwhelmAction(AddConditionAction("burn", 2, "player"), AttackAction(2), 3)),
   "Insistent Duelist": Enemy.make(20, "Insistent Duelist",
@@ -38,8 +38,8 @@ enemies = {
                               ), entry=AddConditionAction("ward", 1, "player")),
   #
   "Cultist": Enemy.make(10, "Cultist", CallAction("Demon of the Inferno", 1), entry=AddConditionAction("burn", 4, "self"), exp=3),
-  "Demon of the Inferno": Enemy.make(40, "Demon of the Inferno", AttackAction(10, lifesteal=True), entry=AddConditionAction("burn", 4, "player")),
-  "Injured Troll": Enemy.make(40, "Injured Troll", AttackAction(4), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
+  "Demon of the Inferno": Enemy.make(40, "Demon of the Inferno", AttackAction(13, lifesteal=True), entry=AddConditionAction("burn", 4, "player")),
+  "Injured Troll": Enemy.make(40, "Injured Troll", AttackAction(5), entry=MultiAction([SelfDamageAction(20), AddConditionAction("regen", 6, "self")]), exp=14),
   "Crossbow Deadeye": Enemy.make(12, "Crossbow Deadeye", WindupAction(AttackAction(10), 1)),
   "Herald of Doom": Enemy.make(5, "Herald of Doom", SelfDamageAction(5)),
   "The Executioner": Enemy.make(40, "The Executioner", WindupAction(AttackAction(25), 1)),
@@ -98,7 +98,7 @@ enemies = {
                         ])),
   "Cocky Descender": Enemy.make(9, "Cocky Descender",
                                   HealthThresholdAction(
-                                    MultiAction([AttackAction(3), AttackAction(3)]),
+                                    AttackAction(6),
                                     AttackAction(1), 1)),
   "Fickle Witch-Queen": Enemy.make(12, "Fickle Witch-Queen",
                            CautiousAction(NothingAction(), WindupAction(MultiAction([
@@ -109,16 +109,16 @@ enemies = {
   "Screeching Fury": Enemy.make(20, "Screeching Fury",
                            HealthThresholdAction(AttackAction(3),
                                                  MultiAction([
-                                                     AttackAction(5),
-                                                     AttackAction(5),
-                                                     AddConditionAction("sharp", 1, "self")]
+                                                     AttackAction(6),
+                                                     AttackAction(6),
+                                                  ]
                                                  ), 1)),
   "Witch-Burner Devil": Enemy.make(20, "Witch-Burner Devil",
-                              EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(2), 1)),
-  "Tithetaker": Enemy.make(26, "Tithetaker",
+                              EnergyThresholdAction(AddConditionAction("burn", 4, "player"), AttackAction(3), 1)),
+  "Tithetaker": Enemy.make(30, "Tithetaker",
                       EnergyThresholdAction(
                           AddConditionAction("regen", 1, "player"),
-                          AttackAction(13, lifesteal=True), 6)),
+                          AttackAction(15, lifesteal=True), 6)),
   "Generous Sprite": Enemy.make(1, "Generous Sprite",
                          BackstabAction(
                              WindupAction(AddConditionAction("green", 1, "player"), 2),
@@ -160,7 +160,7 @@ enemies = {
   "Aegis Orb": Enemy.make(20, "Aegis Orb", MultiAction([AddConditionAction("armor", 1, "all_enemies"), AddConditionAction("retaliate", 1, "all_enemies")])),
   "Defective Shieldbot": Enemy.make(10, "Defective Shieldbot",
                                MultiAction([AttackAction(3), AddConditionAction("shield", -6, "self")]),
-                               entry=AddConditionAction("shield", 40, "self")),
+                               entry=AddConditionAction("shield", 50, "self")),
   "Plated Warmech": Enemy.make(12, "Plated Warmech", AttackAction(4), entry=AddConditionAction("armor", 6, "self")),
   "Relentless Legionnaire": Enemy.make(8, "Relentless Legionnaire", AttackAction(2),
     entry=MultiAction([AddConditionAction("undying", 1, "self"), AddConditionAction("empower", 3, "self")])),
@@ -427,7 +427,7 @@ fae_realm = [
   EnemySet("Tithetaker", [
       EnemySpawn(1, "b", make_enemy("Generous Sprite")),
       EnemySpawn(5, "f", make_enemy("Tithetaker"))
-  ], faction="Fae Realm", description="Heavy attacks unless you have lots of energy."),
+  ], faction="Fae Realm", description="Heavy attacks unless you have >=6 energy."),
 ]
 
 kingdom_of_amar = [
@@ -555,7 +555,7 @@ ancient_horrors = [
   ], faction="Ancient Horrors", description="Attacks whatever's in front of it and gets stronger."),
   EnemySet("The Vulture", [
     EnemySpawn(6, "b", make_enemy("The Vulture"))
-  ], faction="Ancient Horrors", description="Consumes all enemies on entry, to strengthen itself."),
+  ], faction="Ancient Horrors", description="Stronger the more enemies you've killed when it spawns."),
 ]
 
 factions = [

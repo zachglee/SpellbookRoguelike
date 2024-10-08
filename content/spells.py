@@ -104,8 +104,8 @@ red_random_target = [
   [Spell(rules_text="At turn start, inflict 4 poison on a random enemy", color="red", type="Passive",
           triggers_on=passive_turn_start, raw_commands=["poison r 4"]),
   Spell(rules_text="deal 3 to a random enemy twice.", color="red", type="Producer", raw_commands=["damage r 3", "damage r 3"]),
-  Spell(rules_text="Inflict 7 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 7"]),
-  Spell(rules_text="Gain 5 regen, then you and all enemies get 5 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 5", "v      ulnerable a 5", "vulnerable p 5"])]
+  Spell(rules_text="Inflict 8 poison on a damaged enemy.", color="red", type="Converter", conversion_color="blue", raw_commands=["poison _damaged 8"]),
+  Spell(rules_text="Gain 5 regen, then you and all enemies get 5 vulnerable.", color="red", type="Consumer", raw_commands=["regen p 5", "vulnerable a 5", "vulnerable p 5"])]
 ]
 
 red_page_sets = [red_enemy_dies, red_take_damage, red_big_attack, red_hit_big_enemy, red_first_3_turns, red_random_target]
@@ -151,8 +151,8 @@ blue_3_enemies = [
          triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["stun r 1", "stun r 1"]),
   Spell(rules_text="gain 2 block and Break: stun 1.", color="blue", type="Producer", raw_commands=["block p 2", "break stun ^ 1"]),
   Spell(rules_text="Gain retaliate 4.", color="blue", type="Converter", conversion_color="gold", raw_commands=["retaliate p 4"]),
-  # FIXME: FIX THIS -- doesn't damage all
-  Spell(rules_text="Deal 6 to all stunned enemies. Stun 1 all enemies.", color="blue", type="Consumer", raw_commands=["stun a 1"])],
+  Spell(rules_text="Deal 6 to all stunned enemies. Stun 1 all enemies on faced side", color="blue", type="Consumer",
+        generate_commands_pre=["damage ?stun 6"], raw_commands=["stun iside 1"])],
   #
   [Spell(rules_text="At turn start, if there >= 3 enemies, deal 15 to random.", color="blue", type="Passive",
          triggers_on=passive_3_plus_enemies_at_begin, raw_commands=["damage r 15"]),
@@ -170,8 +170,8 @@ blue_excess_block = [
   Spell(rules_text="Gain 1 armor and 2 retaliate.", color="blue", type="Converter", conversion_color="red", raw_commands=["armor p 1", "retaliate p 2"]),
   Spell(rules_text="Gain 20 block.", color="blue", type="Consumer", raw_commands=["block p 20"])],
   #
-  [Spell(rules_text="At turn end, gain shield equal to block.", color="blue", type="Passive",
-         triggers_on=passive_block_at_end, raw_commands=["shield p ^"]),
+  [Spell(rules_text="At round end, gain shield equal to block.", color="blue", type="Passive",
+         triggers_on=passive_block_at_round_end, raw_commands=["shield p ^"]),
   Spell(rules_text="+2 shield.", color="blue", type="Producer", raw_commands=["shield p 2"]),
   Spell(rules_text="Block 2. Convert block into 2x shield.", color="blue", type="Converter", conversion_color="gold",
         raw_commands=["block p 2"], generate_commands_post=for_player_condition(["block"], ["shield p *", "block p =0"], lambda b: 2*b)),
@@ -204,8 +204,8 @@ blue_on_entry = [
   Spell(rules_text="inflict 2 poison.", color="blue", type="Producer", raw_commands=["poison _ 2"]),
   Spell(rules_text="Block 4. Break: Poison 4 all enemies.", color="blue", type="Converter", conversion_color="red",
         raw_commands=["block p 4", "break poison a 4"]),
-  Spell(rules_text="Gain 1 shield for each enemy. Banish all enemies until end of round.", color="blue", type="Consumer",
-        raw_commands=["banish a 0"], generate_commands_pre=for_enemies(["shield p *"], lambda s: 1*s))],
+  Spell(rules_text="Banish three enemies immediately in front and behind for this round.", color="blue", type="Consumer",
+        raw_commands=["repeat 3 banish i 0", "repeat 3 banish bi 0"])],
   #
   [Spell(rules_text="When an enemy enters, deal it 4.", color="blue", type="Passive",
           triggers_on=passive_on_entry, raw_commands=["damage ^ 4"]),
@@ -244,8 +244,8 @@ gold_turn_page = [
         raw_commands=["damage i 6"], generate_commands_post=for_missing_charges(["empower p *"])),
   Spell(rules_text="Gain Dig Deep 3 and 3 shield. +3 time.", color="gold", type="Consumer", raw_commands=["dig p 3", "time -3", "shield p 3"])],
   #
-  [Spell(rules_text="When you turn to this page, gain 2 inventive.", color="gold", type="Passive",
-         triggers_on=passive_on_page, raw_commands=["inventive p 2"]),
+  [Spell(rules_text="When you turn to this page, gain 2 inventive and +1 time", color="gold", type="Passive",
+         triggers_on=passive_on_page, raw_commands=["inventive p 2", "time -1"]),
   Spell(rules_text="Recharge and refresh a spell.", color="gold", type="Producer"), # TODO: make this prompt you with a choice
   Spell(rules_text="Gain 5 block and break: Gain searing presence 5. Refresh this.", color="gold", type="Converter", conversion_color="red",
         raw_commands=["block p 5", "break searing p 5", "refresh last"]),
@@ -264,8 +264,8 @@ gold_1_spell = [
   [Spell(rules_text="If you cast 1 or less spell in a turn, empower 7.", color="gold", type="Passive",
          triggers_on=passive_1_spell_in_turn, raw_commands=["empower p 7"]),
   Spell(rules_text="+2 time.", color="gold", type="Producer", raw_commands=["time -2"]),
-  Spell(rules_text="Deal 7 to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
-        targets=["i"], raw_commands=["damage i 7"], generate_commands_post=if_kill("i", ["recharge last", "refresh last"])),
+  Spell(rules_text="Deal 8 to immediate. If this kills, recharge and refresh.", color="gold", type="Converter", conversion_color="red",
+        targets=["i"], raw_commands=["damage i 8"], generate_commands_post=if_kill("i", ["recharge last", "refresh last"])),
   Spell(rules_text="Gain 3 prolific.", color="gold", type="Consumer", raw_commands=["prolific p 3"])],
 ]
 

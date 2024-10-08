@@ -2,7 +2,7 @@ import asyncio
 import random
 import dill
 import os
-from drafting import draft_ritual_for_haven, draft_spell_for_haven, encounter_draft, haven_library_draft
+from drafting import draft_ritual_for_haven, draft_spell_for_haven, encounter_draft, haven_library_draft, haven_rolling_draft
 from model.encounter import Encounter, EnemyWave
 from model.map import Map
 from model.party_member_state import PartyMemberState
@@ -11,7 +11,7 @@ from model.region_draft import RegionDraft
 from model.spellbook import LibrarySpell
 from sound_utils import ws_play_sound
 from termcolor import colored
-from generators import generate_endgame_enemy_composition, generate_faction_sets, generate_spell_pools, generate_starting_haven_library
+from generators import generate_endgame_enemy_composition, generate_faction_sets, generate_starting_haven_library
 from model.haven import Haven
 from utils import choose_obj, choose_number, command_reference, get_combat_entities, help_reference, numbered_list, ws_input, ws_print
 
@@ -253,14 +253,12 @@ class GameStateV2:
       character_file = f"saves/characters/{character_choice}.pkl"
       with open(character_file, "rb") as f:
         player = dill.load(f)
-    unchosen_characters = [c for c in available_characters if c != player]
-    for character in unchosen_characters:
-      character.heal(3)
     player.init()
     return player
   
   async def choose_map(self, websocket):
     existing_maps = load_maps_from_files()
+    existing_maps = [m for m in existing_maps if not m.completed]
     while True:
       await ws_print(numbered_list(existing_maps), websocket)
       map_choice = await choose_obj(existing_maps, "Choose a map for your run (or type 'done' to start a new map) > ", websocket)
@@ -268,22 +266,30 @@ class GameStateV2:
         map = map_choice
         await ws_print(f"You embark on {map.render()}...", websocket)
         break
-      elif map_choice is None and self.haven.keys >= 1:
-        self.haven.keys -= 1
-        map = Map(name=None, n_regions=self.run_length)
-        await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
-        break
+      elif map_choice is None and self.haven.keys >= self.haven.season + 1:
+        # self.haven.keys -= 1
+        # map = Map(name=None, difficulty=random.choice([1, 2, 3]))
+        # await ws_print(f"This new land is called... {colored(map.name, 'magenta')}", websocket)
+        # break
+        for i in range(4):
+          map = map = Map(name=None, difficulty=i + self.haven.season)
+          if i == 3:
+            map.boss = True
+          map.save()
+        existing_maps = load_maps_from_files()
+        self.haven.season += 1
+        continue
       else:
-        await ws_input(f"You don't have enough keys to unlock a new map ({self.haven.keys}/3) ...", websocket)
+        await ws_input(f"You don't have enough keys to unlock a new map ({self.haven.keys}/{self.haven.season+1}) ...", websocket)
 
     # choose difficulty
-    while map.name != "Endgame":
-      difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
-      if map.completed_difficulties[difficulty] == 0:
-        map.difficulty = difficulty
-        break
-      else:
-        await ws_input(colored("You've already completed this difficulty. Choose another.", "red"), websocket)
+    # while map.name != "Endgame":
+    #   difficulty = await choose_number("Choose a difficulty > ", websocket=websocket)
+    #   if map.completed_difficulties[difficulty] == 0:
+    #     map.difficulty = difficulty
+    #     break
+    #   else:
+    #     await ws_input(colored("You've already completed this difficulty. Choose another.", "red"), websocket)
 
     return map
 
@@ -292,20 +298,24 @@ class GameStateV2:
     if not os.path.exists("saves/haven.pkl") and not self.haven:
       starting_library = generate_starting_haven_library()
       self.haven = Haven(library=starting_library)
+      # Also create the starting maps
+      for i in range(4):
+        map = map = Map(name=None, difficulty=i)
+        map.save()
     elif not self.haven:
       with open("saves/haven.pkl", "rb") as f:
         self.haven = dill.load(f)
 
     # If endgame map doesn't exist create one and save it
-    if not os.path.exists("saves/maps/Endgame.pkl"):
-      region_drafts = []
-      factions = generate_faction_sets(n_sets=1, set_size=3, overlap=1)[0]
-      base_enemy_composition = generate_endgame_enemy_composition(factions)
-      region_draft = RegionDraft(combat_size=6, factions=factions, spell_pool=[],
-                                 n_spell_picks=0, n_enemy_picks=0, mandatory_enemysets=base_enemy_composition)
-      region_drafts.append(region_draft)
-      endgame_map = Map(name="Endgame", n_regions=1, region_drafts=region_drafts, difficulty=4)
-      endgame_map.save()
+    # if not os.path.exists("saves/maps/Endgame.pkl"):
+    #   region_drafts = []
+    #   factions = generate_faction_sets(n_sets=1, set_size=3, overlap=1)[0]
+    #   base_enemy_composition = generate_endgame_enemy_composition(factions)
+    #   region_draft = RegionDraft(combat_size=6, factions=factions, spell_pool=[],
+    #                              n_spell_picks=0, n_enemy_picks=0, mandatory_enemysets=base_enemy_composition)
+    #   region_drafts.append(region_draft)
+    #   endgame_map = Map(name="Endgame", n_regions=1, region_drafts=region_drafts, difficulty=4)
+    #   endgame_map.save()
 
     # Choose Character
     player = await self.choose_character(websocket)
@@ -316,10 +326,10 @@ class GameStateV2:
     await ws_input(f"Once all party members have joined, press enter.", websocket)
 
     # Do the character haven draft
-    print(f"--------------- {list(self.party_member_states.keys())}")
     for pid in list(self.party_member_states.keys()):
       if pid == player.id:
-        await haven_library_draft(player, self)
+        # await haven_library_draft(player, self)
+        await haven_rolling_draft(player, self)
       await self.wait_for_teammates(player.id, f"{pid}-havenlibrarydraft")
 
     # Player 1 makes the choice about map
@@ -330,6 +340,16 @@ class GameStateV2:
       map.init()
     await self.wait_for_teammates(player_id, "mapchoice")
     map = self.map # If you're not player 1 you need to pick up the map from the game state
+
+    # if self.haven.runs % 2 == 0 and self.haven.runs > 0:
+    #   # You must pay 2 keys to embark
+    #   if self.haven.keys < 2:
+    #     await ws_input(colored("You don't have enough keys to embark!", "red"), websocket)
+    #     raise GameOver()
+    #   self.haven.keys -= 2
+    #   await ws_input(colored("You spend 2 keys to survive...", "green"), websocket)
+    
+    self.haven.runs += 1
 
     return player, map
 
@@ -367,25 +387,18 @@ class GameStateV2:
 
       await self.discovery_phase(player)
 
-    if self.map.difficulty in [0]:
+    if self.map.difficulty in [0, 1]:
+      await draft_spell_for_haven(self, websocket)
+    if self.map.difficulty in [3, 4]:
       await draft_spell_for_haven(self, websocket)
       await draft_spell_for_haven(self, websocket)
-    if self.map.difficulty in [1]:
-      await draft_spell_for_haven(self, websocket)
-      await draft_spell_for_haven(self, websocket)
-      await draft_spell_for_haven(self, websocket)
-    if self.map.difficulty in [2]:
-      await draft_spell_for_haven(self, websocket)
-      await draft_spell_for_haven(self, websocket)
-      await draft_ritual_for_haven(self, websocket)
-    if self.map.difficulty in [3]:
-      await draft_spell_for_haven(self, websocket)
-      await draft_spell_for_haven(self, websocket)
-      await draft_spell_for_haven(self, websocket)
+    if self.map.difficulty in [2, 5]:
       await draft_ritual_for_haven(self, websocket)
 
 
-    self.map.completed_difficulties[self.map.difficulty] += 1
+    # self.map.completed_difficulties[self.map.difficulty] += 1
+    # self.map.difficulty += 1
+    self.map.completed = True
     await self.end_run(player)
     await ws_print(self.haven.render(), websocket)
 

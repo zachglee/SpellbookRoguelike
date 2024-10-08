@@ -10,10 +10,12 @@ RITUAL_PROGRESS_PRICE = 20
 class Haven:
   def __init__(self, library):
     self.material = 0
-    self.keys = 1
+    self.keys = 0
     self.secrets_dict = defaultdict(int)
     self.items = []
     self.rituals = []
+    self.runs = 0
+    self.season = 0
 
     self.library = library
 
@@ -44,12 +46,15 @@ class Haven:
       else:
         await ws_print(colored(f"Not enough secrets to progress ritual of faction {choice}!", "red"), player.websocket)
 
+  def render_rituals(self) -> str:
+    secrets_part = colored(render_secrets_dict(self.secrets_dict), "cyan")
+    rituals_part = "-------- HAVEN RITUALS --------\n" + numbered_list(self.rituals)
+    return f"{secrets_part}\n{rituals_part}"
 
   def render(self, player=None):
     # material_part = colored(f"{self.material}⛁", "yellow")
     keys_part = colored(f"{self.keys}♦", "green")
-    secrets_part = colored(render_secrets_dict(self.secrets_dict), "cyan")
-    rituals_part = "-------- HAVEN RITUALS --------\n" + numbered_list(self.rituals)
+    rituals_part = self.render_rituals()
     library_spells = self.library if player is None else self.library + player.personal_spells
     library_part = "-------- HAVEN LIBRARY --------\n" + numbered_list(library_spells)
-    return f"~~~~ HAVEN {keys_part} ~~~~\n{secrets_part}\n{rituals_part}\n{library_part}"
+    return f"~~~~ HAVEN {keys_part} ~~~~\n{rituals_part}\n{library_part}"

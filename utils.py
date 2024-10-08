@@ -191,6 +191,9 @@ async def get_combat_entities(enc, target_string, websocket=None):
     return [enc.front[target_pos - 1]]
   elif target_string == "distant":
     return [enc.faced_enemy_queue[-1]]
+  elif target_string[0] == "?":
+    condition = target_string[1:]
+    return [e for e in enc.enemies if e.conditions.get(condition)]
   elif target_string[0] == "_":
     restriction = target_string[1:]
     is_valid = TARGET_RESTRICTION_PREDICATES.get(restriction)

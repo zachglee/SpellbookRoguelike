@@ -51,27 +51,28 @@ def generate_spellbook_spells(size, spell_pool=spells):
   random.shuffle(spell_pool)
   return [SpellbookSpell(sp) for sp in spell_pool[:size]]
 
-def generate_starting_haven_library():
+def all_reachable(spells: List[LibrarySpell]) -> bool:
+
   def reachable_colors(spells: List[LibrarySpell]):
     return set([ls.spell.output_color for ls in spells if ls.spell.output_color is not None])
 
   def reachable_spells(spells: List[LibrarySpell], colors: List[Color]):
     return [ls for ls in spells if ls.spell.input_color in colors]
 
-  def all_reachable(spells: List[LibrarySpell]) -> bool:
-    reachable = [ls for ls in spells if ls.spell.type == "Producer"]
-    remaining = [ls for ls in spells if ls.spell.type in ["Converter", "Consumer"]]
-    while True:
-      new_reachable_colors = reachable_colors(reachable)
-      new_reachable_spells = reachable_spells(remaining, new_reachable_colors)
-      if len(new_reachable_spells) == 0:
-        return False
-      if len(new_reachable_spells) == len(remaining):
-        return True
-      reachable += new_reachable_spells
-
+  reachable = [ls for ls in spells if ls.spell.type == "Producer"]
+  remaining = [ls for ls in spells if ls.spell.type in ["Converter", "Consumer"]]
   while True:
-    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 10)]
+    new_reachable_colors = reachable_colors(reachable)
+    new_reachable_spells = reachable_spells(remaining, new_reachable_colors)
+    if len(new_reachable_spells) == 0:
+      return False
+    if len(new_reachable_spells) == len(remaining):
+      return True
+    reachable += new_reachable_spells
+
+def generate_starting_haven_library():
+  while True:
+    starting_library = [LibrarySpell(sp) for sp in random.sample(generate_spell_pools(n_pools=1)[0], 12)]
     # The library must have at least 2 producers with 2 distinct colors among them
     # and all spells must be castable with the energies available
     producers = [ls for ls in starting_library if ls.spell.type == "Producer"]
@@ -86,13 +87,13 @@ def generate_shop_item(item):
     cost = item.material_cost
   elif item.rare:
     stock = 1
-    cost = 10
+    cost = 14
   elif item.name in ["Gold Potion", "Red Potion", "Blue Potion"]:
     stock = 2
-    cost = 2
+    cost = 3
   elif not item.rare:
     stock = 1
-    cost = 4
+    cost = 6
   return ShopItem(item, cost=cost, stock=stock)
 
 def generate_ancient_key_shop_item():

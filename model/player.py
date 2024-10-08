@@ -182,8 +182,8 @@ class Player(CombatEntity):
 
   async def discover_spells(self):
     while self.spell_discoveries_pending > 0:
-      spell_choices = [ls.spell for ls in generate_library_spells(4)]
-      await ws_print(numbered_list(spell_choices) + "\n", self.websocket)
+      spell_choices = [ls.spell for ls in generate_library_spells(3)]
+      await ws_print("\n" + numbered_list(spell_choices), self.websocket)
       spell = await choose_obj(spell_choices, "Choose a spell you've personally discovered > ", self.websocket)
       if spell is None:
         break
@@ -234,8 +234,8 @@ class Player(CombatEntity):
     inventory = deepcopy(self.starting_inventory)
     inventory += (
       [Item.make(f"{self.name}'s Ring", 1, "+2 time.", use_commands=["time -2"], personal=True),
-      Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)]
-      + [deepcopy(random.choice(minor_energy_potions))])
+      Item.make(f"{self.name}'s Dagger", 1, "Deal 3 damage to immediate.", use_commands=["damage i 3"], personal=True)])
+      # + [deepcopy(random.choice(minor_energy_potions))])
     self.hp = self.max_hp
     self.clear_conditions()
     self.facing = "front"

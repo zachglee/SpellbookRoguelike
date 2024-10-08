@@ -410,14 +410,12 @@ class MultiAction(Action):
 
 class TheVultureEntryAction(Action):
   def act(self, actor, enc) -> List[Event]:
-    other_enemies = enc.all_other_enemies(actor)
-    total_sacrificed_health = 0
+    dead_enemies = len(enc.dead_enemies)
     events = []
-    for enemy in other_enemies:
-      total_sacrificed_health += enemy.hp
-      events.append(Event(["enemy_death"], enemy, enc, lambda a, e: e.move_to_grave(a)))
     
-    events += AddConditionAction("sharp", int(total_sacrificed_health / 2), "self").act(actor, enc)
+    events += AddConditionAction("sharp", 2*dead_enemies, "self").act(actor, enc)
+    events += AddConditionAction("regen", dead_enemies, "self").act(actor, enc)
+    events += AddConditionAction("retaliate", dead_enemies, "self").act(actor, enc)
     return events
   
 # Utils

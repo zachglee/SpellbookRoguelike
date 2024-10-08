@@ -6,7 +6,7 @@ from termcolor import colored
 
 from model.enemy import EnemySet
 from model.spellbook import LibrarySpell, Spell
-from utils import choose_obj, numbered_list, ws_print
+from utils import choose_obj, numbered_list, ws_input, ws_print
 from content.enemy_factions import faction_dict
 
 class DraftPickOption:
@@ -90,8 +90,11 @@ class RegionDraft:
 
     if type == "enemy":
       enemyset = deepcopy(self.enemyset_pool[self.enemyset_pool_idx])
-      if random.random() < (0.20 + self.difficulty * 0.05):
+      if random.random() < (0.20 + (self.difficulty * 0.10)):
         enemyset.obscured = True
+        material += 3
+      if random.random() < max(0, (self.difficulty - 3) * 0.25):
+        enemyset.alert = True
         material += 3
       material += self.level_enemyset(enemyset)
       self.enemyset_pool_idx += 1
@@ -148,5 +151,12 @@ class RegionDraft:
         player.material += pick_option.material
       if pick_option.enemyset:
         player.pursuing_enemysets.append(pick_option.enemyset)
+        # Handle any alert enemysets
+        alert_enemysets = [po.enemyset for po in pick_options if po is not pick_option and po.enemyset.alert]
+        for alert_enemyset in alert_enemysets:
+          if random.random() < 0.5:
+            player.pursuing_enemysets.append(alert_enemyset)
+            await ws_input(colored(f"{alert_enemyset.name} is alerted to your presence and follows you!", "red"), player.websocket)
+
       
       await game_state.wait_for_teammates(player.id, f"regiondraft{i}")

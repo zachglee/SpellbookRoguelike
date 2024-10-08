@@ -12,8 +12,10 @@ class Map:
   def __init__(self, name, n_regions=3, difficulty=0, region_drafts=None, num_escapes=1):
     self.name = name
     self.difficulty = difficulty
+    self.completed = False
     self.completed_difficulties = defaultdict(int) # Mapping of int difficulty to how many times completed4
     self.num_escapes = num_escapes
+    self.boss = False
 
     if region_drafts is None:
       self.region_drafts = []

@@ -40,18 +40,29 @@ def passive_third_spell_in_turn(encounter, event):
 
 def passive_for_survive_6_damage_in_turn(encounter, event):
   if event.has_tag("end_round"):
-    print(f"----------------- damage survived: {encounter.player.damage_survived_this_turn}")
     return int(encounter.player.damage_survived_this_turn / 6)
   return False
-  
+
+# FIXME: remove this -- was just here for backwards compat one time
 def passive_block_at_end(encounter, event):
   if event.has_tag("end_turn"):
     return encounter.player.conditions["block"]
   return False
 
+def passive_block_at_turn_end(encounter, event):
+  if event.has_tag("end_turn"):
+    return encounter.player.conditions["block"]
+  return False
+
+def passive_block_at_round_end(encounter, event):
+  if event.has_tag("end_round"):
+    return encounter.player.conditions["block"]
+  return False
+
 def passive_block_and_shield_at_end(encounter, event):
   if event.has_tag("end_turn"):
-    return encounter.player.conditions["block"] + encounter.player.conditions["shield"]
+    player_block_shield = encounter.player.conditions["block"] + encounter.player.conditions["shield"]
+    return player_block_shield or False
   return False
 
 def passive_first_damage_10hp_remains(encounter, event):

@@ -153,7 +153,7 @@ class SpellbookSpell:
     if self.exhausted:
       await ws_input(colored("Spell is exhausted, can't cast it again this turn!", "red"), player.websocket)
       return False
-    if self.spell.input_color and player.energy[self.spell.input_color] <= 0:
+    if self.spell.input_color and player.conditions[self.spell.input_color] <= 0:
       await ws_input(colored("Not enough energy to cast this spell!", "red"), player.websocket)
       return False
     return True

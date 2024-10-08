@@ -21,7 +21,7 @@ class Enemy(CombatEntity):
 
   @classmethod
   def make(cls, hp, name, action, entry=NothingAction(), exp=None):
-    exp = exp or math.ceil(hp / 2)
+    exp = exp or (math.ceil(hp / 2) + 2)
     return cls(hp=hp, max_hp=hp, name=name, action=action, entry=entry, experience=exp)
 
 class EnemySpawn:
@@ -43,6 +43,7 @@ class EnemySet:
 
     self.pickable = True
     self.obscured = False
+    self.alert = False
   
   @property
   def instantiated_enemy_spawns(self):

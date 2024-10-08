@@ -11,7 +11,7 @@ RITUAL_PROGRESS = 10
 factions = [
   Faction("Freed Automata", freed_automata, "⚙",
     basic_items=[
-      Item.make("Heavy Plating", 1, "Gain 2 armor. (takes 3 actions)", ["armor p 2"], time_cost=3),
+      Item.make("Heavy Plating", 1, "Gain 2 armor. (takes 4 actions)", ["armor p 2"], time_cost=4),
       Item.make("Shield Generator", 4, "Gain 2 shield.", ["shield p 2"])
     ],
     special_items=[
@@ -50,7 +50,7 @@ factions = [
   # ),
   # Faction("Doombringers", doombringers, "⚶",
   #   basic_items=[
-  #     Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor, 1 searing presence.", ["sharp p 1", "armor p 1", "searing p 1"]),
+  #     Item.make("Underdog's Defiance", 1, "Gain 1 sharp, 1 armor", ["sharp p 1", "armor p 1"]),
   #     Item.make("Survivor's Last Stand", 1, "Deal 3 damage to all enemies.", ["damage a 3"]),
   #   ],
   #   special_items=[
@@ -120,7 +120,7 @@ factions = [
       Item.make("Potion of Strength", 3, "Gain 3 empower.", ["empower p 3"])
     ],
     special_items=[
-      Item.make("Ogre's Brew", 1, "Gain 3 armor and 9 empower.", ["armor p 3", "empower p 9"], rare=True)
+      Item.make("Ogre's Brew", 1, "Gain 12 block and 12 empower.", ["block p 12", "empower p 12"], rare=True)
     ],
     ritual=Ritual("Giant's Blows", "Deal 10 damage to immediate on turns 3 and 6.", "Giantkin", RITUAL_PROGRESS,
                   [ritual_event([3, 6], ["damage i 10"])], priority=4),
@@ -161,8 +161,8 @@ factions = [
     special_items=[
       Item.make("Demon's Blood", 1, "burn 3 self, gain 6 searing presence, 6 retaliate", ["burn p 3", "searing p 6", "retaliate p 6"], rare=True)
     ],
-    ritual=Ritual("Imminent Inferno", "Burn 4 all.", "Infernal Plane", RITUAL_PROGRESS,
-                  [ritual_event([4, 5, 6], ["burn a 4"])]),
+    ritual=Ritual("Imminent Inferno", "Burn 4 all every turn starting on turn 4.", "Infernal Plane", RITUAL_PROGRESS,
+                  [ritual_event([4, 5, 6, 7], ["burn a 4"])]),
     map_name_adjectives=["Scorched", "Burning", "Hellish", "Smoldering", "Demonic", "Devil's", "Blazing"],
     map_name_nouns=["Pits", "Inferno", "Hellscape", "Pentacale", "Cauldron", "Pyre", "Torture"]
   ),
@@ -195,7 +195,7 @@ factions = [
   Faction("Shadow Realm", shadow_realm, "☽",
     basic_items=[
       Item.make("Brave Face", 2, "Face, then block 5.", ["face!", "block p 5"]),
-      Item.make("Mirror Blade", 1, "Deal 6 damage immediately behind.", ["damage bi 6"])
+      Item.make("Mirror Blade", 1, "Deal 8 damage immediately behind.", ["damage bi 8"])
     ],
     special_items=[
       Item.make("Voodoo Doll", 3, "Any target suffers 4 damage.", ["suffer _ 4"], rare=True)
@@ -211,7 +211,7 @@ factions = [
       Item.make("Forbidden Text", 4, "Gain 1 inventive.", ["inventive p 1"]),
     ],
     special_items=[
-      Item.make("Prayer to the Ancients", 3, "10 damage to random.", ["damage r 10"], rare=True)
+      Item.make("Prayer to the Ancients", 3, "12 damage to random.", ["damage r 12"], rare=True)
     ],
     ritual=Ritual("Call the Unspeakable", "Gain 2 ward on turn 1, then deal 6 damage to random 6 times on turn 6.", "Ancient Horrors", RITUAL_PROGRESS,
                   [ritual_event([1], ["ward p 2"]), ritual_event([6], ["repeat 6 damage r 6"])], priority=4),

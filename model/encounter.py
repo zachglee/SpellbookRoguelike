@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from content.trigger_functions import trigger_player_defense_break
 from model.combat_entity import CombatEntity
 from model.triggers import EventTrigger
@@ -83,7 +83,7 @@ class Encounter:
     return self.back + [self.player] + self.front
 
   @property
-  def enemies(self):
+  def enemies(self) -> List[CombatEntity]:
     enemies_list = []
     for i in range(max(len(self.back), len(self.front))):
       if i < len(self.front):
@@ -524,9 +524,13 @@ class Encounter:
                              if i != self.player.spellbook.current_page_idx], [])
       recharge_candidates = [sp for sp in off_page_spells
                             if sp.charges < sp.max_charges and
-                            sp.spell.type != "Passive" and
-                            "Unrechargeable" not in sp.spell.description]
-      if len(recharge_candidates) > 0:
+                            sp.spell.type != "Passive"]
+      # recharge a spell on the current page with p=0.5 if there's nothing to recharge on other pages
+      if len(recharge_candidates) == 0:
+        recharge_candidates = [sp for sp in self.player.spellbook.current_page.spells
+                              if sp.charges < sp.max_charges and
+                              sp.spell.type != "Passive"]
+      if recharge_candidates:
         random.choice(recharge_candidates).recharge()
     # unexhaust all spells
     for spell in self.player.spellbook.spells:
